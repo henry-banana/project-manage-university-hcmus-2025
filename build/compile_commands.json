@@ -1,0 +1,26 @@
+[
+{
+  "directory": "D:/Code/VSCode/manage-university-project/build",
+  "command": "C:\\mingw64\\bin\\g++.exe  @CMakeFiles/university_manager.dir/includes_CXX.rsp -g -std=gnu++23 -o CMakeFiles\\university_manager.dir\\src\\core\\entities\\User.cpp.obj -c D:\\Code\\VSCode\\manage-university-project\\src\\core\\entities\\User.cpp",
+  "file": "D:/Code/VSCode/manage-university-project/src/core/entities/User.cpp",
+  "output": "CMakeFiles/university_manager.dir/src/core/entities/User.cpp.obj"
+},
+{
+  "directory": "D:/Code/VSCode/manage-university-project/build",
+  "command": "C:\\mingw64\\bin\\g++.exe  @CMakeFiles/university_manager.dir/includes_CXX.rsp -g -std=gnu++23 -o CMakeFiles\\university_manager.dir\\src\\core\\repo\\data\\StudentRepo.cpp.obj -c D:\\Code\\VSCode\\manage-university-project\\src\\core\\repo\\data\\StudentRepo.cpp",
+  "file": "D:/Code/VSCode/manage-university-project/src/core/repo/data/StudentRepo.cpp",
+  "output": "CMakeFiles/university_manager.dir/src/core/repo/data/StudentRepo.cpp.obj"
+},
+{
+  "directory": "D:/Code/VSCode/manage-university-project/build",
+  "command": "C:\\mingw64\\bin\\g++.exe  @CMakeFiles/university_manager.dir/includes_CXX.rsp -g -std=gnu++23 -o CMakeFiles\\university_manager.dir\\src\\core\\services\\AdminService.cpp.obj -c D:\\Code\\VSCode\\manage-university-project\\src\\core\\services\\AdminService.cpp",
+  "file": "D:/Code/VSCode/manage-university-project/src/core/services/AdminService.cpp",
+  "output": "CMakeFiles/university_manager.dir/src/core/services/AdminService.cpp.obj"
+},
+{
+  "directory": "D:/Code/VSCode/manage-university-project/build",
+  "command": "C:\\mingw64\\bin\\g++.exe  @CMakeFiles/university_manager.dir/includes_CXX.rsp -g -std=gnu++23 -o CMakeFiles\\university_manager.dir\\src\\main.cpp.obj -c D:\\Code\\VSCode\\manage-university-project\\src\\main.cpp",
+  "file": "D:/Code/VSCode/manage-university-project/src/main.cpp",
+  "output": "CMakeFiles/university_manager.dir/src/main.cpp.obj"
+}
+]
