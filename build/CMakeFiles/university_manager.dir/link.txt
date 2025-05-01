@@ -1,3 +1,0 @@
-C:\mingw64\bin\cmake.exe -E rm -f CMakeFiles\university_manager.dir/objects.a
-C:\mingw64\bin\ar.exe qc CMakeFiles\university_manager.dir/objects.a @CMakeFiles\university_manager.dir\objects1.rsp
-C:\mingw64\bin\g++.exe -g -Wl,--whole-archive CMakeFiles\university_manager.dir/objects.a -Wl,--no-whole-archive -o D:\Code\VSCode\manage-university-project\release\university_manager.exe -Wl,--out-implib,libuniversity_manager.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\university_manager.dir\linkLibs.rsp

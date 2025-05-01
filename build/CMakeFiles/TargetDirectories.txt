@@ -1,4 +1,0 @@
-D:/Code/VSCode/manage-university-project/build/CMakeFiles/university_manager.dir
-D:/Code/VSCode/manage-university-project/build/CMakeFiles/test.dir
-D:/Code/VSCode/manage-university-project/build/CMakeFiles/edit_cache.dir
-D:/Code/VSCode/manage-university-project/build/CMakeFiles/rebuild_cache.dir
