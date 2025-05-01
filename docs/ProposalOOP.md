@@ -122,41 +122,41 @@ university-management/
 │   │
 │   ├── core/                          # Business Logic Layer (OOP & SOLID)
 │   │   ├── entities/                  # Các lớp domain
-│   │   │   ├── User.hpp / .cpp        # Abstract class
-│   │   │   ├── Student.hpp / .cpp     # Kế thừa User
-│   │   │   ├── Faculty.hpp / .cpp     # Kế thừa User
-│   │   │   ├── Course.hpp / .cpp      # Lớp khóa học
-│   │   │   ├── Department.hpp / .cpp  # Lớp Khoa/Viện
-│   │   │   └── Result.hpp / .cpp      # Xử lý điểm, tính CGPA
+│   │   │   ├── User.h / .cpp        # Abstract class
+│   │   │   ├── Student.h / .cpp     # Kế thừa User
+│   │   │   ├── Faculty.h / .cpp     # Kế thừa User
+│   │   │   ├── Course.h / .cpp      # Lớp khóa học
+│   │   │   ├── Department.h / .cpp  # Lớp Khoa/Viện
+│   │   │   └── Result.h / .cpp      # Xử lý điểm, tính CGPA
 │   │   │
 │   │   ├── services/                  # Các dịch vụ xử lý logic
-│   │   │   ├── AuthService.hpp / .cpp         # Đăng nhập, xác thực
-│   │   │   ├── EnrollmentService.hpp / .cpp   # Đăng ký môn học
-│   │   │   ├── ResultService.hpp / .cpp       # Tính điểm
-│   │   │   ├── FinanceService.hpp / .cpp      # Thanh toán học phí, biên lai
-│   │   │   └── AdminService.hpp / .cpp        # HOD, Faculty list, Student list
+│   │   │   ├── AuthService.h / .cpp         # Đăng nhập, xác thực
+│   │   │   ├── EnrollmentService.h / .cpp   # Đăng ký môn học
+│   │   │   ├── ResultService.h / .cpp       # Tính điểm
+│   │   │   ├── FinanceService.h / .cpp      # Thanh toán học phí, biên lai
+│   │   │   └── AdminService.h / .cpp        # HOD, Faculty list, Student list
 │   │   │
 │   │   └── repositories/             # Data Access Layer (Repository Pattern)
 │   │       ├── interfaces/
-│   │       │   ├── IStudentRepository.hpp 
+│   │       │   ├── IStudentRepository.h 
 # được dùng để định nghĩa giao diện (interface) cho các lớp làm nhiệm vụ truy cập dữ liệu (data access) — tức là chúng áp dụng Interface Segregation Principle (ISP) và Dependency Inversion Principle (DIP) trong SOLID.
-│   │       │   ├── IFacultyRepository.hpp
-│   │       │   └── ILoginRepository.hpp
+│   │       │   ├── IFacultyRepository.h / .cpp
+│   │       │   └── ILoginRepository.h / .cpp
 │   │       ├── csv/
-│   │       │   ├── CsvStudentRepo.cpp
-│   │       │   ├── CsvFacultyRepo.cpp
-│   │       │   └── CsvLoginRepo.cpp
+│   │       │   ├── CsvStudentRepo.cpp / .h
+│   │       │   ├── CsvFacultyRepo.cpp / .h
+│   │       │   └── CsvLoginRepo.cpp / .h
 │   │       └── mock/                 # (cho Unit Test)
-│   │           └── MockStudentRepo.hpp
+│   │           └── MockStudentRepo.h / .cpp
 │
 │   ├── ui/                           # Giao diện (console)
-│   │   ├── ConsoleUI.hpp / .cpp      # Hiển thị menu, gọi service
+│   │   ├── ConsoleUI.h / .cpp      # Hiển thị menu, gọi service
 │   │   └── (gui/)                    # GUI nếu có sau này
 │
 │   └── utils/                        # Tiện ích
-│       ├── Logger.hpp / .cpp         # Singleton log
-│       ├── FileHandler.hpp / .cpp    # Đọc ghi file
-│       └── PasswordInput.hpp / .cpp  # Nhập password kiểu `*`
+│       ├── Logger.h / .cpp         # Singleton log
+│       ├── FileHandler.h / .cpp    # Đọc ghi file
+│       └── PasswordInput.h / .cpp  # Nhập password kiểu `*`
 │
 ├── tests/
 │   ├── unit/

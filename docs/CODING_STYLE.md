@@ -59,11 +59,10 @@ ResultService.hpp
 ---
 
 ## 6. 🔧 Quy tắc dấu ngoặc `{}`
-- **Allman Style**: Đặt `{` ở dòng mới
+- **Allman Style**: Đặt `{` ở dòng hàm
 
 ```cpp
-void showInfo()
-{
+void showInfo() {
     std::cout << "Student info";
 }
 ```
@@ -75,8 +74,7 @@ void showInfo()
 - Có khoảng trắng quanh toán tử
 
 ```cpp
-if (gpa >= 3.5)
-{
+if (gpa >= 3.5) {
     total_score += score;
 }
 ```
