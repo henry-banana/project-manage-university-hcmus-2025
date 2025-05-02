@@ -3,12 +3,31 @@
 
 #include <string>
 
+class Birthday {
+private:
+    int _day;
+    int _month;
+    int _year;
+public:
+    Birthday();
+    Birthday(int day, int month, int year);
+
+    void setBirthday(int day, int month, int year);
+    void setBirthday(std::string date); // Chuyển đổi từ chuỗi sang ngày tháng năm
+
+    std::string getBirthday() const; // Trả về chuỗi định dạng "dd/mm/yyyy"
+    int getDay() const;
+    int getMonth() const;
+    int getYear() const;
+};
+
 // Lớp cơ sở trừu tượng cho các loại người dùng
 class User {
 private:
     std::string _id;
-    std::string _firstName;
-    std::string _lastName;
+    std::string _first_name;
+    std::string _last_name;
+    Birthday _birth_day;
 
 protected: // Cho phép lớp con truy cập trực tiếp nếu cần, hoặc dùng getter
 
