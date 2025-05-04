@@ -16,9 +16,8 @@ protected:
 
 public:
     Student();
-    Student(std::string id, std::string firstName, std::string lastName, std::string citizenID, std::string facultyId);
     Student(std::string id, std::string firstName, std::string lastName, std::string citizenID, std::string facultyId,
-            std::string email, std::string phoneNumber, std::string passwordHash, std::string salt);
+            std::string email, std::string phoneNumber);
 
     Student(const Student& other);
     Student& operator=(const Student& other); // Toán tử gán sao chép
