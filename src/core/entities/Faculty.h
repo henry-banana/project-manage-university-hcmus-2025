@@ -9,24 +9,29 @@
 
 #include <string>
 
-class Teacher; // Forward declaration
-
 class Faculty {
 private:
     std::string _id; // Ví dụ: "CE", "IT"
     std::string _name; // Ví dụ: "Computer Engineering"
-    std::string _hodFacultyId; // Tham chiếu đến ID của Faculty là HOD
-
 protected:
 
 public:
-    Faculty(std::string id, std::string name, std::string hodFacultyId = ""); // hodFacultyId có thể trống
+    Faculty();
+    // Rule of Three
+    Faculty(std::string id, std::string name);
+    Faculty(const Faculty& other); // Copy constructor
+    Faculty& operator=(const Faculty& other); // Toán tử gán sao chép
+    ~Faculty() = default; // Destructor ảo để đảm bảo dọn dẹp đúng cách trong kế thừa
+    
+    // Getter & Setter
+    const std::string& id() const;
+    const std::string& name() const;
 
-    const std::string& getId() const { return _id; }
-    const std::string& getName() const { return _name; }
-    const std::string& getHodFacultyId() const { return _hodFacultyId; }
+    void setId(const std::string& id);
+    void setName(const std::string& name);
 
-    void setHodFacultyId(std::string hodId) { _hodFacultyId = std::move(hodId); }
+    // Phương thức hiển thị thông tin khoa
+    void display() const; // Hiển thị thông tin khoa
 };
 
 #endif // FACULTY_H

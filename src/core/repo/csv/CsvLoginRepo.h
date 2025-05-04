@@ -3,6 +3,8 @@
 
 #include "../interface/ILoginRepository.h"
 #include "../../../utils/FileHandler.h"
+#include "../../entities/User.h"
+#include "../../../utils/PasswordInput.h"
 #include <string>
 #include <map>
 #include <optional>
@@ -10,25 +12,42 @@
 // Implementation of ILoginRepository with CSV
 class CsvLoginRepo : public ILoginRepository {
 private:
-    std::string _dataFilePath;
-    std::map<std::string, std::pair<std::string, UserType>> _credentialsCache; // Local cache <userId, <password, userType>>
-    CsvFileHandler _fileHandler;
+    std::string _filePath;
+    const char DELIMITER = ',';
 
-    // Helper to load data from file
-    void loadCredentials();
-    // Helper to save data to file (if changed)
-    bool saveCredentials() const;
+    // Column indices
+    enum ColumnIndex {
+        COL_USER_ID = 0,
+        COL_PASSWORD_HASH,
+        COL_SALT,
+        COL_ROLE, // Store role as string or int? String is more readable.
+        NUM_COLUMNS
+    };
 
-protected:
+    // Helper to load all credentials (less efficient but simple)
+    std::vector<UserCredentials> loadFromFile() const;
+    // Helper to save all credentials
+    bool saveToFile(const std::vector<UserCredentials>& credentials);
+    // Helper to parse one row
+    UserCredentials parseCredentials(const std::vector<std::string>& csvRow) const;
+    // Helper to format one row
+    std::vector<std::string> formatCredentials(const UserCredentials& creds) const;
+        // Helper to convert string to UserRole
+    UserRole stringToRole(const std::string& roleStr) const;
+    // Helper to convert UserRole to string
+    std::string roleToString(UserRole role) const;
+
 
 public:
-    CsvLoginRepo(const std::string& dataFilePath);
+    explicit CsvLoginRepo(std::string csvFilePath);
 
-    std::optional<UserType> validateCredentials(const std::string& userId, const std::string& password) override;
-    bool addUser(const std::string& userId, const std::string& password, UserType userType) override;
-    bool updatePassword(const std::string& userId, const std::string& newPassword) override;
-    bool removeUser(const std::string& userId) override;
-    std::optional<UserType> getUserType(const std::string& userId) override;
+    // ILoginRepository implementation
+    std::optional<UserRole> validateCredentials(const std::string& userId, const std::string& plainPassword) const override;
+    std::optional<UserCredentials> findCredentialsById(const std::string& userId) const override;
+    bool addUserCredentials(const std::string& userId, const std::string& passwordHash, const std::string& salt, UserRole userRole) override;
+    bool updatePassword(const std::string& userId, const std::string& newPasswordHash, const std::string& newSalt) override;
+    bool removeUserCredentials(const std::string& userId) override;
+    std::optional<UserRole> getUserRole(const std::string& userId) const override;
 };
 
 #endif // CSV_LOGIN_REPO_H

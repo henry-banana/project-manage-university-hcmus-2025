@@ -1,27 +1,34 @@
-#ifndef FEERECORD_H
-#define FEERECORD_H
+#ifndef FEE_RECORD_H
+#define FEE_RECORD_H
 
 #include <string>
 
 class FeeRecord {
 private:
     std::string _studentId;
-    long _totalFee;
-    long _pendingFee;
+    int _totalFee;
+    int _paidFee; // Số tiền đã thanh toán
 
 protected:
 
 public:
-    FeeRecord(std::string studentId, long totalFee, long pendingFee);
+    FeeRecord(); // Constructor mặc định
+    FeeRecord(std::string studentId, int totalFee, int paidFee); 
+    FeeRecord(const FeeRecord& other); // Copy constructor
+    FeeRecord& operator=(const FeeRecord& other); // Toán tử gán sao chép
+    ~FeeRecord() = default; // Destructor ảo để đảm bảo dọn dẹp đúng cách trong kế thừa
 
-    const std::string& getStudentId() const { return _studentId; }
-    long getTotalFee() const { return _totalFee; }
-    long getPendingFee() const { return _pendingFee; }
-    long getPaidFee() const { return _totalFee - _pendingFee; }
-    bool isFullyPaid() const { return _pendingFee <= 0; }
+    const std::string& studentId() const;
+    int totalFee() const;
+    int paidFee() const; // Số tiền đã thanh toán;
+    bool isFullyPaid() const; // Kiểm tra xem đã thanh toán đủ chưa
 
-    // Trả về true nếu thanh toán thành công, false nếu số tiền không hợp lệ
-    bool makePayment(long amount);
+    void setStudentId(const std::string& studentId);
+    void setTotalFee(int totalFee);
+    void setPaidFee(int paidFee); // Cập nhật số tiền đã thanh toán
+
+    bool makePayment(int amount); // Thanh toán một khoản tiền
+    void display() const; // Hiển thị thông tin hóa đơn
 };
 
-#endif // FEERECORD_H
+#endif // FEE_RECORD_H

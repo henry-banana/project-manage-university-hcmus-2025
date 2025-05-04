@@ -1,64 +1,91 @@
 #ifndef CONSOLEUI_H
 #define CONSOLEUI_H
 
-#include <memory> // For std::shared_ptr/unique_ptr
-#include "../core/services/IAuthService.h"
-#include "../core/services/IStudentService.h"
-#include "../core/services/IFacultyService.h"
-#include "../core/services/IFinanceService.h"
-#include "../core/services/IAdminService.h"
-#include "../core/repositories/interfaces/ILoginRepository.h" // For UserType
-#include "MenuOption.h" // Enum cho các lựa chọn menu
+#include <memory>
+#include <string>
+#include <vector>
+#include <optional>
+#include "../core/services/AuthService.h"
+#include "../core/services/StudentService.h"
+#include "../core/services/TeacherService.h"
+#include "../core/services/FacultyService.h" // Department/School Service
+#include "../core/services/CourseService.h"
+#include "../core/services/EnrollmentService.h"
+#include "../core/services/ResultService.h"
+#include "../core/services/FinanceService.h"
+#include "../core/services/AdminService.h"
+#include "../core/entities/User.h" // For UserRole
+#include "../core/entities/Student.h"
+#include "../core/entities/Teacher.h"
+#include "../core/entities/Faculty.h"
+#include "../core/entities/Course.h"
+#include "MenuOption.h" // User's MenuOption enum
 
 // Lớp quản lý giao diện console
 class ConsoleUI {
 private:
-    // Các service được inject
     std::shared_ptr<IAuthService> _authService;
     std::shared_ptr<IStudentService> _studentService;
-    std::shared_ptr<IFacultyService> _facultyService;
+    std::shared_ptr<ITeacherService> _teacherService;
+    std::shared_ptr<IFacultyService> _facultyService; // Dept/School service
+    std::shared_ptr<ICourseService> _courseService;
+    std::shared_ptr<IEnrollmentService> _enrollmentService;
+    std::shared_ptr<IResultService> _resultService;
     std::shared_ptr<IFinanceService> _financeService;
     std::shared_ptr<IAdminService> _adminService;
 
     // Trạng thái đăng nhập hiện tại
-    std::optional<UserType> _currentUserType;
-    std::string _currentUserId; // Lưu ID người dùng đã đăng nhập
-
+    // Internal state (not needed if using AuthService state)
+    // std::optional<UserRole> _currentUserRole;
+    // std::string _currentUserId;
+    
     // Hiển thị các menu
     void displayMainMenu();
-    void displayLoginPrompt(const std::string& role); // Role: "Finance", "Admin", "Student/Faculty"
     void displayStudentMenu();
-    void displayFacultyMenu();
-    void displayAdminMenu();
-    void displayFinanceMenu(UserType userType); // Menu finance khác nhau cho S và F
+    void displayTeacherMenu(); // Renamed from FacultyMenu
+    void displayAdminTopMenu();
+    void displayAdminStudentMenu();
+    void displayAdminTeacherMenu(); // Renamed from FacultyMenu
+    void displayAdminFacultyMenu(); // Menu for managing Faculties (Departments)
+    void displayAdminCourseMenu();  // Menu for managing Courses
+    void displayFinanceLoginMenu(); // Choose Student/Teacher login for Finance
+    void displayFinanceStudentMenu();
+    void displayFinanceTeacherMenu();
 
-    // Các hàm xử lý luồng con
-    void handleLogin(const std::string& role);
+    // --- Private Action Handler Methods ---
+    void handleMainMenuChoice(MainMenuOption choice);
     void handleStudentActions();
-    void handleFacultyActions();
+    void handleTeacherActions();
     void handleAdminActions();
+    void handleAdminStudentActions();
+    void handleAdminTeacherActions();
+    void handleAdminFacultyActions();
+    void handleAdminCourseActions();
     void handleFinanceActions();
+    void handleFinanceStudentActions(const std::string& studentId);
+    void handleFinanceTeacherActions(const std::string& teacherId);
 
-    // Các hàm hiển thị thông tin cụ thể
-    void showWelcomeHeader();
+    // --- Login/Logout Flow ---
+    bool performLogin(const std::string& prompt, UserRole expectedRole = UserRole::STUDENT /* Use a sentinel?*/, bool allowAny = false); // Performs login prompt and validation
+    void performLogout();
+
+    // --- Data Display Helpers ---
+    void showWelcomeMessage();
     void showSectionHeader(const std::string& title);
     void showStudentDetails(const std::string& studentId);
-    void showFacultyDetails(const std::string& facultyId);
+    void showTeacherDetails(const std::string& teacherId);
+    void showFacultyDetails(const std::string& facultyId); // Show Dept/School details
+    void showCourseDetails(const std::string& courseId);
     void showStudentResultReport(const std::string& studentId);
     void showFeeReceipt(const std::string& studentId);
-    void showSalaryCertificate(const std::string& facultyId);
-    void showStudentList(const std::vector<Student>& students);
-    void showFacultyList(const std::vector<Faculty>& faculty);
-    void showDepartmentList(const std::vector<Department>& departments);
-    void showHodList(const std::vector<Faculty>& hods);
+    void showSalaryCertificate(const std::string& teacherId);
 
-    // Hàm tiện ích UI
-    void clearScreen();
-    void pauseExecution(); // Tương đương getch()
-    int getMenuChoice(int minOption, int maxOption);
-    std::string promptForString(const std::string& prompt);
-    long promptForLong(const std::string& prompt);
-    bool promptForYesNo(const std::string& prompt);
+    // --- List Display Helpers ---
+    void showStudentList(const std::vector<Student>& students);
+    void showTeacherList(const std::vector<Teacher>& teachers);
+    void showFacultyList(const std::vector<Faculty>& faculties); // Show Dept/School list
+    void showCourseList(const std::vector<Course>& courses);
+    // void showHodList(const std::vector<Teacher>& hods); // Can use showTeacherList
 
 protected:
 
@@ -67,7 +94,11 @@ public:
     ConsoleUI(
         std::shared_ptr<IAuthService> authService,
         std::shared_ptr<IStudentService> studentService,
+        std::shared_ptr<ITeacherService> teacherService,
         std::shared_ptr<IFacultyService> facultyService,
+        std::shared_ptr<ICourseService> courseService,
+        std::shared_ptr<IEnrollmentService> enrollmentService,
+        std::shared_ptr<IResultService> resultService,
         std::shared_ptr<IFinanceService> financeService,
         std::shared_ptr<IAdminService> adminService
     );
