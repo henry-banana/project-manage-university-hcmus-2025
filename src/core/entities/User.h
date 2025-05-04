@@ -30,17 +30,19 @@ enum class UserRole {
 // Lớp cơ sở trừu tượng cho các loại người dùng
 class User {
 private:
+protected: // Cho phép lớp con truy cập trực tiếp nếu cần, hoặc dùng getter
     std::string _id;
     std::string _first_name;
     std::string _last_name;
     Birthday _birth_day;
     std::string _address;
     std::string _citizen_id; // Căn cước công dân
+    std::string _email; // Email của người dùng
+    std::string _phone_number; // Số điện thoại của người dùng
     std::string _password_hash; // Mã băm của mật khẩu
     std::string _salt; // Muối cho mật khẩu
     UserRole _role; // Vai trò của người dùng (học sinh, giáo viên, quản trị viên)
 
-protected: // Cho phép lớp con truy cập trực tiếp nếu cần, hoặc dùng getter
     void setBirthday(const Birthday& birthday);
 
 public:
@@ -64,6 +66,8 @@ public:
     Birthday birthday() const;
     const std::string& address() const;
     const std::string& citizenID() const;
+    const std::string& email() const;
+    const std::string& phoneNumber() const;
     const std::string& passwordHash() const;
     const std::string& salt() const;
     UserRole role() const;
@@ -76,6 +80,8 @@ public:
     // Setter cho ngày sinh (nếu muốn sửa ngày sinh sau này)
     void setBirthday(int day, int month, int year);
     void setBirthday(const std::string& date);
+    void setEmail(const std::string& email); // Setter cho email
+    void setPhoneNumber(const std::string& phoneNumber); // Setter cho số điện thoại
     void setPasswordHash(const std::string& passwordHash);
     void setSalt(const std::string& salt); // Setter cho salt
 

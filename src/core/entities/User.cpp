@@ -64,6 +64,8 @@ const std::string& User::citizenID() const { return _citizen_id; }
 const std::string& User::passwordHash() const { return _password_hash; }
 const std::string& User::salt() const { return _salt; } // Getter cho salt
 UserRole User::role() const { return _role; }
+const std::string& User::email() const { return _email; }
+const std::string& User::phoneNumber() const { return _phone_number; }
 
 // --- Triển khai các Setters khác ---
 void User::setFirstName(const std::string& firstName) { _first_name = firstName; }
@@ -75,6 +77,8 @@ void User::setBirthday(const std::string& date) { _birth_day.setBirthday(date); 
 void User::setBirthday(const Birthday& birthday) {
     _birth_day = birthday;
 }
+void User::setEmail(const std::string& email) { _email = email; } // Setter cho email
+void User::setPhoneNumber(const std::string& phoneNumber) { _phone_number = phoneNumber; } // Setter cho số điện thoại
 
 // Hàm display() là virtual thuần túy nên không có định nghĩa trong lớp User.cpp
 // Các lớp con (Student, Teacher/Faculty) PHẢI định nghĩa hàm display() của riêng chúng.
