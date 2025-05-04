@@ -40,6 +40,6 @@
 *.out
 *.app
 
-vscode/
+.vscode/
 build/
 s.md
