@@ -24,7 +24,8 @@ public:
 enum class UserRole {
     STUDENT,
     TEACHER,
-    ADMIN
+    ADMIN,
+    FINANCE
 };
 
 // Lớp cơ sở trừu tượng cho các loại người dùng
