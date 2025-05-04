@@ -58,6 +58,4 @@ enum class FinanceFacultyMenuOption {
     BACK = 0
 };
 
-// Có thể thêm các enum khác nếu menu phức tạp hơn
-
 #endif // MENUOPTION_H
