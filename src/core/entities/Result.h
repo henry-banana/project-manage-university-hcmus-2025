@@ -18,14 +18,20 @@ private:
 protected:
 
 public:
+    CourseResult();
     CourseResult(std::string studentId, std::string courseId, int marks = -1); // -1: Chưa có điểm
+    CourseResult(const CourseResult& other); // Copy constructor
+    CourseResult& operator=(const CourseResult& other); // Toán tử gán sao chép
+    ~CourseResult() = default;
 
-    const std::string& getStudentId() const { return _studentId; }
-    const std::string& getCourseId() const { return _courseId; }
-    int getMarks() const { return _marks; }
-    char getGrade() const; // Logic tính grade dựa trên marks_
+    // Getter & Setter
+    const std::string& studentId() const;
+    const std::string& courseId() const;
+    int marks() const;
+    char grade() const; // Logic tính grade dựa trên marks_
 
     void setMarks(int marks);
+    bool isGreded() const; // Kiểm tra xem đã có điểm hay chưa
 };
 
 // Hoặc có thể thiết kế Result như một tập hợp điểm của sinh viên trong kỳ
@@ -33,20 +39,29 @@ class StudentSemesterResult {
 private:
     std::string _studentId;
     int _semester; // Optional
+    int _year;
     std::vector<CourseResult> _results;
 
 protected:
 
 public:
-    StudentSemesterResult(std::string studentId, int semester); // Hoặc không cần semester nếu chỉ quản lý tổng thể
+    StudentSemesterResult();
+    StudentSemesterResult(std::string studentId, int semester, int year);
+    StudentSemesterResult(const StudentSemesterResult& other); // Copy constructor
+    StudentSemesterResult& operator=(const StudentSemesterResult& other); // Toán tử gán sao chép
+    ~StudentSemesterResult() = default;
 
-    void addCourseResult(const CourseResult& result);
-    const std::vector<CourseResult>& getCourseResults() const;
+    // Getter & Setter
+    const std::string& studentId() const;
+    int semester() const; // Có thể không cần nếu không quản lý theo kỳ
+    int year() const;
+    const std::vector<CourseResult>& results() const; // Trả về danh sách điểm của sinh viên
 
-    // Các phương thức tính toán tổng hợp (có thể đặt ở ResultService)
-    // double calculateSGPA(const std::map<std::string, int>& courseCredits) const;
-    // int getTotalCreditsEarned(const std::map<std::string, int>& courseCredits) const;
-    // int getTotalCreditsAttempted(const std::map<std::string, int>& courseCredits) const;
+    void setSemester(int semester);
+    void setYear(int year);
+    void addResult(const CourseResult& result); // Thêm điểm cho sinh viên
+    void removeResult(const std::string& courseId); // Xóa điểm của môn học cụ thể
+    void updateResult(const CourseResult& result); // Cập nhật điểm của môn học cụ thể
 };
 
 
