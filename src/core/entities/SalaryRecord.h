@@ -1,30 +1,34 @@
-#ifndef SALARYRECORD_H
-#define SALARYRECORD_H
+#ifndef SALARY_RECORD_H
+#define SALARY_RECORD_H
 
 #include <string>
 
 class SalaryRecord {
 private:
-    std::string _facultyId;
-    long _basicMonthlyPay;
+    std::string _teacherId;
+    int _basicMonthlyPay;
     // double bonusRate_; // Có thể lưu tỉ lệ bonus ở đây
 
 protected:
 
 public:
-    // Có thể thêm các yếu tố khác như bonus rate, deductions,...
-    SalaryRecord(std::string facultyId, long basicMonthlyPay);
+    SalaryRecord();
+    SalaryRecord(std::string facultyId, int basicMonthlyPay);
+    SalaryRecord(const SalaryRecord& other);
+    SalaryRecord& operator=(const SalaryRecord& other);
+    ~SalaryRecord() = default; 
 
-    const std::string& getFacultyId() const { return _facultyId; }
-    long getBasicMonthlyPay() const { return _basicMonthlyPay; }
-
+    // Getter & Setter
+    const std::string& teacherId() const;
+    int basicMonthlyPay() const;
+    
+    void setTeacherId(const std::string& teacherId);
+    void setBasicMonthlyPay(int newPay);
     // Tính toán lương (có thể đặt ở FinanceService)
-    long calculateAnnualBasicPay() const;
-    long calculateAnnualBonus(double bonusRate = 0.9) const; // Ví dụ bonus rate
-    long calculateTotalAnnualPay(double bonusRate = 0.9) const;
 
-    // Setter nếu lương cơ bản có thể thay đổi
-    void setBasicMonthlyPay(long newPay);
+    int calculateAnnualBasicPay() const;
+    int calculateAnnualBonus(double bonusRate = 0.9) const; // Ví dụ bonus rate
+    int calculateTotalAnnualPay(double bonusRate = 0.9) const;
 };
 
-#endif // SALARYRECORD_H
+#endif // SALARY_RECORD_H
