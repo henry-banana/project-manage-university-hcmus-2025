@@ -3,15 +3,7 @@
 
 #include <optional>
 #include <string>
-
-// Enum để phân biệt loại người dùng
-enum class UserType {
-    STUDENT,
-    FACULTY,
-    ADMIN,
-    FINANCE
-};
-
+#include "../../entities/User.h"
 // Interface cho Login Repository (quản lý authentication)
 class ILoginRepository {
 private:
@@ -21,20 +13,29 @@ protected:
 public:
     virtual ~ILoginRepository() = default;
 
-    // Xác thực thông tin đăng nhập
-    virtual std::optional<UserType> validateCredentials(const std::string& userId, const std::string& password) = 0;
-    
-    // Thêm người dùng mới
-    virtual bool addUser(const std::string& userId, const std::string& password, UserType userType) = 0;
-    
-    // Cập nhật mật khẩu
-    virtual bool updatePassword(const std::string& userId, const std::string& newPassword) = 0;
-    
-    // Xóa người dùng
-    virtual bool removeUser(const std::string& userId) = 0;
-    
-    // Lấy loại người dùng
-    virtual std::optional<UserType> getUserType(const std::string& userId) = 0;
+    virtual std::optional<UserRole> validateCredentials(const std::string& userId, const std::string& plainPassword) const = 0;
+
+    // Get user details needed for validation (hash, salt, role)
+    struct UserCredentials {
+        std::string userId;
+        std::string passwordHash;
+        std::string salt;
+        UserRole role;
+    };
+
+    virtual std::optional<UserCredentials> findCredentialsById(const std::string& userId) const = 0;
+
+    // Add new user credentials (requires hashed password and salt)
+    virtual bool addUserCredentials(const std::string& userId, const std::string& passwordHash, const std::string& salt, UserRole userRole) = 0;
+
+    // Update password (requires new hash and salt)
+    virtual bool updatePassword(const std::string& userId, const std::string& newPasswordHash, const std::string& newSalt) = 0;
+
+    // Remove user credentials
+    virtual bool removeUserCredentials(const std::string& userId) = 0;
+
+    // Get user role (if needed separately)
+    virtual std::optional<UserRole> getUserRole(const std::string& userId) const = 0;
 };
 
 #endif // ILOGINREPOSITORY_H

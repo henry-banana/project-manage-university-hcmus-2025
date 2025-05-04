@@ -3,6 +3,7 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 #include "../../entities/FeeRecord.h"
 
 // Interface cho Fee Repository
@@ -16,6 +17,7 @@ public:
 
     // CRUD operations
     virtual std::optional<FeeRecord> findByStudentId(const std::string& studentId) = 0;
+    virtual std::vector<FeeRecord> findAll() const = 0; // Might be needed for reports
     virtual bool add(const FeeRecord& feeRecord) = 0;
     virtual bool update(const FeeRecord& feeRecord) = 0;
     virtual bool remove(const std::string& studentId) = 0;

@@ -14,22 +14,18 @@ private:
     // CsvFileHandler _fileHandler;
 
     // Helpers for CSV processing
-    std::vector<Faculty> loadFacultyFromCsv();
-    bool saveFacultyToCsv(const std::vector<Faculty>& faculty);
-    Faculty parseFacultyFromCsvLine(const std::vector<std::string>& csvLine);
-    std::vector<std::string> formatFacultyToCsvLine(const Faculty& faculty);
     const char CSV_DELIMITER = ',';
     
-    // Column indexes
-    const int COL_ID = 0;
-    const int COL_FNAME = 1;
-    const int COL_LNAME = 2;
-    const int COL_DEPT = 3;
-    const int COL_INSTITUTE = 4;
-    const int COL_QUALIFICATION = 5;
-    const int COL_SPECIALIZATION = 6;
-    const int COL_DESIGNATION = 7;
-    const int COL_EXPERIENCE = 8;
+    std::vector<Faculty> loadFromFile() const;
+    bool saveToFile(const std::vector<Faculty>& faculties);
+    Faculty parseFaculty(const std::vector<std::string>& csvRow) const;
+    std::vector<std::string> formatFaculty(const Faculty& faculty) const;
+
+    enum ColumnIndex {
+        COL_ID = 0,
+        COL_NAME,
+        NUM_COLUMNS
+    };
 
 protected:
 
@@ -37,13 +33,13 @@ public:
     explicit CsvFacultyRepo(const std::string& csvFilePath);
 
     // IFacultyRepository implementation
-    std::optional<Faculty> findById(const std::string& facultyId) override;
-    std::vector<Faculty> findAll() override;
-    std::vector<Faculty> findByDepartment(const std::string& departmentId) override;
-    std::vector<Faculty> findHods() override;
+    std::optional<Faculty> findById(const std::string& facultyId) const override;
+    std::optional<Faculty> findByName(const std::string& name) const override;
+    std::vector<Faculty> findAll() const override;
     bool add(const Faculty& faculty) override;
     bool update(const Faculty& faculty) override;
     bool remove(const std::string& facultyId) override;
+    bool exists(const std::string& facultyId) const override;
 };
 
 #endif // CSV_FACULTY_REPO_H
