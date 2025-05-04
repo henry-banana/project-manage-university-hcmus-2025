@@ -9,8 +9,6 @@
 
 #include <string>
 
-class Teacher; // Forward declaration
-
 class Faculty {
 private:
     std::string _id; // Ví dụ: "CE", "IT"
@@ -18,15 +16,22 @@ private:
 protected:
 
 public:
+    Faculty();
+    // Rule of Three
     Faculty(std::string id, std::string name);
-
-
+    Faculty(const Faculty& other); // Copy constructor
+    Faculty& operator=(const Faculty& other); // Toán tử gán sao chép
+    ~Faculty() = default; // Destructor ảo để đảm bảo dọn dẹp đúng cách trong kế thừa
+    
     // Getter & Setter
     const std::string& id() const;
     const std::string& name() const;
 
     void setId(const std::string& id);
     void setName(const std::string& name);
+
+    // Phương thức hiển thị thông tin khoa
+    void display() const; // Hiển thị thông tin khoa
 };
 
 #endif // FACULTY_H
