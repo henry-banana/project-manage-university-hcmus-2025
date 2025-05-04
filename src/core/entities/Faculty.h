@@ -15,18 +15,18 @@ class Faculty {
 private:
     std::string _id; // Ví dụ: "CE", "IT"
     std::string _name; // Ví dụ: "Computer Engineering"
-    std::string _hodFacultyId; // Tham chiếu đến ID của Faculty là HOD
-
 protected:
 
 public:
-    Faculty(std::string id, std::string name, std::string hodFacultyId = ""); // hodFacultyId có thể trống
+    Faculty(std::string id, std::string name);
 
-    const std::string& getId() const { return _id; }
-    const std::string& getName() const { return _name; }
-    const std::string& getHodFacultyId() const { return _hodFacultyId; }
 
-    void setHodFacultyId(std::string hodId) { _hodFacultyId = std::move(hodId); }
+    // Getter & Setter
+    const std::string& id() const;
+    const std::string& name() const;
+
+    void setId(const std::string& id);
+    void setName(const std::string& name);
 };
 
 #endif // FACULTY_H
