@@ -1,15 +1,8 @@
-[2025-05-05 11:06:22.327] [INFO ] Logger initialized. Logging to: logs/university_app.log
-[2025-05-05 11:06:22.328] [INFO ] Log level set to: INFO 
-[2025-05-05 11:06:22.328] [INFO ] Application starting...
-[2025-05-05 11:06:32.229] [INFO ] Loaded credentials: thaihao, 16554018337685155615, TDTH@!@PTPC, STUDENT
-[2025-05-05 11:06:32.230] [INFO ] User ID not found during login attempt: Thaihao
-[2025-05-05 11:06:32.230] [WARN ] Login failed for user: Thaihao
-[2025-05-05 11:06:43.536] [INFO ] Loaded credentials: thaihao, 16554018337685155615, TDTH@!@PTPC, STUDENT
-[2025-05-05 11:06:43.536] [INFO ] User logged in successfully: thaihao
-[2025-05-05 11:06:53.512] [INFO ] User logged out: thaihao
-[2025-05-05 11:07:00.152] [INFO ] Loaded credentials: thaihao, 16554018337685155615, TDTH@!@PTPC, STUDENT
-[2025-05-05 11:07:00.152] [INFO ] User ID not found during login attempt: 1
-[2025-05-05 11:07:00.152] [WARN ] Login failed for user: 1
-[2025-05-05 11:07:47.563] [INFO ] Application exited normally.
-[2025-05-05 11:07:47.563] [INFO ] Application finished cleanly.
-[2025-05-05 11:07:47.563] [INFO ] Logger shutting down.
+[2025-05-05 11:13:16.592] [INFO ] Logger initialized. Logging to: logs/university_app.log
+[2025-05-05 11:13:16.593] [INFO ] Log level set to: INFO 
+[2025-05-05 11:13:16.593] [INFO ] Application starting...
+[2025-05-05 11:13:23.530] [INFO ] User logged in successfully: thaihao
+[2025-05-05 11:13:33.672] [INFO ] User logged out: thaihao
+[2025-05-05 11:14:38.721] [INFO ] Application exited normally.
+[2025-05-05 11:14:38.721] [INFO ] Application finished cleanly.
+[2025-05-05 11:14:38.721] [INFO ] Logger shutting down.
