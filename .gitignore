@@ -1,0 +1,11 @@
+# Executables
+*.exe
+!university_manager.exe
+*.out
+*.app
+
+.vscode/
+build/
+s.md
+*.log
+*.log
