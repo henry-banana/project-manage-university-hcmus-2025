@@ -1,8 +1,8 @@
-[2025-05-05 11:13:16.592] [INFO ] Logger initialized. Logging to: logs/university_app.log
-[2025-05-05 11:13:16.593] [INFO ] Log level set to: INFO 
-[2025-05-05 11:13:16.593] [INFO ] Application starting...
-[2025-05-05 11:13:23.530] [INFO ] User logged in successfully: thaihao
-[2025-05-05 11:13:33.672] [INFO ] User logged out: thaihao
-[2025-05-05 11:14:38.721] [INFO ] Application exited normally.
-[2025-05-05 11:14:38.721] [INFO ] Application finished cleanly.
-[2025-05-05 11:14:38.721] [INFO ] Logger shutting down.
+[2025-05-05 15:37:43.255] [INFO ] Logger initialized. Logging to: logs/university_app.log
+[2025-05-05 15:37:43.256] [INFO ] Log level set to: INFO 
+[2025-05-05 15:37:43.256] [INFO ] Application starting...
+[2025-05-05 15:37:51.082] [INFO ] User logged in successfully: admin
+[2025-05-05 15:37:53.211] [INFO ] User logged out: admin
+[2025-05-05 15:37:54.796] [INFO ] Application exited normally.
+[2025-05-05 15:37:54.796] [INFO ] Application finished cleanly.
+[2025-05-05 15:37:54.796] [INFO ] Logger shutting down.

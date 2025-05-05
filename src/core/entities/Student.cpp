@@ -2,6 +2,7 @@
 #include "User.h"
 #include <iostream>
 #include <format>
+#include "../../utils/Logger.h"
 
 Student::Student() : User(), _facultyId("") {}
 
@@ -23,7 +24,9 @@ Student::Student(std::string id,
         phoneNumber,
         UserRole::STUDENT // Mặc định là sinh viên
     ),
-      _facultyId(std::move(facultyId)) {}
+    _facultyId(std::move(facultyId)) {
+        LOG_INFO("Student object created with ID: " + id);
+    }
 
 Student::Student(const Student& other)
     : User(other), _facultyId(other._facultyId) {}

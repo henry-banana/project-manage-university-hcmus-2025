@@ -44,7 +44,7 @@ void ConsoleUI::run() {
     while (running) {
         clearScreen();
         displayMainMenu();
-        int choice = getMenuChoice(static_cast<int>(MainMenuOption::EXIT), static_cast<int>(MainMenuOption::STUDENT_FACULTY_LOGIN));
+        int choice = getMenuChoice(static_cast<int>(MainMenuOption::EXIT), static_cast<int>(MainMenuOption::LOGIN));
         MainMenuOption option = static_cast<MainMenuOption>(choice);
 
         if (option == MainMenuOption::EXIT) {
@@ -226,7 +226,7 @@ void ConsoleUI::handleMainMenuChoice(MainMenuOption choice) {
                  performLogout(); // Logout after finishing admin tasks
              }
             break;
-        case MainMenuOption::STUDENT_FACULTY_LOGIN:
+        case MainMenuOption::LOGIN:
             {
                 // Use allowAny=true, the role is determined by the login repo
                 if (performLogin("Student/Teacher Login", UserRole::STUDENT, true)) {
@@ -441,7 +441,7 @@ void ConsoleUI::handleAdminStudentActions() {
                      std::string password = getMaskedPassword("Enter Initial Password: ");
 
                      Student newStudent(
-                        id, fname, lname, cid, facId, email, phone, address
+                        id, fname, lname, cid, address, email, phone, facId
                      );
 
                      if (!newStudent.birthday().setBirthday(bday)) {

@@ -104,7 +104,7 @@ Birthday::Birthday(int day, int month, int year) {
 
 bool Birthday::setBirthday(int day, int month, int year) {
     // Kiểm tra tính hợp lệ của ngày tháng năm
-    if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1900) {
+    if (day < 1 || day > 31 || month < 1 || month > 12 || year < 0) {
         return false; // Ngày tháng năm không hợp lệ
     }
 

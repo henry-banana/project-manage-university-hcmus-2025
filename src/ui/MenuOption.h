@@ -5,7 +5,7 @@
 enum class MainMenuOption {
     FINANCE = 1,
     ADMIN = 2,
-    STUDENT_FACULTY_LOGIN = 3,
+    LOGIN = 3,
     EXIT = 0
 };
 

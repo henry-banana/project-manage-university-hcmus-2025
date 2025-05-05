@@ -1,6 +1,7 @@
 #include "FileHandler.h"
 #include "Logger.h" 
 #include <sstream>
+#include <filesystem>
 
 std::vector<std::string> CsvFileHandler::split(const std::string& s, char delimiter) {
     std::vector<std::string> tokens;
@@ -54,6 +55,12 @@ std::string CsvFileHandler::join(const std::vector<std::string>& elements, char 
 
 std::vector<std::vector<std::string>> CsvFileHandler::readAllLines(const std::string& filename, char delimiter) {
     std::vector<std::vector<std::string>> data;
+    
+    if (!std::filesystem::exists(filename) || std::filesystem::is_empty(filename)) {
+        LOG_WARN("File is empty: " + filename);
+        return data;
+    }
+    
     std::ifstream file(filename);
     if (!file.is_open()) {
         LOG_ERROR("Failed to open file for reading: " + filename);
