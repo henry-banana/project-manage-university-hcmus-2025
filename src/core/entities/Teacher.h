@@ -11,7 +11,7 @@ private:
     std::string _qualification;
     std::string _specializationSubjects; // Có thể tách thành vector<string>
     std::string _designation; // Chức vụ của giảng viên
-    int _experienceYears; // Số năm kinh nghiệm
+    int _experienceYears; // Số năm kinh nghiệm?
 
 public:
     // Constructor nhận thông tin giảng viên, bao gồm thông tin từ lớp User

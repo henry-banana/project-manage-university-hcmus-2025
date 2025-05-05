@@ -1,8 +1,28 @@
-[2025-05-05 15:37:43.255] [INFO ] Logger initialized. Logging to: logs/university_app.log
-[2025-05-05 15:37:43.256] [INFO ] Log level set to: INFO 
-[2025-05-05 15:37:43.256] [INFO ] Application starting...
-[2025-05-05 15:37:51.082] [INFO ] User logged in successfully: admin
-[2025-05-05 15:37:53.211] [INFO ] User logged out: admin
-[2025-05-05 15:37:54.796] [INFO ] Application exited normally.
-[2025-05-05 15:37:54.796] [INFO ] Application finished cleanly.
-[2025-05-05 15:37:54.796] [INFO ] Logger shutting down.
+[2025-05-05 20:42:01.249] [INFO ] Logger initialized. Logging to: logs/university_app.log
+[2025-05-05 20:42:01.250] [INFO ] Log level set to: INFO 
+[2025-05-05 20:42:01.250] [INFO ] Application starting...
+[2025-05-05 20:42:26.964] [INFO ] User logged in successfully: admin
+[2025-05-05 20:43:02.639] [INFO ] Student object created with ID: 232
+[2025-05-05 20:43:02.641] [INFO ] Student object created with ID: 23120001
+[2025-05-05 20:43:02.641] [INFO ] Student object created with ID: 23120025
+[2025-05-05 20:43:02.642] [INFO ] Student object created with ID: 23120001
+[2025-05-05 20:43:02.642] [INFO ] Student object created with ID: 23120025
+[2025-05-05 20:43:02.642] [INFO ] Student object created with ID: 23120001
+[2025-05-05 20:43:02.642] [INFO ] Student object created with ID: 23120025
+[2025-05-05 20:43:02.643] [WARN ] Registration failed: Password does not meet complexity requirements for user: 232
+[2025-05-05 20:43:02.644] [ERROR] Failed to register login credentials for student ID: 232. Rolling back student addition.
+[2025-05-05 20:43:02.673] [INFO ] Student object created with ID: 23120001
+[2025-05-05 20:43:02.673] [INFO ] Student object created with ID: 23120025
+[2025-05-05 20:43:02.673] [INFO ] Student object created with ID: 232
+[2025-05-05 20:43:12.212] [INFO ] Student object created with ID: 23120001
+[2025-05-05 20:43:12.212] [INFO ] Student object created with ID: 23120025
+[2025-05-05 20:43:23.201] [INFO ] Student object created with ID: 23120001
+[2025-05-05 20:43:23.201] [INFO ] Student object created with ID: 23120025
+[2025-05-05 20:43:27.481] [INFO ] Student object created with ID: 23120001
+[2025-05-05 20:43:27.481] [INFO ] Student object created with ID: 23120025
+[2025-05-05 20:45:11.070] [INFO ] Student object created with ID: 23120001
+[2025-05-05 20:45:11.070] [INFO ] Student object created with ID: 23120025
+[2025-05-05 20:45:11.073] [INFO ] Faculty removed successfully: SSH
+[2025-05-05 20:46:16.959] [INFO ] Finding students enrolled in course OOP
+[2025-05-05 20:46:16.960] [INFO ] Course removed successfully: OOP
+[2025-05-05 21:00:08.256] [INFO ] Logger shutting down.
