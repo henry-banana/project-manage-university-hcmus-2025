@@ -23,7 +23,7 @@ Teacher::Teacher(std::string id,
         citizenID,
         email, 
         phoneNumber, 
-        UserRole::TEACHER) ,
+        UserRole::TEACHER),
     _facultyId(facultyId), _qualification(qualification), 
     _specializationSubjects(specializationSubjects), _designation(designation),
     _experienceYears(experienceYears) {}
