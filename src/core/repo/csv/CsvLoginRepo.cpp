@@ -86,9 +86,6 @@ bool CsvLoginRepo::saveToFile(const std::vector<UserCredentials>& credentials) {
 }
 
 ILoginRepository::UserCredentials CsvLoginRepo::parseCredentials(const std::vector<std::string>& csvRow) const {
-    if (csvRow.size() < NUM_COLUMNS) {
-        throw std::runtime_error("Incorrect columns in login CSV row.");
-    }
     return {
         csvRow[COL_USER_ID],
         csvRow[COL_PASSWORD_HASH],

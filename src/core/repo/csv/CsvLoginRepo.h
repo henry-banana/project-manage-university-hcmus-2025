@@ -21,7 +21,6 @@ private:
         COL_PASSWORD_HASH,
         COL_SALT,
         COL_ROLE, // Store role as string or int? String is more readable.
-        NUM_COLUMNS
     };
 
     // Helper to load all credentials (less efficient but simple)
