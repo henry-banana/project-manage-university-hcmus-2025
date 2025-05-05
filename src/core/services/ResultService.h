@@ -68,12 +68,17 @@ public:
 
     bool enterMultipleMarks(const std::string& studentId, const std::map<std::string, int>& courseMarks) override;
 
+    // Added missing method implementations
+    bool updateResult(const std::string& studentId, const std::map<std::string, int>& marks) override;
+    
+    std::optional<char> getGrade(int marks) const override;
+    
+    bool declareResult(const std::string& studentId) override;
 
     std::optional<double> calculateCGPA(const std::string& studentId) const override;
 
      // SGPA calculation would be similar but filter results by semester
     std::optional<double> calculateSGPA(const std::string& studentId /*, int semester */) const override;
-
 
     std::string generateResultReport(const std::string& studentId) const override;
 

@@ -9,7 +9,7 @@ User::User(std::string id,
     std::string citizenID,
     std::string email, 
     std::string phoneNumber, 
-    UserRole role = UserRole::STUDENT)  
+    UserRole role)  
     : _id(std::move(id)),
       _first_name(std::move(firstName)),
       _last_name(std::move(lastName)),
@@ -68,7 +68,10 @@ const std::string& User::firstName() const { return _first_name; }
 const std::string& User::lastName() const { return _last_name; }
 std::string User::fullName() const { return _first_name + " " + _last_name; }
 Birthday User::birthday() { return _birth_day; } // Trả về bản sao
-const std::string& User::Birthday() const { return _birth_day.birthday(); } // Trả về chuỗi định dạng "dd/mm/yyyy"
+
+// Changed return type from reference to value to avoid returning a reference to a temporary
+std::string User::Birthday() const { return _birth_day.birthday(); } // Trả về chuỗi định dạng "dd/mm/yyyy"
+
 const std::string& User::address() const { return _address; }
 const std::string& User::citizenID() const { return _citizen_id; }
 const std::string& User::passwordHash() const { return _password_hash; }

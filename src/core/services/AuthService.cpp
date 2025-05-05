@@ -20,7 +20,7 @@ std::optional<UserRole> AuthService::login(const std::string& userId, const std:
         _currentUserRole = roleOpt;
         LOG_INFO("User logged in successfully: " + userId);
     } else {
-            LOG_WARN("Login failed for user: " + userId);
+        LOG_WARN("Login failed for user: " + userId);
     }
     return roleOpt;
 }

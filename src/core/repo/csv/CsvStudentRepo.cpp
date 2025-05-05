@@ -1,5 +1,5 @@
 #include "CsvStudentRepo.h"
-#include "../../utils/Logger.h"
+#include "../../../utils/Logger.h"
 #include <algorithm> // For std::find_if, std::remove_if
 
 // --- Constructor ---
@@ -86,8 +86,17 @@ Student CsvStudentRepo::parseStudent(const std::vector<std::string>& csvRow) con
     std::string bdayStr = csvRow[COL_BIRTHDAY];
 
    // This is a guess based on common patterns - adjust parameters according to actual Student constructor
-    Student student(id, fname, lname, citizenId, facultyId, email, phone);
+    Student student(id,
+        fname,
+        lname,
+        address,
+        citizenId,
+        email, 
+        phone,
+        facultyId
+    );
 
+    student.setBirthday(bdayStr); // Assuming setBirthday handles validation internally
     // // Set birthday
     // if (!student.birthday().setBirthday(bdayStr) && !bdayStr.empty() && bdayStr != "N/A") {
     //      LOG_WARN("Could not parse birthday string '" + bdayStr + "' for student ID: " + id);
@@ -112,7 +121,7 @@ std::vector<std::string> CsvStudentRepo::formatStudent(const Student& student) c
      csvRow[COL_EMAIL] = student.email();
      csvRow[COL_PHONE] = student.phoneNumber();
      csvRow[COL_ADDRESS] = student.address();
-     csvRow[COL_BIRTHDAY] = student.birthday().birthday(); // Use Birthday's format
+     csvRow[COL_BIRTHDAY] = student.Birthday(); // Use Birthday's format
 
      // Format password hash/salt if stored here
 

@@ -8,19 +8,22 @@
 #include <iostream>
 #include <conio.h>
 
+// std::string generateSalt(size_t length) {
+//     const std::string characters = "TDTH@!@PTPC";
+//     std::random_device random_device;
+//     std::mt19937 generator(random_device());
+//     std::uniform_int_distribution<> distribution(0, characters.length() - 1);
+
+//     std::string salt;
+//     salt.reserve(length);
+//     for (size_t i = 0; i < length; ++i) {
+//         salt += characters[distribution(generator)];
+//     }
+//     return salt;
+// }
 
 std::string generateSalt(size_t length) {
-    const std::string characters = "TDTH@!@PTPC";
-    std::random_device random_device;
-    std::mt19937 generator(random_device());
-    std::uniform_int_distribution<> distribution(0, characters.length() - 1);
-
-    std::string salt;
-    salt.reserve(length);
-    for (size_t i = 0; i < length; ++i) {
-        salt += characters[distribution(generator)];
-    }
-    return salt;
+    return "TDTH@!@PTPC";
 }
 
 // --- !! PLACEHOLDER HASHING - DO NOT USE IN PRODUCTION !! ---

@@ -207,3 +207,72 @@ std::string ResultService::generateResultReport(const std::string& studentId) co
 
     return report.str();
 }
+
+// Added the missing methods for ResultService
+
+bool ResultService::updateResult(const std::string& studentId, const std::map<std::string, int>& marks) {
+    // This method is similar to enterMultipleMarks
+    if (!_studentRepo->exists(studentId)) {
+        LOG_WARN("Update result failed: Student not found: " + studentId);
+        return false;
+    }
+
+    bool allSuccess = true;
+    for (const auto& [courseId, mark] : marks) {
+        auto existingResult = _resultRepo->findCourseResult(studentId, courseId);
+        if (!existingResult) {
+            LOG_WARN("Update result failed: No existing result for student " + studentId + " in course " + courseId);
+            allSuccess = false;
+            continue;
+        }
+
+        // Update the result
+        CourseResult updatedResult(studentId, courseId, mark);
+        if (!_resultRepo->addOrUpdateCourseResult(updatedResult)) {
+            LOG_ERROR("Failed to update marks for course " + courseId + " for student " + studentId);
+            allSuccess = false;
+        }
+    }
+
+    return allSuccess;
+}
+
+std::optional<char> ResultService::getGrade(int marks) const {
+    if (marks < 0 || marks > 100) {
+        LOG_WARN("Invalid marks value for grade calculation: " + std::to_string(marks));
+        return std::nullopt;
+    }
+    
+    return IResultService::calculateGradeFromMarks(marks);
+}
+
+bool ResultService::declareResult(const std::string& studentId) {
+    // This method would typically perform operations like finalizing results,
+    // marking them as official, or performing any additional validation
+    // before results are published/declared for a student
+    
+    if (!_studentRepo->exists(studentId)) {
+        LOG_WARN("Declare result failed: Student not found: " + studentId);
+        return false;
+    }
+    
+    auto results = _resultRepo->findCourseResultsByStudent(studentId);
+    if (results.empty()) {
+        LOG_WARN("Declare result failed: No results found for student: " + studentId);
+        return false;
+    }
+    
+    // Verify all enrolled courses have results
+    auto enrolledCourses = _enrollmentService->getEnrolledCourses(studentId);
+    for (const auto& course : enrolledCourses) {
+        auto result = _resultRepo->findCourseResult(studentId, course.id());
+        if (!result) {
+            LOG_WARN("Student " + studentId + " is missing results for enrolled course: " + course.id());
+            // You could decide to return false here or just log a warning
+        }
+    }
+    
+    // In a real system, you might mark these results as "declared" in the database
+    LOG_INFO("Results declared for student: " + studentId);
+    return true;
+}

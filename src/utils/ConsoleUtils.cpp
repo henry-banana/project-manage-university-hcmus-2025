@@ -4,6 +4,8 @@
 #include <limits> // For numeric_limits
 #include <algorithm> // For std::max
 #include <iomanip> // For std::setw
+#include <format>
+#include <conio.h>
 
 void clearScreen() {
     #ifdef _WIN32 // Check for Windows
@@ -15,10 +17,11 @@ void clearScreen() {
 }
 
 void pauseExecution(const std::string& message) {
-    std::cout << std::endl << message << std::flush;
-    // Clear the input buffer before waiting
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-    std::cin.get();
+    std::cout << std::format(
+        "\n{} Press Enter to continue...\n", message
+    );
+    _getch(); // Wait for a key press (Enter)
+    std::cout << std::endl;
 }
 
 void drawHeader(const std::string& title, char borderChar) {

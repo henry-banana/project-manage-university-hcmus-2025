@@ -1,5 +1,6 @@
 # Executables
 *.exe
+!university_manager.exe
 *.out
 *.app
 

@@ -8,7 +8,7 @@ Logger::Logger() : _logLevel(Level::INFO) {
     // Constructor attempts to open the default file immediately
     // Using unique_ptr to manage the ofstream resource
     try {
-        _logFile = std::make_unique<std::ofstream>(_logFilename, std::ios::app);
+        _logFile = std::make_unique<std::ofstream>(_logFilename);
          if (!_logFile || !_logFile->is_open()) {
             std::cerr << "Error: Failed to open default log file: " << _logFilename << std::endl;
              _logFile.reset(); // Ensure unique_ptr is null if open failed
@@ -41,7 +41,7 @@ void Logger::setLogFile(const std::string& filename) {
     }
     _logFilename = filename;
      try {
-        _logFile = std::make_unique<std::ofstream>(_logFilename, std::ios::app);
+        _logFile = std::make_unique<std::ofstream>(_logFilename);
          if (!_logFile || !_logFile->is_open()) {
             std::cerr << "Error: Failed to open new log file: " << _logFilename << std::endl;
             _logFile.reset();

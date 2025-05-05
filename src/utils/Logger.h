@@ -23,7 +23,7 @@ private:
     ~Logger(); // Đóng file khi hủy
 
     std::unique_ptr<std::ofstream> _logFile;
-    std::string _logFilename = "../logs/university_app.log"; // Default log file
+    std::string _logFilename = "logs/university_app.log"; // Default log file
     Level _logLevel = Level::INFO; // Default logging level
 
     // Helper để lấy timestamp
@@ -40,12 +40,6 @@ public:
 
     // Lấy instance duy nhất của Logger
     static Logger& getInstance();
-
-    // Ghi log message
-    void log(const std::string& message);
-    void error(const std::string& message);
-    void info(const std::string& message);
-    void debug(const std::string& message); // Có thể cấu hình level
 
     // Đặt file log (tùy chọn)
     void setLogFile(const std::string& filename);

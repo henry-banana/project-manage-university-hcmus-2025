@@ -62,7 +62,7 @@ public:
     void addResult(const CourseResult& result); // Thêm điểm cho sinh viên
     bool removeResult(const std::string& courseId); // Xóa điểm của môn học cụ thể
     bool updateResult(const CourseResult& result); // Cập nhật điểm của môn học cụ thể
-    std::optional<CourseResult> StudentSemesterResult::findResultForCourse(const std::string& courseId) const;
+    std::optional<CourseResult> findResultForCourse(const std::string& courseId) const;
 };
 
 

@@ -5,7 +5,8 @@
 Faculty::Faculty() : _id(""), _name("") {}
 
 // Rule of Three
-Faculty::Faculty(std::string id, std::string name) : _id(std::move(id)), _name(std::move(name)) {}
+Faculty::Faculty(std::string id, std::string name) 
+: _id(std::move(id)), _name(std::move(name)) {}
 
 Faculty::Faculty(const Faculty& other) : _id(other._id), _name(other._name) {}
 

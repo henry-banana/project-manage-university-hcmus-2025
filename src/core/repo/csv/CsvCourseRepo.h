@@ -44,6 +44,12 @@ public:
     bool remove(const std::string& courseId) override;
     bool exists(const std::string& courseId) const override;
 
+    // Implementation of enrollment-related methods (temporary)
+    bool enrollStudent(const std::string& studentId, const std::string& courseId) override;
+    bool unenrollStudent(const std::string& studentId, const std::string& courseId) override;
+    std::vector<std::string> findStudentsByCourse(const std::string& courseId) const override;
+    std::vector<std::string> findCoursesByStudent(const std::string& studentId) const override;
+    bool isStudentEnrolled(const std::string& studentId, const std::string& courseId) const override;
 };
 
 #endif // CSVCOURSEREPO_H

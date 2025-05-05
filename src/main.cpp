@@ -17,16 +17,7 @@
 #include "core/repo/interface/IResultRepository.h"
 #include "core/repo/interface/ILoginRepository.h"
 
-#include "core/services/AuthService.cpp" // Include impl for now
-#include "core/services/StudentService.cpp"
-#include "core/services/TeacherService.cpp"
-#include "core/services/FacultyService.cpp"
-#include "core/services/CourseService.cpp"
-#include "core/services/EnrollmentService.cpp"
-#include "core/services/ResultService.cpp"
-#include "core/services/FinanceService.cpp"
-#include "core/services/AdminService.cpp"
-// Include service interfaces
+// Include only service headers, not implementation files
 #include "core/services/AuthService.h"
 #include "core/services/StudentService.h"
 #include "core/services/TeacherService.h"
@@ -36,7 +27,6 @@
 #include "core/services/ResultService.h"
 #include "core/services/FinanceService.h"
 #include "core/services/AdminService.h"
-
 
 #include "ui/ConsoleUI.h"
 #include "utils/Logger.h"
@@ -90,7 +80,7 @@ int main() {
         auto facultyService = std::make_shared<FacultyService>(facultyRepo, studentRepo, teacherRepo, courseRepo); // Added dependency checks
         auto courseService = std::make_shared<CourseService>(courseRepo, facultyRepo);
         // Enrollment Service needs CourseRepo and StudentRepo
-        auto enrollmentService = std::make_shared<EnrollmentService>(courseRepo, studentRepo);
+        auto enrollmentService = std::make_shared<EnrollmentService>(studentRepo, courseRepo);
          // Result Service needs ResultRepo, StudentRepo, CourseRepo, EnrollmentService
         auto resultService = std::make_shared<ResultService>(resultRepo, studentRepo, courseRepo, enrollmentService);
         // Finance Service needs FeeRepo, SalaryRepo, StudentRepo, TeacherRepo

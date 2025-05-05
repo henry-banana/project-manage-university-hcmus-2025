@@ -1,5 +1,5 @@
 #include "CsvCourseRepo.h"
-#include "../../utils/Logger.h"
+#include "../../../utils/Logger.h"
 #include <stdexcept>
 #include <algorithm>
 #include <charconv> // For std::from_chars (safer int conversion)
@@ -135,4 +135,35 @@ bool CsvCourseRepo::remove(const std::string& courseId) {
 
 bool CsvCourseRepo::exists(const std::string& courseId) const {
     return findById(courseId).has_value();
+}
+
+// Implementation of enrollment-related methods (temporary)
+bool CsvCourseRepo::enrollStudent(const std::string& studentId, const std::string& courseId) {
+    // Temporary implementation - this should be moved to a proper enrollment repository
+    LOG_INFO("Enrolling student " + studentId + " in course " + courseId);
+    return true; // Placeholder implementation
+}
+
+bool CsvCourseRepo::unenrollStudent(const std::string& studentId, const std::string& courseId) {
+    // Temporary implementation - this should be moved to a proper enrollment repository
+    LOG_INFO("Unenrolling student " + studentId + " from course " + courseId);
+    return true; // Placeholder implementation
+}
+
+std::vector<std::string> CsvCourseRepo::findStudentsByCourse(const std::string& courseId) const {
+    // Temporary implementation - this should be moved to a proper enrollment repository
+    LOG_INFO("Finding students enrolled in course " + courseId);
+    return {}; // Return empty vector as placeholder
+}
+
+std::vector<std::string> CsvCourseRepo::findCoursesByStudent(const std::string& studentId) const {
+    // Temporary implementation - this should be moved to a proper enrollment repository
+    LOG_INFO("Finding courses for student " + studentId);
+    return {}; // Return empty vector as placeholder
+}
+
+bool CsvCourseRepo::isStudentEnrolled(const std::string& studentId, const std::string& courseId) const {
+    // Temporary implementation - this should be moved to a proper enrollment repository
+    LOG_INFO("Checking if student " + studentId + " is enrolled in course " + courseId);
+    return false; // Placeholder implementation
 }

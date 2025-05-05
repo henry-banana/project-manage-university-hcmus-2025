@@ -72,7 +72,7 @@ public:
     const std::string& lastName() const;
     std::string fullName() const;
     Birthday birthday();
-    const std::string& Birthday() const; // Trả về chuỗi định dạng "dd/mm/yyyy"
+    std::string Birthday() const; // Changed from reference to value type
     const std::string& address() const;
     const std::string& citizenID() const;
     const std::string& email() const;

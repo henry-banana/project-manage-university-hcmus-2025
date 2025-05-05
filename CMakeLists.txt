@@ -5,21 +5,12 @@ project(manage-university-project VERSION 1.0)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Specify build directory (Optional)
+# Specify build directory
 set(CMAKE_BINARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build)
 
 # Include all relevant directories
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/core
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/core/entities
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/core/services
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/core/repositories
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/core/repositories/interfaces
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/core/repositories/csv
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/core/repositories/mock
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/ui
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/utils
 )
 
 # Find all source files
@@ -27,11 +18,18 @@ file(GLOB_RECURSE SRC_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
 )
 
+# DEBUG: Print the source files found to see if they're all included
+message(STATUS "Source files:")
+foreach(SRC_FILE ${SRC_FILES})
+    message(STATUS "  ${SRC_FILE}")
+endforeach()
+
 # Create executable
 add_executable(university_manager ${SRC_FILES})
 
+# Set output directory
 set_target_properties(university_manager PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/release  
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}  
 )
 
 # Enable testing (optional)

@@ -40,7 +40,6 @@ ConsoleUI::ConsoleUI(
 void ConsoleUI::run() {
     showWelcomeMessage();
     pauseExecution();
-
     bool running = true;
     while (running) {
         clearScreen();
@@ -68,8 +67,6 @@ void ConsoleUI::showWelcomeMessage() {
     clearScreen();
     std::cout << "\n\n\n";
     drawHeader("WELCOME TO UNIVERSITY MANAGEMENT SYSTEM", '=');
-    std::cout << std::format("\n\n\t\t CHAROTAR UNIVERSITY OF SCIENCE AND TECHNOLOGY (CHARUSAT)\n"
-                            "\t\t         FACULTY OF ENGINEERING AND TECHNOLOGY, CHANGA") << std::endl;
     std::cout << "\n\n\n";
 }
 
@@ -500,6 +497,305 @@ void ConsoleUI::handleAdminStudentActions() {
 }
 // TODO: Implement handleAdminTeacherActions, handleAdminFacultyActions, handleAdminCourseActions similarly
 
+void ConsoleUI::handleAdminTeacherActions() {
+    bool running = true;
+    while(running) {
+        clearScreen();
+        displayAdminTeacherMenu();
+        int choice = getMenuChoice(0, 7);
+        
+        switch(choice) {
+            case 1: // Add New Teacher
+                {
+                    std::cout << "-- Add New Teacher --\n";
+                    std::string id = promptForString("Enter Teacher ID: ");
+                    std::string fname = promptForString("Enter First Name: ");
+                    std::string lname = promptForString("Enter Last Name: ");
+                    std::string cid = promptForString("Enter Citizen ID: ");
+                    std::string facId = promptForString("Enter Faculty ID: ");
+                    std::string email = promptForString("Enter Email: ");
+                    std::string phone = promptForString("Enter Phone: ");
+                    std::string address = promptForString("Enter Address: ");
+                    std::string bday = promptForString("Enter Birthday (dd/mm/yyyy): ");
+                    std::string designation = promptForString("Enter Designation: ");
+                    std::string qualification = promptForString("Enter Qualification: ");
+                    std::string specialization = promptForString("Enter Specialization Subjects: ");
+                    int experience = static_cast<int>(promptForLong("Enter Experience Years: "));
+                    std::string password = getMaskedPassword("Enter Initial Password: ");
+
+                    Teacher newTeacher(
+                        id, fname, lname, address, cid, email, phone, facId, "",
+                        qualification, specialization, designation, experience
+                    );
+                    
+                    newTeacher.setDesignation(designation);
+
+                    if (!newTeacher.birthday().setBirthday(bday)) {
+                        std::cout << "Warning: Invalid birthday format. Birthday not set." << std::endl;
+                    }
+
+                    if (_teacherService->addTeacher(newTeacher, password)) {
+                        std::cout << "Teacher added successfully." << std::endl;
+                    } else {
+                        std::cout << "Failed to add teacher. Check logs for details." << std::endl;
+                    }
+                }
+                break;
+                
+            case 2: // Find Teacher by ID
+                {
+                    std::string id = promptForString("Enter Teacher ID to find: ");
+                    showTeacherDetails(id);
+                }
+                break;
+                
+            case 3: // List Teachers by Faculty
+                {
+                    std::string facId = promptForString("Enter Faculty ID: ");
+                    auto teachers = _adminService->getTeachersByFaculty(facId);
+                    showTeacherList(teachers);
+                }
+                break;
+                
+            case 4: // List All HODs
+                {
+                    auto hods = _adminService->getAllHODs();
+                    showTeacherList(hods);
+                }
+                break;
+                
+            case 5: // List All Teachers
+                showTeacherList(_adminService->getAllTeachers());
+                break;
+                
+            case 6: // Update Teacher Details
+                std::cout << "Update teacher: Find teacher by ID first, then provide new details (Not fully implemented).\n";
+                // TODO: Implement full update functionality
+                break;
+                
+            case 7: // Remove Teacher
+                {
+                    std::string id = promptForString("Enter Teacher ID to remove: ");
+                    if (promptForYesNo("Are you sure you want to remove teacher " + id + "? This is irreversible!")) {
+                        if (_teacherService->removeTeacher(id)) {
+                            std::cout << "Teacher removed successfully." << std::endl;
+                        } else {
+                            std::cout << "Failed to remove teacher. Check logs." << std::endl;
+                        }
+                    } else {
+                        std::cout << "Removal cancelled." << std::endl;
+                    }
+                }
+                break;
+                
+            case 0: // Back to Admin Main Menu
+                running = false;
+                break;
+                
+            default:
+                std::cout << "Invalid choice." << std::endl;
+                break;
+        }
+        
+        if (running) pauseExecution();
+    }
+}
+
+void ConsoleUI::handleAdminFacultyActions() {
+    bool running = true;
+    while(running) {
+        clearScreen();
+        displayAdminFacultyMenu();
+        int choice = getMenuChoice(0, 5);
+        
+        switch(choice) {
+            case 1: // Add New Faculty
+                {
+                    std::cout << "-- Add New Faculty --\n";
+                    std::string id = promptForString("Enter Faculty ID: ");
+                    std::string name = promptForString("Enter Faculty Name: ");
+                    
+                    Faculty newFaculty(id, name);
+                    
+                    if (_facultyService->addFaculty(newFaculty)) {
+                        std::cout << "Faculty added successfully." << std::endl;
+                    } else {
+                        std::cout << "Failed to add faculty. Check logs for details." << std::endl;
+                    }
+                }
+                break;
+                
+            case 2: // Find Faculty by ID
+                {
+                    std::string id = promptForString("Enter Faculty ID to find: ");
+                    showFacultyDetails(id);
+                }
+                break;
+                
+            case 3: // List All Faculties
+                showFacultyList(_facultyService->getAllFaculties());
+                break;
+                
+            case 4: // Update Faculty Details
+                {
+                    std::string id = promptForString("Enter Faculty ID to update: ");
+                    auto facultyOpt = _facultyService->getFacultyById(id);
+                    
+                    if (!facultyOpt) {
+                        std::cout << "Faculty not found." << std::endl;
+                    } else {
+                        Faculty updatedFaculty = facultyOpt.value();
+                        std::string name = promptForString("Enter new name (or leave empty to keep current): ");
+                        std::string description = promptForString("Enter new description (or leave empty to keep current): ");
+                        
+                        if (!name.empty()) {
+                            updatedFaculty.setName(name);
+                        }
+                        
+                        if (_facultyService->updateFaculty(updatedFaculty)) {
+                            std::cout << "Faculty updated successfully." << std::endl;
+                        } else {
+                            std::cout << "Failed to update faculty. Check logs for details." << std::endl;
+                        }
+                    }
+                }
+                break;
+                
+            case 5: // Remove Faculty
+                {
+                    std::string id = promptForString("Enter Faculty ID to remove: ");
+                    if (promptForYesNo("Are you sure you want to remove faculty " + id + "? This will affect all associated students and teachers!")) {
+                        if (_facultyService->removeFaculty(id)) {
+                            std::cout << "Faculty removed successfully." << std::endl;
+                        } else {
+                            std::cout << "Failed to remove faculty. Check logs." << std::endl;
+                        }
+                    } else {
+                        std::cout << "Removal cancelled." << std::endl;
+                    }
+                }
+                break;
+                
+            case 0: // Back to Admin Main Menu
+                running = false;
+                break;
+                
+            default:
+                std::cout << "Invalid choice." << std::endl;
+                break;
+        }
+        
+        if (running) pauseExecution();
+    }
+}
+
+void ConsoleUI::handleAdminCourseActions() {
+    bool running = true;
+    while(running) {
+        clearScreen();
+        displayAdminCourseMenu();
+        int choice = getMenuChoice(0, 6);
+        
+        switch(choice) {
+            case 1: // Add New Course
+                {
+                    std::cout << "-- Add New Course --\n";
+                    std::string id = promptForString("Enter Course ID: ");
+                    std::string name = promptForString("Enter Course Name: ");
+                    std::string facId = promptForString("Enter Faculty ID: ");
+                    int credits = static_cast<int>(promptForLong("Enter Credits (1-6): "));
+                    
+                    Course newCourse(id, name, credits, facId);
+                    
+                    if (_courseService->addCourse(newCourse)) {
+                        std::cout << "Course added successfully." << std::endl;
+                    } else {
+                        std::cout << "Failed to add course. Check logs for details." << std::endl;
+                    }
+                }
+                break;
+                
+            case 2: // Find Course by ID
+                {
+                    std::string id = promptForString("Enter Course ID to find: ");
+                    showCourseDetails(id);
+                }
+                break;
+                
+            case 3: // List Courses by Faculty
+                {
+                    std::string facId = promptForString("Enter Faculty ID: ");
+                    auto courses = _courseService->getCoursesByFaculty(facId);
+                    showCourseList(courses);
+                }
+                break;
+                
+            case 4: // List All Courses
+                showCourseList(_courseService->getAllCourses());
+                break;
+                
+            case 5: // Update Course Details
+                {
+                    std::string id = promptForString("Enter Course ID to update: ");
+                    auto courseOpt = _courseService->getCourseById(id);
+                    
+                    if (!courseOpt) {
+                        std::cout << "Course not found." << std::endl;
+                    } else {
+                        Course updatedCourse = courseOpt.value();
+                        std::string name = promptForString("Enter new name (or leave empty to keep current): ");
+                        std::string facId = promptForString("Enter new Faculty ID (or leave empty to keep current): ");
+                        std::string creditsStr = promptForString("Enter new credits (1-6, or leave empty to keep current): ");
+                        
+                        if (!name.empty()) {
+                            updatedCourse.setName(name);
+                        }
+                        
+                        if (!facId.empty()) {
+                            updatedCourse.setFacultyId(facId);
+                        }
+                        
+                        if (!creditsStr.empty()) {
+                            int credits = std::stoi(creditsStr);
+                            updatedCourse.setCredits(credits);
+                        }
+                        
+                        if (_courseService->updateCourse(updatedCourse)) {
+                            std::cout << "Course updated successfully." << std::endl;
+                        } else {
+                            std::cout << "Failed to update course. Check logs for details." << std::endl;
+                        }
+                    }
+                }
+                break;
+                
+            case 6: // Remove Course
+                {
+                    std::string id = promptForString("Enter Course ID to remove: ");
+                    if (promptForYesNo("Are you sure you want to remove course " + id + "? This will affect all enrollments!")) {
+                        if (_courseService->removeCourse(id)) {
+                            std::cout << "Course removed successfully." << std::endl;
+                        } else {
+                            std::cout << "Failed to remove course. Check logs." << std::endl;
+                        }
+                    } else {
+                        std::cout << "Removal cancelled." << std::endl;
+                    }
+                }
+                break;
+                
+            case 0: // Back to Admin Main Menu
+                running = false;
+                break;
+                
+            default:
+                std::cout << "Invalid choice." << std::endl;
+                break;
+        }
+        
+        if (running) pauseExecution();
+    }
+}
 
 void ConsoleUI::handleFinanceActions() {
      bool financeMenuRunning = true;
