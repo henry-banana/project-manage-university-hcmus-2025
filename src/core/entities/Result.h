@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-#include <map>
+#include <optional> // For std::optional
 
 // Lớp này có thể đại diện cho điểm của MỘT môn học cho MỘT sinh viên
 class CourseResult {
@@ -30,8 +30,8 @@ public:
     int marks() const;
     char grade() const; // Logic tính grade dựa trên marks_
 
-    void setMarks(int marks);
-    bool isGreded() const; // Kiểm tra xem đã có điểm hay chưa
+    bool setMarks(int marks);
+    bool isGraded() const; // Kiểm tra xem đã có điểm hay chưa
 };
 
 // Hoặc có thể thiết kế Result như một tập hợp điểm của sinh viên trong kỳ
@@ -60,8 +60,9 @@ public:
     void setSemester(int semester);
     void setYear(int year);
     void addResult(const CourseResult& result); // Thêm điểm cho sinh viên
-    void removeResult(const std::string& courseId); // Xóa điểm của môn học cụ thể
-    void updateResult(const CourseResult& result); // Cập nhật điểm của môn học cụ thể
+    bool removeResult(const std::string& courseId); // Xóa điểm của môn học cụ thể
+    bool updateResult(const CourseResult& result); // Cập nhật điểm của môn học cụ thể
+    std::optional<CourseResult> StudentSemesterResult::findResultForCourse(const std::string& courseId) const;
 };
 
 

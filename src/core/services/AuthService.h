@@ -31,6 +31,10 @@ public:
     // Optional: Add a new user (might be better in AdminService, but related to login)
     // Requires hashing the password before storing.
     virtual bool registerUser(const std::string& userId, const std::string& plainPassword, UserRole role) = 0;
+
+    bool removeUserCredentials(const std::string& userId) {
+        return removeUserCredentials(userId);
+    }
 };
 
 class AuthService : public IAuthService {

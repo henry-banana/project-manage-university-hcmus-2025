@@ -22,20 +22,20 @@ public:
     // --- Student Fee Operations ---
     virtual std::optional<FeeRecord> getStudentFeeRecord(const std::string& studentId) const = 0;
     // Processes a payment, returns true if successful, false otherwise.
-    virtual bool makeFeePayment(const std::string& studentId, long amount) = 0;
+    virtual bool makeFeePayment(const std::string& studentId, int amount) = 0;
     // Updates the total fee assigned to a student (e.g., for a new academic year)
-    virtual bool setStudentTotalFee(const std::string& studentId, long newTotalFee) = 0;
+    virtual bool setStudentTotalFee(const std::string& studentId, int newTotalFee) = 0;
     // Generates a formatted fee receipt string
     virtual std::optional<std::string> generateFeeReceipt(const std::string& studentId) const = 0;
 
     // --- Teacher Salary Operations ---
     virtual std::optional<SalaryRecord> getTeacherSalaryRecord(const std::string& teacherId) const = 0;
     // Updates the basic monthly pay for a teacher
-    virtual bool setTeacherBasicSalary(const std::string& teacherId, long newBasicMonthlyPay) = 0;
+    virtual bool setTeacherBasicSalary(const std::string& teacherId, int newBasicMonthlyPay) = 0;
     // Generates a formatted salary certificate string
     virtual std::optional<std::string> generateSalaryCertificate(const std::string& teacherId) const = 0;
     // Calculates total annual pay (could include bonus logic)
-    virtual std::optional<long> calculateTeacherAnnualPay(const std::string& teacherId, double bonusRate = 0.9) const = 0; // Example bonus rate
+    virtual std::optional<int> calculateTeacherAnnualPay(const std::string& teacherId, double bonusRate = 0.9) const = 0; // Example bonus rate
 };
 
 class FinanceService : public IFinanceService {
@@ -55,9 +55,9 @@ public:
 
     std::optional<FeeRecord> getStudentFeeRecord(const std::string& studentId) const override;
 
-    bool makeFeePayment(const std::string& studentId, long amount) override;
+    bool makeFeePayment(const std::string& studentId, int amount) override;
 
-    bool setStudentTotalFee(const std::string& studentId, long newTotalFee) override;
+    bool setStudentTotalFee(const std::string& studentId, int newTotalFee) override;
 
     std::optional<std::string> generateFeeReceipt(const std::string& studentId) const override;
 
@@ -65,9 +65,9 @@ public:
 
     std::optional<SalaryRecord> getTeacherSalaryRecord(const std::string& teacherId) const override;
 
-    bool setTeacherBasicSalary(const std::string& teacherId, long newBasicMonthlyPay) override;
+    bool setTeacherBasicSalary(const std::string& teacherId, int newBasicMonthlyPay) override;
 
-    std::optional<long> calculateTeacherAnnualPay(const std::string& teacherId, double bonusRate) const override;
+    std::optional<int> calculateTeacherAnnualPay(const std::string& teacherId, double bonusRate) const override;
 
     std::optional<std::string> generateSalaryCertificate(const std::string& teacherId) const override;
 };

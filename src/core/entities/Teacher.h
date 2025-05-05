@@ -16,7 +16,13 @@ private:
 public:
     // Constructor nhận thông tin giảng viên, bao gồm thông tin từ lớp User
     Teacher();
-    Teacher(std::string id, std::string firstName, std::string lastName,
+    Teacher(std::string id,
+        std::string firstName,
+        std::string lastName,
+        std::string address,
+        std::string citizenID,
+        std::string email, 
+        std::string phoneNumber,
         std::string facultyId, std::string institute,
         std::string qualification, std::string specializationSubjects,
         std::string designation, int experienceYears);

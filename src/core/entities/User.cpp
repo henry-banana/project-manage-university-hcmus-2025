@@ -2,17 +2,26 @@
 
 #include <sstream> // std::istringstream
 
-User::User(std::string id, std::string firstName, std::string lastName, std::string citizenID /*, Thêm các tham số khác như role */)
+User::User(std::string id,
+    std::string firstName,
+    std::string lastName,
+    std::string address,
+    std::string citizenID,
+    std::string email, 
+    std::string phoneNumber, 
+    UserRole role = UserRole::STUDENT)  
     : _id(std::move(id)),
       _first_name(std::move(firstName)),
       _last_name(std::move(lastName)),
-      _birth_day(), // Cần khởi tạo Birthday
-      _address(""),   // Khởi tạo giá trị mặc định hoặc nhận từ constructor
+      _birth_day(),
+      _address(),
       _citizen_id(std::move(citizenID)),
-      _password_hash(""), // Khởi tạo rỗng, sẽ được set qua setPassword
-      _salt(""),          // Khởi tạo rỗng
-      _role(UserRole::STUDENT) 
-    {}
+      _email(std::move(email)), // Khởi tạo email
+      _phone_number(std::move(phoneNumber)), // Khởi tạo số điện thoại
+      _password_hash(), // Mã băm mật khẩu chưa được khởi tạo
+      _salt(), // Muối chưa được khởi tạo
+      _role(role) {} // Khởi tạo vai trò người dùng
+
 
 User::User(const User& other) = default;
 // User::User(const User& other)
@@ -58,7 +67,8 @@ const std::string& User::id() const { return _id; }
 const std::string& User::firstName() const { return _first_name; }
 const std::string& User::lastName() const { return _last_name; }
 std::string User::fullName() const { return _first_name + " " + _last_name; }
-Birthday User::birthday() const { return _birth_day; } // Trả về bản sao
+Birthday User::birthday() { return _birth_day; } // Trả về bản sao
+const std::string& User::Birthday() const { return _birth_day.birthday(); } // Trả về chuỗi định dạng "dd/mm/yyyy"
 const std::string& User::address() const { return _address; }
 const std::string& User::citizenID() const { return _citizen_id; }
 const std::string& User::passwordHash() const { return _password_hash; }
@@ -74,9 +84,6 @@ void User::setCitizenId(const std::string& citizenId) { _citizen_id = citizenId;
 void User::setAddress(const std::string& address) { _address = address; }
 void User::setBirthday(int day, int month, int year) { _birth_day.setBirthday(day, month, year); }
 void User::setBirthday(const std::string& date) { _birth_day.setBirthday(date); }
-void User::setBirthday(const Birthday& birthday) {
-    _birth_day = birthday;
-}
 void User::setEmail(const std::string& email) { _email = email; } // Setter cho email
 void User::setPhoneNumber(const std::string& phoneNumber) { _phone_number = phoneNumber; } // Setter cho số điện thoại
 

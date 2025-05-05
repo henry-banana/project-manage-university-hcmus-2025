@@ -52,7 +52,14 @@ public:
     // Chú ý: std::move không phải lúc nào cũng cần thiết, nhưng trong trường hợp này,
     // nó giúp tránh sao chép không cần thiết
     User() = default;
-    User(std::string id, std::string firstName, std::string lastName, std::string citizenID);
+    User(std::string id,
+        std::string firstName,
+        std::string lastName,
+        std::string address,
+        std::string citizenID,
+        std::string email, 
+        std::string phoneNumber, 
+        UserRole role = UserRole::STUDENT);
     User(const User& other);
     User& operator=(const User& other); // Toán tử gán sao chép
     
@@ -64,7 +71,8 @@ public:
     const std::string& firstName() const;
     const std::string& lastName() const;
     std::string fullName() const;
-    Birthday birthday() const;
+    Birthday birthday();
+    const std::string& Birthday() const; // Trả về chuỗi định dạng "dd/mm/yyyy"
     const std::string& address() const;
     const std::string& citizenID() const;
     const std::string& email() const;

@@ -26,6 +26,8 @@ public:
     void setBasicMonthlyPay(int newPay);
     // Tính toán lương (có thể đặt ở FinanceService)
 
+    void display() const; // Hiển thị thông tin lương
+
     int calculateAnnualBasicPay() const;
     int calculateAnnualBonus(double bonusRate = 0.9) const; // Ví dụ bonus rate
     int calculateTotalAnnualPay(double bonusRate = 0.9) const;

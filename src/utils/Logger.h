@@ -6,8 +6,8 @@
 #include <memory>
 
 // Singleton Logger class
-class Logger {
-private:
+class Logger {    
+public:
     enum class Level {
         DEBUG,
         INFO,
@@ -15,6 +15,8 @@ private:
         ERROR,
         CRITICAL
     };
+private:
+
 
     // Private constructor
     Logger();
