@@ -120,57 +120,74 @@ university-management/
 ├── src/
 │   ├── main.cpp                       # Entry point
 │   │
-│   ├── core/                          # Business Logic Layer (OOP & SOLID)
-│   │   ├── entities/                  # Các lớp domain
-│   │   │   ├── User.h / .cpp        # Abstract class
-│   │   │   ├── Student.h / .cpp     # Kế thừa User
-│   │   │   ├── Faculty.h / .cpp     # Kế thừa User
-│   │   │   ├── Course.h / .cpp      # Lớp khóa học
-│   │   │   ├── Department.h / .cpp  # Lớp Khoa/Viện
-│   │   │   └── Result.h / .cpp      # Xử lý điểm, tính CGPA
+│   ├── core/                          # Business Logic Layer
+│   │   ├── entities/                  # Domain classes
+│   │   │   ├── User.h / .cpp          # Abstract base class
+│   │   │   ├── Student.h / .cpp       # Inherits from User
+│   │   │   ├── Teacher.h / .cpp       # Inherits from User
+│   │   │   ├── Faculty.h / .cpp       # Faculty/Department entity
+│   │   │   ├── Course.h / .cpp        # Course entity
+│   │   │   ├── Result.h / .cpp        # Grade management
+│   │   │   ├── FeeRecord.h / .cpp     # Student fees
+│   │   │   └── SalaryRecord.h / .cpp  # Teacher salary
 │   │   │
-│   │   ├── services/                  # Các dịch vụ xử lý logic
-│   │   │   ├── AuthService.h / .cpp         # Đăng nhập, xác thực
-│   │   │   ├── EnrollmentService.h / .cpp   # Đăng ký môn học
-│   │   │   ├── ResultService.h / .cpp       # Tính điểm
-│   │   │   ├── FinanceService.h / .cpp      # Thanh toán học phí, biên lai
-│   │   │   └── AdminService.h / .cpp        # HOD, Faculty list, Student list
+│   │   ├── services/                  # Business services
+│   │   │   ├── AuthService.h / .cpp           # Login, authentication
+│   │   │   ├── StudentService.h / .cpp        # Student management
+│   │   │   ├── TeacherService.h / .cpp        # Teacher management
+│   │   │   ├── FacultyService.h / .cpp        # Faculty management
+│   │   │   ├── CourseService.h / .cpp         # Course management
+│   │   │   ├── EnrollmentService.h / .cpp     # Course registration
+│   │   │   ├── ResultService.h / .cpp         # Grade calculation
+│   │   │   ├── FinanceService.h / .cpp        # Fees and salaries
+│   │   │   └── AdminService.h / .cpp          # Administrative functions
 │   │   │
-│   │   └── repositories/             # Data Access Layer (Repository Pattern)
-│   │       ├── interfaces/
-│   │       │   ├── IStudentRepository.h 
-# được dùng để định nghĩa giao diện (interface) cho các lớp làm nhiệm vụ truy cập dữ liệu (data access) — tức là chúng áp dụng Interface Segregation Principle (ISP) và Dependency Inversion Principle (DIP) trong SOLID.
-│   │       │   ├── IFacultyRepository.h / .cpp
-│   │       │   └── ILoginRepository.h / .cpp
-│   │       ├── csv/
-│   │       │   ├── CsvStudentRepo.cpp / .h
-│   │       │   ├── CsvFacultyRepo.cpp / .h
-│   │       │   └── CsvLoginRepo.cpp / .h
-│   │       └── mock/                 # (cho Unit Test)
-│   │           └── MockStudentRepo.h / .cpp
+│   │   └── repo/                      # Data Access Layer
+│   │       ├── interface/              # Repository interfaces
+│   │       │   ├── IStudentRepository.h
+│   │       │   ├── ITeacherRepository.h
+│   │       │   ├── IFacultyRepository.h
+│   │       │   ├── ICourseRepository.h
+│   │       │   ├── IResultRepository.h
+│   │       │   ├── IFeeRepository.h
+│   │       │   ├── ISalaryRepository.h
+│   │       │   └── ILoginRepository.h
+│   │       │
+│   │       ├── csv/                    # CSV implementation
+│   │       │   ├── CsvStudentRepo.h / .cpp
+│   │       │   ├── CsvTeacherRepo.h / .cpp
+│   │       │   ├── CsvFacultyRepo.h / .cpp
+│   │       │   ├── CsvCourseRepo.h / .cpp
+│   │       │   ├── CsvResultRepo.h / .cpp
+│   │       │   ├── CsvFeeRepo.h / .cpp
+│   │       │   ├── CsvSalaryRepo.h / .cpp
+│   │       │   └── CsvLoginRepo.h / .cpp
+│   │       │
+│   │       ├── mock/                   # Mock implementations for testing
+│   │       │   └── MockStudentRepo.h / .cpp
+│   │       │
+│   │       └── sql/                    # SQL implementation (future)
+│   │
+│   ├── ui/                           # Presentation Layer
+│   │   ├── ConsoleUI.h / .cpp        # Console interface
+│   │   └── MenuOption.h              # Menu enumerations
+│   │
+│   ├── database/                     # Database abstraction
+│   │   └── IDatabase.h               # Database interface
+│   │
+│   └── utils/                        # Utilities
+│       ├── Logger.h / .cpp           # Singleton logger
+│       ├── FileHandler.h / .cpp      # File operations
+│       ├── ConsoleUtils.h / .cpp     # Console helpers
+│       └── PasswordInput.h / .cpp    # Secure password input
 │
-│   ├── ui/                           # Giao diện (console)
-│   │   ├── ConsoleUI.h / .cpp      # Hiển thị menu, gọi service
-│   │   └── (gui/)                    # GUI nếu có sau này
-│
-│   └── utils/                        # Tiện ích
-│       ├── Logger.h / .cpp         # Singleton log
-│       ├── FileHandler.h / .cpp    # Đọc ghi file
-│       └── PasswordInput.h / .cpp  # Nhập password kiểu `*`
-│
-├── tests/
-│   ├── unit/
-│   │   ├── StudentTest.cpp
-│   │   ├── FinanceServiceTest.cpp
-│   │   └── ...
-│   └── integration/
-│       ├── SystemIntegrationTest.cpp
-│
-├── data/                             # File dữ liệu
+├── data/                             # Data files
 │   ├── students.csv
-│   ├── faculty.csv
-│   ├── fees.csv
-│   └── login.txt
+│   ├── teachers.csv
+│   ├── faculties.csv
+│   ├── courses.csv
+│   ├── logins.csv
+│   └── other data files...
 │
 ├── docs/
 │   ├── architecture/
