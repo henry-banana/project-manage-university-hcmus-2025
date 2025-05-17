@@ -3,47 +3,43 @@
 
 #include "User.h"
 #include <string>
-#include <vector> // Có thể cần nếu Teacher chứa danh sách Course dạy
+#include <vector>
+
+// Forward declaration
+class Faculty;
+// class Course; // Nếu Teacher có danh sách Course dạy
 
 class Teacher : public User {
 private:
     std::string _facultyId;
-    std::string _qualification;
-    std::string _specializationSubjects; // Có thể tách thành vector<string>
-    std::string _designation; // Chức vụ của giảng viên
-    int _experienceYears; // Số năm kinh nghiệm?
+    std::string _qualification;          // Bằng cấp (e.g., PhD, MSc)
+    std::string _specializationSubjects; // Chuyên ngành giảng dạy (có thể là list)
+    std::string _designation;            // Chức vụ (e.g., Lecturer, Professor, HOD)
+    int _experienceYears;
 
 public:
-    // Constructor nhận thông tin giảng viên, bao gồm thông tin từ lớp User
-    Teacher();
-    Teacher(std::string id,
-        std::string firstName,
-        std::string lastName,
-        std::string address,
-        std::string citizenID,
-        std::string email, 
-        std::string phoneNumber,
-        std::string facultyId, std::string institute,
-        std::string qualification, std::string specializationSubjects,
-        std::string designation, int experienceYears);
-    Teacher(const Teacher& other);
-    Teacher& operator=(const Teacher& other);
-    ~Teacher() override = default; // Destructor ảo để đảm bảo dọn dẹp đúng cách trong kế thừa
+    Teacher(const std::string& id,
+            const std::string& firstName,
+            const std::string& lastName,
+            const std::string& facultyId, // (➕) Thêm vào constructor
+            LoginStatus status = LoginStatus::ACTIVE);
 
-    // Getter & Setter
-    const std::string& facultyId() const;
-    const std::string& qualification() const;
-    const std::string& specializationSubjects() const;
-    const std::string& designation() const;
-    int experienceYears() const;
+    // Getters & Setters
+    const std::string& getFacultyId() const;
+    const std::string& getQualification() const;
+    const std::string& getSpecializationSubjects() const;
+    const std::string& getDesignation() const;
+    int getExperienceYears() const;
 
-    void setFacultyId(const std::string& facultyId);
-    void setQualification(const std::string& qualification);
-    void setSpecializationSubjects(const std::string& specializationSubjects);
-    void setDesignation(const std::string& designation);
-    void setExperienceYears(int experienceYears);
+    bool setFacultyId(const std::string& facultyId);
+    bool setQualification(const std::string& qualification);
+    bool setSpecializationSubjects(const std::string& subjects);
+    bool setDesignation(const std::string& designation);
+    bool setExperienceYears(int years); // Phải >= 0
 
-    void display() const override; // Hiển thị thông tin giảng viên
+    // Override
+    std::string toString() const override;
+    ValidationResult validateBasic() const override;
 };
 
 #endif // TEACHER_H

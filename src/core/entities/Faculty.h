@@ -1,37 +1,27 @@
 #ifndef FACULTY_H
 #define FACULTY_H
 
-#include "User.h"
-#include "Teacher.h"
-#include <string>
-#include <vector> // Có thể cần nếu Faculty dạy nhiều Course
-
-
+#include "IEntity.h"
 #include <string>
 
-class Faculty {
+class Faculty : public IEntity {
 private:
-    std::string _id; // Ví dụ: "CE", "IT"
-    std::string _name; // Ví dụ: "Computer Engineering"
-protected:
+    std::string _id;   // Mã khoa (e.g., "IT", "EE")
+    std::string _name; // Tên khoa (e.g., "Information Technology")
 
 public:
-    Faculty();
-    // Rule of Three
     Faculty(std::string id, std::string name);
-    Faculty(const Faculty& other); // Copy constructor
-    Faculty& operator=(const Faculty& other); // Toán tử gán sao chép
-    ~Faculty() = default; // Destructor ảo để đảm bảo dọn dẹp đúng cách trong kế thừa
-    
-    // Getter & Setter
-    const std::string& id() const;
-    const std::string& name() const;
 
-    void setId(const std::string& id);
-    void setName(const std::string& name);
+    // Getters & Setters
+    const std::string& getId() const; // Implement cụ thể cho _id
+    const std::string& getName() const;
 
-    // Phương thức hiển thị thông tin khoa
-    void display() const; // Hiển thị thông tin khoa
+    bool setName(const std::string& name); // Cần validation (non-empty)
+
+    // Implement IEntity
+    std::string getStringId() const override;
+    std::string toString() const override;
+    ValidationResult validateBasic() const override;
 };
 
 #endif // FACULTY_H

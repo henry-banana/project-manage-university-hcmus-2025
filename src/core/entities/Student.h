@@ -3,37 +3,28 @@
 
 #include "User.h"
 #include <string>
-#include <vector> 
 
+// Forward declaration
+class Faculty;
 
 class Student : public User {
 private:
-    std::string _facultyId; // ID khoa
-    // Không nên chứa trực tiếp Result hoặc FeeRecord ở đây để tuân thủ SRP
-    // Thông tin đó sẽ được quản lý bởi các Service và Repository tương ứng
-
-protected:
+    std::string _facultyId; // ID của Khoa mà sinh viên thuộc về
 
 public:
-    Student();
-    Student(std::string id,
-        std::string firstName,
-        std::string lastName,
-        std::string address,
-        std::string citizenID,
-        std::string email, 
-        std::string phoneNumber,
-        std::string facultyId);
+    Student(const std::string& id,
+            const std::string& firstName,
+            const std::string& lastName,
+            const std::string& facultyId, // (➕) Thêm facultyId vào constructor
+            LoginStatus status = LoginStatus::PENDING_APPROVAL); // SV mới đăng ký mặc định chờ duyệt
 
-    Student(const Student& other);
-    Student& operator=(const Student& other); // Toán tử gán sao chép
-    ~Student() override = default; // Destructor ảo để đảm bảo dọn dẹp đúng cách trong kế thừa
-    
-    // Getter và Setter cho các thuộc tính riêng của Student
-    const std::string& facultyId() const;
-    void setFacultyId(const std::string& facultyId);
+    // Getters & Setters for Student-specific attributes
+    const std::string& getFacultyId() const;
+    bool setFacultyId(const std::string& facultyId); // Cần validate Faculty ID tồn tại (ở Service)
 
-    void display() const override; // Hiển thị thông tin sinh viên
+    // Override
+    std::string toString() const override;
+    ValidationResult validateBasic() const override;
 };
 
 #endif // STUDENT_H
