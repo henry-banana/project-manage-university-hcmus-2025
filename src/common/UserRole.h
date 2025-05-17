@@ -1,12 +1,12 @@
-#ifndef USER_ROLE_H
-#define USER_ROLE_H
+#ifndef USERROLE_H
+#define USERROLE_H
 
 enum class UserRole {
     ADMIN,
     STUDENT,
     TEACHER,
-    PENDING_STUDENT // Dành cho sinh viên đăng ký và chờ duyệt
-    // Có thể thêm FINANCE_STAFF nếu cần phân quyền riêng cho phòng tài vụ
+    PENDING_STUDENT, // Sinh viên đã đăng ký nhưng chờ duyệt
+    UNKNOWN          // Trạng thái không xác định hoặc chưa đăng nhập
 };
 
-#endif // USER_ROLE_H
+#endif // USERROLE_H
