@@ -113,150 +113,140 @@
 
 ```makefile
 university-management/
-├── CMakeLists.txt                     # Build system
-├── conanfile.txt                      # (nếu dùng Conan)
-├── README.md                          # Hướng dẫn chạy
+├── CMakeLists.txt                  # File cấu hình build
+├── README.md                       # Tài liệu dự án
 │
-├── src/
-│   ├── main.cpp                      // Điểm vào chính, khởi tạo và chạy ứng dụng.
+├── src/                            # Thư mục mã nguồn
+│   ├── main.cpp                    # Điểm vào chính của ứng dụng
 │   │
-│   ├── common/                       // Các định nghĩa, enum dùng chung.
-│   │   ├── AppConfig.h/.cpp          // Struct/class để lưu cấu hình ứng dụng (đường dẫn file, loại DB).
-│   │   ├── ErrorType.h               // Định nghĩa struct Error { int code; std::string message; }.
-│   │   ├── UserRole.h                // enum class UserRole { ADMIN, STUDENT, TEACHER, PENDING_STUDENT };
-│   │   ├── OperationResult.h         // Typedef std::expected<T, Error> cho các thao tác.
+│   ├── common/                     # Các định nghĩa và tiện ích dùng chung
+│   │   ├── AppConfig.h/.cpp        # Cấu trúc lưu cấu hình ứng dụng
+│   │   ├── ErrorType.h             # Định nghĩa cấu trúc lỗi
+│   │   ├── UserRole.h              # Enum các vai trò người dùng
+│   │   └── OperationResult.h       # Wrapper kết quả các thao tác
+│   │
+│   ├── core/                       # Logic nghiệp vụ cốt lõi
+│   │   ├── entities/               # Các đối tượng nghiệp vụ
+│   │   │   ├── IEntity.h           # Interface cơ sở cho các entity
+│   │   │   ├── Birthday.h/.cpp     # Lớp quản lý ngày sinh
+│   │   │   ├── User.h/.cpp         # Lớp cơ sở trừu tượng cho người dùng
+│   │   │   ├── Student.h/.cpp      # Lớp sinh viên (kế thừa User)
+│   │   │   ├── Teacher.h/.cpp      # Lớp giảng viên (kế thừa User)
+│   │   │   ├── Faculty.h/.cpp      # Lớp khoa/bộ môn
+│   │   │   ├── Course.h/.cpp       # Lớp môn học
+│   │   │   ├── CourseResult.h/.cpp # Lớp kết quả môn học của sinh viên
+│   │   │   ├── FeeRecord.h/.cpp    # Lớp quản lý học phí sinh viên
+│   │   │   └── SalaryRecord.h/.cpp # Lớp quản lý lương giảng viên
 │   │   │
-    ├── core/
-    │   ├── entities/                 // Các đối tượng nghiệp vụ (Domain Objects).
-    │   │   ├── IEntity.h             // Interface cơ sở: virtual std::string getId() const = 0; virtual std::string toString() const = 0;
-    │   │   ├── Birthday.h/.cpp       // Lớp quản lý ngày sinh.
-    │   │   ├── User.h/.cpp           // Lớp cơ sở trừu tượng, kế thừa IEntity.
-    │   │   │                         // (id, firstName, lastName, birthday, address, citizenId, email, phoneNumber, role, passwordHash, salt)
-    │   │   ├── Student.h/.cpp        // Kế thừa User. (facultyId)
-    │   │   ├── Teacher.h/.cpp        // Kế thừa User. (facultyId, qualification, specializationSubjects, designation, experienceYears)
-    │   │   ├── Faculty.h/.cpp        // Khoa/Bộ môn, kế thừa IEntity. (id, name)
-    │   │   ├── Course.h/.cpp         // Môn học, kế thừa IEntity. (id, name, credits, facultyId)
-    │   │   ├── CourseResult.h/.cpp   // Kết quả 1 môn của 1 SV. (studentId, courseId, marks, grade) - không kế thừa IEntity.
-    │   │   ├── FeeRecord.h/.cpp      // Học phí, kế thừa IEntity (ID là studentId). (studentId, totalFee, paidFee)
-    │   │   └── SalaryRecord.h/.cpp   // Lương, kế thừa IEntity (ID là teacherId). (teacherId, basicMonthlyPay)
-
-    │   ├── data_access/              // Lớp Truy cập Dữ liệu (DAO/Repository Pattern).
-    │   │   ├── interface/
-    │   │   │   ├── IDao.h            // Template Interface: IDao<TEntity, TId>
-    │   │   │   │                     // (getById, getAll, add, update, remove) - trả về OperationResult<T> hoặc OperationResult<bool>
-    │   │   │   ├── IStudentDao.h     // Kế thừa IDao<Student, std::string>, thêm findByFacultyId, findByEmail.
-    │   │   │   ├── ITeacherDao.h     // Kế thừa IDao<Teacher, std::string>, thêm findByFacultyId, findByDesignation.
-    │   │   │   ├── IFacultyDao.h     // Kế thừa IDao<Faculty, std::string>, thêm findByName.
-    │   │   │   ├── ICourseDao.h      // Kế thừa IDao<Course, std::string>, thêm findByFacultyId.
-    │   │   │   ├── IEnrollmentDao.h  // Quản lý bản ghi đăng ký học (studentId, courseId) - không cần kế thừa IDao nếu chỉ có add/remove/find.
-    │   │   │   │                     // (addEnrollment, removeEnrollment, findCoursesByStudent, findStudentsByCourse, isEnrolled)
-    │   │   │   ├── ICourseResultDao.h// Quản lý CourseResult.
-    │   │   │   │                     // (find, findByStudent, findByCourse, addOrUpdate, remove)
-    │   │   │   ├── IFeeRecordDao.h   // Kế thừa IDao<FeeRecord, std::string> (ID là studentId).
-    │   │   │   ├── ISalaryRecordDao.h// Kế thừa IDao<SalaryRecord, std::string> (ID là teacherId).
-    │   │   │   └── ILoginDao.h       // Quản lý thông tin đăng nhập (userId, passwordHash, salt, role).
-    │   │   │                         // (findCredentialsById, addUserCredentials, updatePassword, removeUserCredentials, getUserRole)
-    │   │   ├── impl_csv/             // Triển khai DAO cho CSV.
-    │   │   │   ├── CsvStudentDao.h/.cpp
-    │   │   │   ├── CsvTeacherDao.h/.cpp
-    │   │   │   ├── CsvFacultyDao.h/.cpp
-    │   │   │   ├── CsvCourseDao.h/.cpp
-    │   │   │   ├── CsvEnrollmentDao.h/.cpp
-    │   │   │   ├── CsvCourseResultDao.h/.cpp
-    │   │   │   ├── CsvFeeRecordDao.h/.cpp
-    │   │   │   ├── CsvSalaryRecordDao.h/.cpp
-    │   │   │   └── CsvLoginDao.h/.cpp
-    │   │   ├── impl_sql/             // Triển khai DAO cho SQL (sẽ làm sau).
-    │   │   │   └── ...
-    │   │   ├── mock/              // (➕) Thư mục cho Mock DAOs
-    │   │   │   │   ├── MockStudentDao.h/.cpp
-    │   │   │   │   ├── MockTeacherDao.h/.cpp
-    │   │   │   │   └── ...
-    │   │   └── DaoFactory.h/.cpp     // Factory để tạo DAO instances dựa trên AppConfig.
-    │   │
-    │   ├── services/                 // Lớp Dịch vụ (Logic Nghiệp vụ).
-    │   │   ├── interface/
-    │   │   │   ├── IAuthService.h
-    │   │   │   ├── IStudentService.h
-    │   │   │   ├── ITeacherService.h
-    │   │   │   ├── IFacultyService.h
-    │   │   │   ├── ICourseService.h
-    │   │   │   ├── IEnrollmentService.h
-    │   │   │   ├── IResultService.h
-    │   │   │   ├── IFinanceService.h
-    │   │   │   └── IAdminService.h      // (Có thể bao gồm cả việc duyệt đăng ký SV mới).
-    │   │   ├── impl/
-    │   │   │   ├── AuthService.h/.cpp   // (login, logout, registerStudent, changePassword, getCurrentUser)
-    │   │   │   ├── StudentService.h/.cpp// (getDetails, getAll, updateDetails, /* viewEnrolledCourses - bỏ sang EnrollmentService */, /* viewResultReport - bỏ sang ResultService */)
-    │   │   │   ├── TeacherService.h/.cpp// (getDetails, getAll, updateDetails, /* enterMarks - bỏ sang ResultService */)
-    │   │   │   ├── FacultyService.h/.cpp// (getById, getAll, add, update, remove - admin only)
-    │   │   │   ├── CourseService.h/.cpp // (getById, getAll, getByFaculty, add, update, remove - admin only)
-    │   │   │   ├── EnrollmentService.h/.cpp // (enroll, drop, getEnrolledCourses, getEnrolledStudents)
-    │   │   │   ├── ResultService.h/.cpp   // (enterMarks, getStudentResults, getCourseResults, generateReport, calculateCGPA/SGPA)
-    │   │   │   ├── FinanceService.h/.cpp  // (getStudentFee, makePayment, setTotalFee, getTeacherSalary, setBasicSalary, generateFeeReceipt, generateSalaryCert)
-    │   │   │   └── AdminService.h/.cpp    // (approveStudentRegistration, manageUsers (add/update/remove student/teacher thông qua services tương ứng), manageFaculties, manageCourses)
-
-    │   ├── validators/               // Lớp Kiểm tra Dữ liệu Đầu vào.
-    │   │   ├── interface/
-    │   │   │   └── IValidator.h      // template<typename T> { virtual ValidationResult validate(const T& data) const; } // ValidationResult là struct chứa bool isValid và vector<Error>
-    │   │   ├── impl/
-    │   │   │   ├── StudentValidator.h/.cpp
-    │   │   │   ├── TeacherValidator.h/.cpp
-    │   │   │   ├── CourseValidator.h/.cpp
-    │   │   │   └── GeneralInputValidator.h/.cpp // (validateIdFormat, email, phone, non-empty string, numeric range)
-
-    │   └── database_adapter/         // (Nếu dùng SQL) Giao tiếp với CSDL cụ thể.
-    │       ├── interface/
-    │       │   └── IDatabaseAdapter.h// (connect, disconnect, executeQuery, executeUpdate)
-    │       ├── impl_mysql/
-    │       │   ├── MySqlAdapter.h/.cpp
-    │       │   └── MySqlConnectionManager.h/.cpp // Quản lý kết nối MySQL.
-
-    ├── ui/                           // Giao diện Người dùng.
-    │   ├── ConsoleUI.h/.cpp          // Lớp chính quản lý UI Console.
-    │   ├── MenuOption.h              // Enums cho các lựa chọn menu.
-    │   ├── InputPrompter.h/.cpp      // Lớp helper để lấy input (string, int, y/n) an toàn.
-    │   └── TableDisplayer.h/.cpp     // Lớp helper để hiển thị dữ liệu dạng bảng.
-
-    ├── utils/                        // Các tiện ích.
-    │   ├── Logger.h/.cpp             // Ghi log.
-    │   ├── FileHandler.h/.cpp        // Đọc/ghi file CSV cơ bản.
-    │   ├── PasswordUtils.h/.cpp      // Hash/verify password, generate salt, check complexity.
-    │   ├── StringUtils.h/.cpp        // trim, toLower, split, join.
-    │   └── ConfigLoader.h/.cpp       // Đọc file cấu hình app_config.ini.
-
-    ├── config/                       // File cấu hình.
-    │   └── app_config.ini
-
-    ├── data/                         // Thư mục chứa file CSV (khi datasource_type=CSV).
-    │   ├── students.csv
-    │   ├── teachers.csv
-    │   ├── faculties.csv
-    │   ├── courses.csv
-    │   ├── enrollments.csv
-    │   ├── results.csv
-    │   ├── fees.csv
-    │   ├── salaries.csv
-    │   └── logins.csv
-
-    ├── tests/                        // (Quan trọng) Unit Tests.
-    │   ├── services/
-    │   │   └── StudentServiceTest.cpp
-    │   ├── data_access/
-    │   │   └── CsvStudentDaoTest.cpp
-    │   └── validators/
-    │       └── StudentValidatorTest.cpp
-
-    ├── CMakeLists.txt                // File build cho CMake.
-    └── README.md
+│   │   ├── data_access/            # Tầng truy cập dữ liệu
+│   │   │   ├── interface/          # Các interface DAO
+│   │   │   │   ├── IDao.h          # Interface chung cho DAO
+│   │   │   │   ├── IStudentDao.h   # Interface DAO sinh viên
+│   │   │   │   ├── ITeacherDao.h   # Interface DAO giảng viên
+│   │   │   │   ├── IFacultyDao.h   # Interface DAO khoa/bộ môn
+│   │   │   │   ├── ICourseDao.h    # Interface DAO môn học
+│   │   │   │   ├── IEnrollmentDao.h # Interface DAO đăng ký học
+│   │   │   │   ├── ICourseResultDao.h # Interface DAO kết quả môn học
+│   │   │   │   ├── IFeeRecordDao.h # Interface DAO học phí
+│   │   │   │   ├── ISalaryRecordDao.h # Interface DAO lương
+│   │   │   │   └── ILoginDao.h     # Interface DAO đăng nhập
+│   │   │   │
+│   │   │   ├── impl_csv/           # Triển khai DAO với CSV
+│   │   │   │   ├── CsvStudentDao.h/.cpp
+│   │   │   │   ├── CsvTeacherDao.h/.cpp
+│   │   │   │   ├── CsvFacultyDao.h/.cpp
+│   │   │   │   ├── CsvCourseDao.h/.cpp
+│   │   │   │   ├── CsvEnrollmentDao.h/.cpp
+│   │   │   │   ├── CsvCourseResultDao.h/.cpp
+│   │   │   │   ├── CsvFeeRecordDao.h/.cpp
+│   │   │   │   ├── CsvSalaryRecordDao.h/.cpp
+│   │   │   │   └── CsvLoginDao.h/.cpp
+│   │   │   │
+│   │   │   ├── impl_sql/           # Triển khai DAO với SQL (phát triển sau)
+│   │   │   │   └── ...
+│   │   │   │
+│   │   │   ├── mock/               # Mock DAO để phục vụ kiểm thử
+│   │   │   │   ├── MockStudentDao.h/.cpp
+│   │   │   │   ├── MockTeacherDao.h/.cpp
+│   │   │   │   └── ...
+│   │   │   │
+│   │   │   ├── DaoFactory.h/.cpp   # Factory tạo các DAO
+│   │   │
+│   │   ├── services/               # Các dịch vụ nghiệp vụ
+│   │   │   ├── interface/          # Interface dịch vụ
+│   │   │   │   ├── IAuthService.h  # Interface xác thực người dùng
+│   │   │   │   ├── IStudentService.h # Interface quản lý sinh viên
+│   │   │   │   ├── ITeacherService.h # Interface quản lý giảng viên
+│   │   │   │   ├── IFacultyService.h # Interface quản lý khoa
+│   │   │   │   ├── ICourseService.h # Interface quản lý môn học
+│   │   │   │   ├── IEnrollmentService.h # Interface đăng ký học
+│   │   │   │   ├── IResultService.h # Interface quản lý kết quả học tập
+│   │   │   │   ├── IFinanceService.h # Interface quản lý tài chính
+│   │   │   │   └── IAdminService.h # Interface quản trị hệ thống
+│   │   │   │
+│   │   │   └── impl/              # Triển khai dịch vụ
+│   │   │       ├── AuthService.h/.cpp # Dịch vụ xác thực
+│   │   │       ├── StudentService.h/.cpp # Dịch vụ sinh viên
+│   │   │       ├── TeacherService.h/.cpp # Dịch vụ giảng viên
+│   │   │       ├── FacultyService.h/.cpp # Dịch vụ khoa
+│   │   │       ├── CourseService.h/.cpp # Dịch vụ môn học
+│   │   │       ├── EnrollmentService.h/.cpp # Dịch vụ đăng ký học
+│   │   │       ├── ResultService.h/.cpp # Dịch vụ kết quả học tập
+│   │   │       ├── FinanceService.h/.cpp # Dịch vụ tài chính
+│   │   │       └── AdminService.h/.cpp # Dịch vụ quản trị
+│   │   │
+│   │   ├── validators/             # Kiểm tra dữ liệu đầu vào
+│   │   │   ├── interface/
+│   │   │   │   └── IValidator.h    # Interface validator
+│   │   │   │
+│   │   │   └── impl/
+│   │   │       ├── StudentValidator.h/.cpp # Validator sinh viên
+│   │   │       ├── TeacherValidator.h/.cpp # Validator giảng viên
+│   │   │       ├── CourseValidator.h/.cpp  # Validator môn học
+│   │   │       └── GeneralInputValidator.h/.cpp # Validator chung
+│   │   │
+│   │   └── database_adapter/       # Kết nối cơ sở dữ liệu (cho SQL)
+│   │       ├── interface/
+│   │       │   └── IDatabaseAdapter.h # Interface adapter CSDL
+│   │       │
+│   │       └── impl_mysql/
+│   │           ├── MySqlAdapter.h/.cpp # Adapter MySQL
+│   │           └── MySqlConnectionManager.h/.cpp # Quản lý kết nối
+│   │
+│   ├── ui/                         # Giao diện người dùng
+│   │   ├── ConsoleUI.h/.cpp        # Giao diện console
+│   │   ├── MenuOption.h            # Enum các lựa chọn menu
+│   │   ├── InputPrompter.h/.cpp    # Lớp hỗ trợ nhập liệu
+│   │   └── TableDisplayer.h/.cpp   # Lớp hiển thị dữ liệu dạng bảng
+│   │
+│   ├── utils/                      # Các tiện ích
+│   │   ├── Logger.h/.cpp           # Ghi log
+│   │   ├── FileHandler.h/.cpp      # Xử lý file
+│   │   ├── PasswordUtils.h/.cpp    # Tiện ích mật khẩu
+│   │   ├── StringUtils.h/.cpp      # Xử lý chuỗi
+│   │   └── ConfigLoader.h/.cpp     # Đọc cấu hình
+│   │
+│   └── config/                     # File cấu hình
+│       └── app_config.ini
 │
-├── data/                             # Data files
-│   ├── students.csv
-│   ├── teachers.csv
-│   ├── faculties.csv
-│   ├── courses.csv
-│   ├── logins.csv
-│   └── other data files...
+├── data/                           # Dữ liệu lưu trữ
+│   ├── students.csv                # Dữ liệu sinh viên
+│   ├── teachers.csv                # Dữ liệu giảng viên
+│   ├── faculties.csv               # Dữ liệu khoa
+│   ├── courses.csv                 # Dữ liệu môn học
+│   ├── enrollments.csv             # Dữ liệu đăng ký học
+│   ├── results.csv                 # Dữ liệu kết quả học tập
+│   ├── fees.csv                    # Dữ liệu học phí
+│   ├── salaries.csv                # Dữ liệu lương
+│   └── logins.csv                  # Dữ liệu đăng nhập
+│
+├── tests/                          # Kiểm thử đơn vị
+│   ├── services/                   # Test các dịch vụ
+│   │   └── StudentServiceTest.cpp  # Test dịch vụ sinh viên
+│   ├── data_access/                # Test các DAO
+│   │   └── CsvStudentDaoTest.cpp   # Test DAO sinh viên CSV
+│   └── validators/                 # Test các validator
+│       └── StudentValidatorTest.cpp # Test validator sinh viên
 │
 ├── docs/
 │   ├── architecture/
