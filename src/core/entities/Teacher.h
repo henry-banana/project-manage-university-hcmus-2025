@@ -38,7 +38,7 @@ public:
     bool setExperienceYears(int years); // Phải >= 0
 
     // Override
-    std::string toString() const override;
+    std::string display() const override;
     ValidationResult validateBasic() const override;
 };
 

@@ -27,7 +27,7 @@ public:
 
     // Implement IEntity
     std::string getStringId() const override; // Trả về _studentId
-    std::string toString() const override;
+    std::string display() const override;
     ValidationResult validateBasic() const override;
 };
 

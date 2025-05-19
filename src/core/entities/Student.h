@@ -23,7 +23,7 @@ public:
     bool setFacultyId(const std::string& facultyId); // Cần validate Faculty ID tồn tại (ở Service)
 
     // Override
-    std::string toString() const override;
+    std::string display() const override;
     ValidationResult validateBasic() const override;
 };
 

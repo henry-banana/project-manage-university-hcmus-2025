@@ -68,4 +68,6 @@ public:
     virtual void setStatus(LoginStatus status);
 };
 
+std::string toStringUserRole(UserRole role);
+
 #endif // USER_H
