@@ -1,4 +1,5 @@
 #include "ValidationResult.h"
+#include <sstream> // Required for std::ostringstream in getErrorMessagesCombined
 
 void ValidationResult::addError(int code, const std::string& message) {
     isValid = false;
@@ -10,17 +11,16 @@ void ValidationResult::addError(const Error& error) {
     errors.push_back(error);
 }
 
-// Helper để nối các message lỗi thành một chuỗi
-std::string ValidationResult::getErrorMessagesCombined(const std::string& separator = "\n") const {
+std::string ValidationResult::getErrorMessagesCombined(const std::string& separator) const {
     if (errors.empty()) {
         return "";
     }
-    std::string combined;
+    std::ostringstream oss;
     for (size_t i = 0; i < errors.size(); ++i) {
-        combined += errors[i].message;
+        oss << errors[i].message;
         if (i < errors.size() - 1) {
-            combined += separator;
+            oss << separator;
         }
     }
-    return combined;
+    return oss.str();
 }
