@@ -2,6 +2,7 @@
 // #include <stdexcept> // For std::invalid_argument
 
 namespace LoginStatusUtils {
+
     std::string toString(LoginStatus status) {
         switch (status) {
             case LoginStatus::ACTIVE: return "ACTIVE";
@@ -15,8 +16,9 @@ namespace LoginStatusUtils {
         if (statusStr == "ACTIVE") return LoginStatus::ACTIVE;
         if (statusStr == "PENDING_APPROVAL") return LoginStatus::PENDING_APPROVAL;
         if (statusStr == "DISABLED") return LoginStatus::DISABLED;
-        // Hoặc ghi log và trả về một giá trị mặc định an toàn
         // Hoặc throw std::invalid_argument("Invalid LoginStatus string: " + statusStr);
-        return LoginStatus::DISABLED; // Default fallback
+        // Hiện tại, trả về một giá trị mặc định nếu không khớp
+        return LoginStatus::DISABLED;
     }
-}
+
+} // namespace LoginStatusUtils
