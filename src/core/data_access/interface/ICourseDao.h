@@ -5,11 +5,13 @@
 #include "../../entities/Course.h"
 #include <string>
 #include <vector>
+#include <expected> // (➕)
+#include "../../../common/ErrorType.h" // (➕)
 
 class ICourseDao : public IDao<Course, std::string> {
 public:
     virtual ~ICourseDao() override = default;
-    virtual OperationResult<std::vector<Course>> findByFacultyId(const std::string& facultyId) const = 0;
+    virtual std::expected<std::vector<Course>, Error> findByFacultyId(const std::string& facultyId) const = 0;
 };
 
 #endif // ICOURSEDAO_H

@@ -3,8 +3,8 @@
 
 #include "IDao.h"
 #include "../../entities/SalaryRecord.h"
+// expected và ErrorType đã được IDao.h include
 
-// ID của SalaryRecord là teacherId
 class ISalaryRecordDao : public IDao<SalaryRecord, std::string> {
 public:
     virtual ~ISalaryRecordDao() override = default;
