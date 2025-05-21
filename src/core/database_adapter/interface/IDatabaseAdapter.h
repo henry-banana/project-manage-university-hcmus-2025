@@ -1,15 +1,16 @@
 #ifndef IDATABASEADAPTER_H
 #define IDATABASEADAPTER_H
 
+
 #include <string>
 #include <vector>
 #include <map>
-#include <any> // For parameter values and result values
-#include "../../../common/OperationResult.h"
-#include "../../../common/AppConfig.h" // Để lấy connection string
+#include <any>
+#include <expected> // Đã thống nhất dùng std::expected
+#include "../../../common/ErrorType.h"
+// AppConfig không cần ở đây nữa nếu connectionString truyền qua connect()
 
-// Định nghĩa kiểu cho một dòng kết quả từ CSDL
-using DbQueryParam = std::any; // Hoặc dùng std::variant nếu biết trước các kiểu có thể
+using DbQueryParam = std::any;
 using DbQueryResultRow = std::map<std::string, std::any>;
 using DbQueryResultTable = std::vector<DbQueryResultRow>;
 
@@ -17,16 +18,18 @@ class IDatabaseAdapter {
 public:
     virtual ~IDatabaseAdapter() = default;
 
-    virtual OperationResult<bool> connect(const std::string& connectionString) = 0;
-    virtual OperationResult<bool> disconnect() = 0;
+    virtual std::expected<bool, Error> connect(const std::string& connectionString) = 0;
+    virtual std::expected<bool, Error> disconnect() = 0;
     virtual bool isConnected() const = 0;
 
-    // Dùng cho SELECT
-    virtual OperationResult<DbQueryResultTable> executeQuery(const std::string& sqlQuery, const std::vector<DbQueryParam>& params = {}) = 0;
-    // Dùng cho INSERT, UPDATE, DELETE. Trả về số dòng bị ảnh hưởng (nếu CSDL hỗ trợ và cần thiết)
-    virtual OperationResult<long> executeUpdate(const std::string& sqlQuery, const std::vector<DbQueryParam>& params = {}) = 0;
-    // Hoặc đơn giản là OperationResult<bool>
-    // virtual OperationResult<bool> executeCommand(const std::string& sqlQuery, const std::vector<DbQueryParam>& params = {}) = 0;
+    virtual std::expected<DbQueryResultTable, Error> executeQuery(const std::string& sqlQuery, const std::vector<DbQueryParam>& params = {}) = 0;
+    virtual std::expected<long, Error> executeUpdate(const std::string& sqlQuery, const std::vector<DbQueryParam>& params = {}) = 0;
+
+    // (➕) Transaction Management Methods
+    virtual std::expected<bool, Error> beginTransaction() = 0;
+    virtual std::expected<bool, Error> commitTransaction() = 0;
+    virtual std::expected<bool, Error> rollbackTransaction() = 0;
+    virtual bool isInTransaction() const = 0; // (➕) Kiểm tra xem có đang trong transaction không
 };
 
 #endif
