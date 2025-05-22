@@ -4,20 +4,19 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include "../../../common/OperationResult.h"
+#include <expected> // (➕)
+#include "../../../common/ErrorType.h" // (➕)
 #include "../../entities/Faculty.h"
 
 class IFacultyService {
 public:
     virtual ~IFacultyService() = default;
-    virtual OperationResult<Faculty> getFacultyById(const std::string& facultyId) const = 0;
-    virtual OperationResult<Faculty> getFacultyByName(const std::string& name) const = 0;
-    virtual OperationResult<std::vector<Faculty>> getAllFaculties() const = 0;
-
-    // Các hàm sau thường chỉ Admin mới được gọi
-    virtual OperationResult<Faculty> addFaculty(const std::string& id, const std::string& name) = 0;
-    virtual OperationResult<bool> updateFaculty(const std::string& facultyId, const std::string& newName) = 0;
-    virtual OperationResult<bool> removeFaculty(const std::string& facultyId) = 0; // Cần kiểm tra ràng buộc
+    virtual std::expected<Faculty, Error> getFacultyById(const std::string& facultyId) const = 0;
+    virtual std::expected<Faculty, Error> getFacultyByName(const std::string& name) const = 0;
+    virtual std::expected<std::vector<Faculty>, Error> getAllFaculties() const = 0;
+    virtual std::expected<Faculty, Error> addFaculty(const std::string& id, const std::string& name) = 0;
+    virtual std::expected<bool, Error> updateFaculty(const std::string& facultyId, const std::string& newName) = 0;
+    virtual std::expected<bool, Error> removeFaculty(const std::string& facultyId) = 0;
 };
 
 #endif // IFACULTYSERVICE_H

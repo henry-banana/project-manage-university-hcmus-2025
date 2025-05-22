@@ -3,13 +3,16 @@
 
 #include <string>
 #include <vector>
-#include <memory> // For std::shared_ptr for detailed Student
-#include "../../../common/OperationResult.h"
+#include <memory>
+#include <optional>
+#include <expected> // (➕)
+#include "../../../common/ErrorType.h" // (➕)
 #include "../../entities/Student.h"
-#include "../../../common/LoginStatus.h" // Nếu Service cần thao tác với status
+#include "../../entities/Birthday.h" // (➕) Cần cho StudentUpdateData
+#include "../../../common/LoginStatus.h"
 
-struct StudentUpdateData { // (➕) Struct để update, chỉ chứa các trường có thể update
-    std::string studentIdToUpdate; // ID không đổi
+struct StudentUpdateData {
+    std::string studentIdToUpdate;
     std::optional<std::string> firstName;
     std::optional<std::string> lastName;
     std::optional<Birthday> birthday;
@@ -18,21 +21,16 @@ struct StudentUpdateData { // (➕) Struct để update, chỉ chứa các trư�
     std::optional<std::string> email;
     std::optional<std::string> phoneNumber;
     std::optional<std::string> facultyId;
-    // Không cho update Role, Status qua đây, phải qua AdminService/AuthService
 };
-
 
 class IStudentService {
 public:
     virtual ~IStudentService() = default;
 
-    virtual OperationResult<Student> getStudentDetails(const std::string& studentId) const = 0;
-    virtual OperationResult<std::vector<Student>> getAllStudents() const = 0;
-    virtual OperationResult<std::vector<Student>> getStudentsByFaculty(const std::string& facultyId) const = 0;
-    // Việc addStudent sẽ do AuthService (registerStudent) hoặc AdminService xử lý
-    // StudentService chỉ chịu trách nhiệm update thông tin phi xác thực
-    virtual OperationResult<bool> updateStudentDetails(const StudentUpdateData& data) = 0;
-    // Việc removeStudent cũng nên do AdminService quản lý vì liên quan nhiều hệ thống con
+    virtual std::expected<Student, Error> getStudentDetails(const std::string& studentId) const = 0;
+    virtual std::expected<std::vector<Student>, Error> getAllStudents() const = 0;
+    virtual std::expected<std::vector<Student>, Error> getStudentsByFaculty(const std::string& facultyId) const = 0;
+    virtual std::expected<bool, Error> updateStudentDetails(const StudentUpdateData& data) = 0;
 };
 
 #endif // ISTUDENTSERVICE_H

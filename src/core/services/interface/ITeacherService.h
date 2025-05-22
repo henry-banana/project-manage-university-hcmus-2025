@@ -5,9 +5,10 @@
 #include <vector>
 #include <memory>
 #include <optional>
-#include "../../../common/OperationResult.h"
+#include <expected> // (➕)
+#include "../../../common/ErrorType.h" // (➕)
 #include "../../entities/Teacher.h"
-#include "../../entities/Birthday.h" // Nếu dùng Birthday trong struct
+#include "../../entities/Birthday.h"
 
 struct TeacherUpdateData {
     std::string teacherIdToUpdate;
@@ -28,12 +29,11 @@ struct TeacherUpdateData {
 class ITeacherService {
 public:
     virtual ~ITeacherService() = default;
-    virtual OperationResult<Teacher> getTeacherDetails(const std::string& teacherId) const = 0;
-    virtual OperationResult<std::vector<Teacher>> getAllTeachers() const = 0;
-    virtual OperationResult<std::vector<Teacher>> getTeachersByFaculty(const std::string& facultyId) const = 0;
-    virtual OperationResult<std::vector<Teacher>> getTeachersByDesignation(const std::string& designation) const = 0;
-    virtual OperationResult<bool> updateTeacherDetails(const TeacherUpdateData& data) = 0;
-    // addTeacher, removeTeacher sẽ do AdminService gọi, kết hợp AuthService
+    virtual std::expected<Teacher, Error> getTeacherDetails(const std::string& teacherId) const = 0;
+    virtual std::expected<std::vector<Teacher>, Error> getAllTeachers() const = 0;
+    virtual std::expected<std::vector<Teacher>, Error> getTeachersByFaculty(const std::string& facultyId) const = 0;
+    virtual std::expected<std::vector<Teacher>, Error> getTeachersByDesignation(const std::string& designation) const = 0;
+    virtual std::expected<bool, Error> updateTeacherDetails(const TeacherUpdateData& data) = 0;
 };
 
 #endif // ITEACHERSERVICE_H
