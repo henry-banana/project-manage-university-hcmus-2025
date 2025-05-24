@@ -1,6 +1,12 @@
 #include "TeacherValidator.h"
 #include "../../../utils/StringUtils.h"
 
+/**
+ * @brief Khởi tạo đối tượng TeacherValidator với validator đầu vào chung
+ * 
+ * @param generalValidator Con trỏ đến đối tượng validator chung
+ * @throw std::invalid_argument Nếu generalValidator là nullptr
+ */
 TeacherValidator::TeacherValidator(std::shared_ptr<IGeneralInputValidator> generalValidator)
     : _generalValidator(std::move(generalValidator)) {
     if (!_generalValidator) {
@@ -8,6 +14,18 @@ TeacherValidator::TeacherValidator(std::shared_ptr<IGeneralInputValidator> gener
     }
 }
 
+/**
+ * @brief Kiểm tra tính hợp lệ của đối tượng giảng viên
+ * 
+ * Phương thức này kiểm tra tất cả các trường của đối tượng giảng viên:
+ * - Thông tin cơ bản: ID, họ tên, ngày sinh, email, CMND/CCCD
+ * - Thông tin liên hệ: địa chỉ, số điện thoại
+ * - Thông tin chuyên môn: mã khoa, bằng cấp, chuyên môn, chức danh, số năm kinh nghiệm
+ * - Vai trò tài khoản
+ * 
+ * @param teacher Đối tượng giảng viên cần kiểm tra
+ * @return ValidationResult Kết quả kiểm tra với danh sách lỗi (nếu có)
+ */
 ValidationResult TeacherValidator::validateEntity(const Teacher& teacher) const {
     ValidationResult vr;
 
