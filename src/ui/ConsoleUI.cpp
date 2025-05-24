@@ -1,3 +1,11 @@
+/**
+ * @file ConsoleUI.cpp
+ * @brief Triển khai các phương thức của lớp ConsoleUI
+ * 
+ * File này chứa mã nguồn triển khai cho giao diện người dùng dòng lệnh,
+ * bao gồm logic hiển thị menu, xử lý đầu vào người dùng, và tương tác với
+ * các dịch vụ của hệ thống quản lý trường đại học.
+ */
 #include "ConsoleUI.h"
 #include "../utils/Logger.h"
 #include "../utils/ConsoleUtils.h" 
@@ -14,7 +22,21 @@
 #endif
 
 
-
+/**
+ * @brief Constructor khởi tạo ConsoleUI với đầy đủ các dịch vụ cần thiết
+ * 
+ * @param authService Dịch vụ xác thực
+ * @param studentService Dịch vụ quản lý sinh viên
+ * @param teacherService Dịch vụ quản lý giảng viên
+ * @param facultyService Dịch vụ quản lý khoa
+ * @param courseService Dịch vụ quản lý khóa học
+ * @param enrollmentService Dịch vụ đăng ký khóa học
+ * @param resultService Dịch vụ quản lý kết quả học tập
+ * @param financeService Dịch vụ quản lý tài chính
+ * @param adminService Dịch vụ quản trị hệ thống
+ * 
+ * @throws std::runtime_error Nếu bất kỳ dịch vụ nào là nullptr
+ */
 ConsoleUI::ConsoleUI(
     std::shared_ptr<IAuthService> authService,
     std::shared_ptr<IStudentService> studentService,
@@ -50,23 +72,55 @@ ConsoleUI::ConsoleUI(
 }
 
 // --- Utility Implementations ---
+/**
+ * @brief Hiển thị thông báo lỗi đơn giản
+ * 
+ * @param message Nội dung thông báo lỗi
+ */
 void ConsoleUI::showErrorMessage(const std::string& message) {
     std::cerr << "\n### ERROR ###\n" << message << "\n#############" << std::endl;
 }
+
+/**
+ * @brief Hiển thị đối tượng lỗi
+ * 
+ * @param error Đối tượng lỗi cần hiển thị
+ */
 void ConsoleUI::showErrorMessage(const Error& error) {
     std::cerr << "\n### ERROR [" << error.code << "] ###\n" << error.message << "\n#################" << std::endl;
 }
 
+/**
+ * @brief Hiển thị thông báo thành công
+ * 
+ * @param message Nội dung thông báo
+ */
 void ConsoleUI::showSuccessMessage(const std::string& message) {
     std::cout << "\n*** SUCCESS ***\n" << message << "\n***************" << std::endl;
 }
 
+/**
+ * @brief Xóa màn hình và tạm dừng chờ người dùng nhấn Enter
+ * 
+ * @param message Thông báo hiển thị trước khi tạm dừng
+ */
 void ConsoleUI::clearAndPause(const std::string& message){
     pauseExecution(message); 
     clearScreen();
 }
 
 // --- Menu Processing Helper ---
+/**
+ * @brief Hiển thị và xử lý menu
+ * 
+ * Phương thức này hiển thị menu với các tùy chọn và thực hiện hành động tương ứng
+ * khi người dùng chọn một mục menu.
+ * 
+ * @param title Tiêu đề của menu
+ * @param items Danh sách các mục menu
+ * @param actions Danh sách các hàm xử lý tương ứng với từng mục
+ * @param isSubMenu Cờ đánh dấu đây là menu con hay không
+ */
 void ConsoleUI::processMenu(const std::string& title, const std::vector<MenuItemDisplay>& items, 
                             const std::vector<std::function<void()>>& actions, bool isSubMenu) {
     if (items.empty()) { // (➕) Xử lý menu rỗng ngay từ đầu
@@ -184,6 +238,12 @@ void ConsoleUI::processMenu(const std::string& title, const std::vector<MenuItem
 }
 
 // --- Main Application Loop and State Processing ---
+/**
+ * @brief Chạy vòng lặp chính của giao diện người dùng
+ * 
+ * Phương thức này khởi động vòng lặp chính của ứng dụng, xử lý các trạng thái UI
+ * và tương tác với người dùng cho đến khi người dùng chọn thoát.
+ */
 void ConsoleUI::run() {
     LOG_INFO("ConsoleUI run loop started.");
     _isRunning = true;
@@ -198,34 +258,58 @@ void ConsoleUI::run() {
     std::cout << "University Management System - Application Shutting Down...\n";
     std::cout << "============================================================\n";
     #ifdef _WIN32
-        Sleep(2000); // Windows sleep in milliseconds
+        Sleep(1000); // Windows sleep in milliseconds
     #else
         sleep(2); // Unix/Linux sleep in seconds
     #endif
     // Logger::releaseInstance();
 }
 
+/**
+ * @brief Xử lý trạng thái hiện tại của UI
+ * 
+ * Phương thức này sử dụng std::visit để gọi hàm xử lý tương ứng với trạng thái hiện tại.
+ * Nó cũng thực hiện việc xóa màn hình và chuẩn bị cho việc hiển thị menu mới.
+ */
 void ConsoleUI::processCurrentState() {
-    clearScreen(); 
-    std::visit([this](auto&& state_arg) { 
-        using T = std::decay_t<decltype(state_arg)>;
-        if constexpr (std::is_same_v<T, UnauthenticatedState>)                this->handleState(state_arg);
-        else if constexpr (std::is_same_v<T, LoginPromptState>)               this->handleState(state_arg);
-        else if constexpr (std::is_same_v<T, StudentRegistrationPromptState>) this->handleState(state_arg);
-        else if constexpr (std::is_same_v<T, ChangePasswordPromptState>)      this->handleState(state_arg);
-        else if constexpr (std::is_same_v<T, AdminPanelState>)                this->handleState(state_arg);
-        else if constexpr (std::is_same_v<T, StudentPanelState>)              this->handleState(state_arg);
-        else if constexpr (std::is_same_v<T, TeacherPanelState>)              this->handleState(state_arg);
-        else if constexpr (std::is_same_v<T, AdminStudentManagementState>)    this->handleState(state_arg);
-        else if constexpr (std::is_same_v<T, AdminTeacherManagementState>)    this->handleState(state_arg);
-        else if constexpr (std::is_same_v<T, AdminFacultyManagementState>)    this->handleState(state_arg);
-        else if constexpr (std::is_same_v<T, AdminCourseManagementState>)     this->handleState(state_arg);
-        else if constexpr (std::is_same_v<T, AdminAccountManagementState>)    this->handleState(state_arg);
+    clearScreen(); // Xóa màn hình trước khi xử lý state mới
+    
+    // Hiển thị thông tin phiên đăng nhập nếu đã xác thực
+    if(_authService->isAuthenticated()) {
+        auto user = _authService->getCurrentUser();
+        auto role = _authService->getCurrentUserRole();
+        if(user.has_value() && role.has_value()) {
+            std::string roleName;
+            switch(role.value()) {
+                case UserRole::ADMIN: roleName = "Admin"; break;
+                case UserRole::STUDENT: roleName = "Student"; break;
+                case UserRole::TEACHER: roleName = "Teacher"; break;
+                default: roleName = "Unknown";
+            }
+            std::cout << "Logged in as: " << (*user.value())->getName() 
+                      << " (" << roleName << ") [ID: " << (*user.value())->getId() << "]" 
+                      << std::endl << std::endl;
+        }
+    }
+
+    // Sử dụng std::visit để xử lý state tương ứng
+    std::visit([this](auto&& state) {
+        this->handleState(state);
     }, _currentState);
 }
 
 // --- State Handler Implementations ---
 
+/**
+ * @brief Xử lý trạng thái UnauthenticatedState - màn hình chính khi chưa đăng nhập
+ * 
+ * Hiển thị menu chính cho người dùng chưa đăng nhập với các tùy chọn:
+ * - Đăng nhập
+ * - Đăng ký tài khoản sinh viên mới
+ * - Thoát ứng dụng
+ * 
+ * @param state Tham chiếu đến đối tượng trạng thái
+ */
 void ConsoleUI::handleState(UnauthenticatedState&) {
     drawHeader("UNIVERSITY MANAGEMENT SYSTEM");
     std::vector<MenuItemDisplay> items = {
@@ -241,6 +325,17 @@ void ConsoleUI::handleState(UnauthenticatedState&) {
     processMenu("MAIN MENU (GUEST)", items, actions, false);
 }
 
+/**
+ * @brief Xử lý trạng thái LoginPromptState - màn hình đăng nhập
+ * 
+ * Gọi phương thức đăng nhập và chuyển đổi trạng thái tiếp theo dựa trên vai trò người dùng:
+ * - Admin -> AdminPanelState
+ * - Student -> StudentPanelState
+ * - Teacher -> TeacherPanelState
+ * - Không xác thực hoặc tài khoản không hợp lệ -> UnauthenticatedState
+ * 
+ * @param state Tham chiếu đến đối tượng trạng thái
+ */
 void ConsoleUI::handleState(LoginPromptState&) {
     doLogin(); 
     if (_authService->isAuthenticated()) {
@@ -258,11 +353,27 @@ void ConsoleUI::handleState(LoginPromptState&) {
     }
 }
 
+/**
+ * @brief Xử lý trạng thái StudentRegistrationPromptState - màn hình đăng ký sinh viên
+ * 
+ * Gọi phương thức đăng ký sinh viên mới và chuyển về trạng thái UnauthenticatedState
+ * sau khi hoàn tất.
+ * 
+ * @param state Tham chiếu đến đối tượng trạng thái
+ */
 void ConsoleUI::handleState(StudentRegistrationPromptState&) {
     doStudentRegistration(); 
     _currentState = UnauthenticatedState{}; 
 }
 
+/**
+ * @brief Xử lý trạng thái ChangePasswordPromptState - màn hình đổi mật khẩu
+ * 
+ * Gọi phương thức đổi mật khẩu và chuyển đổi trạng thái tiếp theo dựa trên vai trò
+ * người dùng hiện tại.
+ * 
+ * @param state Tham chiếu đến đối tượng trạng thái
+ */
 void ConsoleUI::handleState(ChangePasswordPromptState&) {
     doChangePassword(); 
     if (_authService->isAuthenticated()) {
@@ -488,6 +599,11 @@ void ConsoleUI::doExitApplication() {
     LOG_INFO("Exit Application action called.");
 }
 
+/**
+ * @brief Xử lý hành động đăng xuất
+ * 
+ * Đăng xuất người dùng hiện tại và chuyển về trạng thái UnauthenticatedState.
+ */
 void ConsoleUI::doLogout(){
     _authService->logout();
     showSuccessMessage("You have been logged out.");
@@ -495,6 +611,12 @@ void ConsoleUI::doLogout(){
     // Không cần clearAndPause ở đây, vì processCurrentState sẽ vẽ lại cho UnauthenticatedState
 }
 
+/**
+ * @brief Xử lý hành động đăng nhập
+ * 
+ * Yêu cầu người dùng nhập ID/Email và mật khẩu, sau đó thực hiện đăng nhập.
+ * Trạng thái tiếp theo sẽ được quyết định bởi handleState(LoginPromptState&).
+ */
 void ConsoleUI::doLogin() { 
     drawHeader("USER LOGIN");
     std::string userIdOrEmail = _prompter->promptForString("Enter User ID or Email:");
@@ -510,6 +632,12 @@ void ConsoleUI::doLogin() {
     clearAndPause(); 
 }
 
+/**
+ * @brief Xử lý hành động đăng ký sinh viên mới
+ * 
+ * Yêu cầu người dùng nhập thông tin đăng ký sinh viên và mật khẩu,
+ * sau đó thực hiện đăng ký tài khoản mới.
+ */
 void ConsoleUI::doStudentRegistration() {
     drawHeader("STUDENT REGISTRATION");
     StudentRegistrationData regData = promptForStudentRegistrationData();
@@ -531,6 +659,12 @@ void ConsoleUI::doStudentRegistration() {
     clearAndPause();
 }
 
+/**
+ * @brief Xử lý hành động đổi mật khẩu
+ * 
+ * Yêu cầu người dùng nhập mật khẩu cũ và mật khẩu mới,
+ * sau đó thực hiện thay đổi mật khẩu nếu xác thực thành công.
+ */
 void ConsoleUI::doChangePassword(){
     if(!_authService->isAuthenticated()){
         showErrorMessage("You must be logged in to change password.");
@@ -927,6 +1061,12 @@ void ConsoleUI::doAdminAddCourse() {
     clearAndPause();
 }
 
+/**
+ * @brief Xử lý hành động cập nhật thông tin khóa học (Admin)
+ * 
+ * Yêu cầu Admin nhập ID khóa học cần cập nhật, sau đó hiển thị thông tin hiện tại
+ * và cho phép nhập các thông tin mới để cập nhật.
+ */
 void ConsoleUI::doAdminUpdateCourse() {
     drawHeader("ADMIN - UPDATE COURSE DETAILS");
     std::string courseId = _prompter->promptForString("Enter ID of course to update:");
@@ -966,6 +1106,11 @@ void ConsoleUI::doAdminUpdateCourse() {
     clearAndPause();
 }
 
+/**
+ * @brief Xử lý hành động xóa khóa học (Admin)
+ * 
+ * Yêu cầu Admin nhập ID khóa học cần xóa, xác nhận lại, và thực hiện xóa nếu đồng ý.
+ */
 void ConsoleUI::doAdminRemoveCourse() {
     drawHeader("ADMIN - REMOVE COURSE");
     std::string courseId = _prompter->promptForString("Enter ID of course to remove:");
@@ -982,6 +1127,11 @@ void ConsoleUI::doAdminRemoveCourse() {
     clearAndPause();
 }
 
+/**
+ * @brief Xử lý hành động xem tất cả khóa học (Admin)
+ * 
+ * Hiển thị danh sách tất cả các khóa học trong hệ thống.
+ */
 void ConsoleUI::doAdminViewAllCourses() {
     drawHeader("ADMIN - ALL COURSES");
     auto result = _courseService->getAllCourses();
@@ -993,6 +1143,11 @@ void ConsoleUI::doAdminViewAllCourses() {
     clearAndPause();
 }
 
+/**
+ * @brief Xử lý hành động tìm kiếm khóa học theo ID (Admin)
+ * 
+ * Yêu cầu Admin nhập ID khóa học và hiển thị thông tin chi tiết nếu tìm thấy.
+ */
 void ConsoleUI::doAdminFindCourseById() {
     drawHeader("ADMIN - FIND COURSE BY ID");
     std::string id = _prompter->promptForString("Enter Course ID to find:");
@@ -1002,7 +1157,11 @@ void ConsoleUI::doAdminFindCourseById() {
     clearAndPause();
 }
 
-
+/**
+ * @brief Xử lý hành động đặt lại mật khẩu cho người dùng (Admin)
+ * 
+ * Yêu cầu Admin nhập ID người dùng và mật khẩu mới, sau đó thực hiện đặt lại mật khẩu.
+ */
 void ConsoleUI::doAdminResetUserPassword(){
     drawHeader("ADMIN - RESET USER PASSWORD");
     std::string userId = _prompter->promptForString("Enter User ID (Student or Teacher) to reset password:");
@@ -1141,6 +1300,12 @@ void ConsoleUI::doStudentDropCourse() {
     }
     clearAndPause();
 }
+
+/**
+ * @brief Xử lý hành động xem hồ sơ học phí (Sinh viên)
+ * 
+ * Hiển thị thông tin chi tiết về học phí của sinh viên đang đăng nhập.
+ */
 void ConsoleUI::doStudentViewFeeRecord() {
     if(!_authService->isAuthenticated() || !_authService->getCurrentUserId().has_value()) {
         showErrorMessage("Not logged in."); clearAndPause(); return;
@@ -1155,6 +1320,13 @@ void ConsoleUI::doStudentViewFeeRecord() {
     }
     clearAndPause();
 }
+
+/**
+ * @brief Xử lý hành động thanh toán học phí (Sinh viên)
+ * 
+ * Hiển thị thông tin học phí hiện tại, yêu cầu sinh viên nhập số tiền muốn thanh toán,
+ * và thực hiện thanh toán nếu được xác nhận. Sau khi thanh toán thành công, hiển thị biên lai.
+ */
 void ConsoleUI::doStudentMakeFeePayment() {
     if(!_authService->isAuthenticated() || !_authService->getCurrentUserId().has_value()) {
         showErrorMessage("Not logged in."); clearAndPause(); return;
@@ -1449,6 +1621,7 @@ StudentRegistrationData ConsoleUI::promptForStudentRegistrationData() {
         data.facultyId = _prompter->promptForString("Enter Faculty ID from the list above:");
     } else {
         if (!facultiesExp.has_value()) showErrorMessage(facultiesExp.error());
+       
         else showErrorMessage("No faculties available to select from. Please ensure faculties are added by Admin.");
         data.facultyId = _prompter->promptForString("Enter Faculty ID (will be validated):");
     }
@@ -1487,6 +1660,7 @@ NewTeacherDataByAdmin ConsoleUI::promptForNewTeacherDataByAdmin() {
     } else {
         if (!facultiesExp.has_value()) showErrorMessage(facultiesExp.error());
         else showErrorMessage("No faculties available. Please ensure faculties are added first.");
+       
         data.facultyId = _prompter->promptForString("Enter Faculty ID (will be validated):");
     }
 
