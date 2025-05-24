@@ -6,15 +6,14 @@
 #include <algorithm>
 #include <expected>
 
-// Namespace ẩn danh và initializeMockSalaryRecordDataIfNeeded giữ nguyên như trước
 namespace {
     std::map<std::string, SalaryRecord> mock_salary_records_data;
     bool mock_salary_record_data_initialized = false;
 
     void initializeMockSalaryRecordDataIfNeeded() {
         if (!mock_salary_record_data_initialized) {
-            mock_salary_records_data.emplace("T001", SalaryRecord("T001", 15000000));
-            mock_salary_records_data.emplace("T002", SalaryRecord("T002", 20000000));
+            mock_salary_records_data.emplace("T001", SalaryRecord("T001", 15000000)); // Dùng emplace
+            mock_salary_records_data.emplace("T002", SalaryRecord("T002", 20000000)); // Dùng emplace
             mock_salary_record_data_initialized = true;
         }
     }
@@ -48,7 +47,11 @@ std::expected<SalaryRecord, Error> MockSalaryRecordDao::add(const SalaryRecord& 
     if (mock_salary_records_data.count(salaryRecord.getTeacherId())) {
         return std::unexpected(Error{ErrorCode::ALREADY_EXISTS, "Mock SalaryRecord for Teacher ID " + salaryRecord.getTeacherId() + " already exists."});
     }
-    mock_salary_records_data[salaryRecord.getTeacherId()] = salaryRecord;
+    // mock_salary_records_data[salaryRecord.getTeacherId()] = salaryRecord; // Dòng cũ
+    auto insert_result = mock_salary_records_data.emplace(salaryRecord.getTeacherId(), salaryRecord);
+    if (!insert_result.second) {
+        return std::unexpected(Error{ErrorCode::OPERATION_FAILED, "Failed to emplace salary record into mock data."});
+    }
     return salaryRecord;
 }
 

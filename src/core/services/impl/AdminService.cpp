@@ -1,0 +1,353 @@
+#include "AdminService.h"
+#include "../../../utils/Logger.h"
+#include "../../../utils/StringUtils.h"
+#include <random>
+
+AdminService::AdminService(
+    std::shared_ptr<IStudentDao> studentDao,
+    std::shared_ptr<ITeacherDao> teacherDao,
+    std::shared_ptr<ILoginDao> loginDao,
+    std::shared_ptr<IFeeRecordDao> feeDao,
+    std::shared_ptr<ISalaryRecordDao> salaryDao,
+    std::shared_ptr<IEnrollmentDao> enrollmentDao,
+    std::shared_ptr<ICourseResultDao> courseResultDao,
+    std::shared_ptr<IGeneralInputValidator> inputValidator,
+    std::shared_ptr<SessionContext> sessionContext)
+    : _studentDao(std::move(studentDao)),
+      _teacherDao(std::move(teacherDao)),
+      _loginDao(std::move(loginDao)),
+      _feeDao(std::move(feeDao)),
+      _salaryDao(std::move(salaryDao)),
+      _enrollmentDao(std::move(enrollmentDao)),
+      _courseResultDao(std::move(courseResultDao)),
+      _inputValidator(std::move(inputValidator)),
+      _sessionContext(std::move(sessionContext)) {
+    // Kiểm tra null cho tất cả dependencies
+    if (!_studentDao || !_teacherDao || !_loginDao || !_feeDao || !_salaryDao || 
+        !_enrollmentDao || !_courseResultDao || !_inputValidator || !_sessionContext) {
+        throw std::invalid_argument("One or more DAO/Validator/SessionContext is null for AdminService.");
+    }
+}
+
+// Helper kiểm tra quyền admin
+bool AdminService::isAdminAuthenticated() const {
+    return _sessionContext->isAuthenticated() && 
+           _sessionContext->getCurrentUserRole().has_value() &&
+           _sessionContext->getCurrentUserRole().value() == UserRole::ADMIN;
+}
+
+
+std::expected<bool, Error> AdminService::approveStudentRegistration(const std::string& studentIdToApprove) {
+    if (!isAdminAuthenticated()) {
+        return std::unexpected(Error{ErrorCode::PERMISSION_DENIED, "Only admins can approve student registrations."});
+    }
+    ValidationResult idVr = _inputValidator->validateIdFormat(studentIdToApprove, "Student ID");
+    if (!idVr.isValid) return std::unexpected(idVr.errors[0]);
+
+    auto studentExp = _studentDao->getById(studentIdToApprove);
+    if (!studentExp.has_value()){
+        return std::unexpected(studentExp.error());
+    }
+    Student student = studentExp.value();
+
+    if (student.getStatus() != LoginStatus::PENDING_APPROVAL || student.getRole() != UserRole::PENDING_STUDENT) {
+        return std::unexpected(Error{ErrorCode::VALIDATION_ERROR, "Student is not pending approval."});
+    }
+
+    // Cập nhật trong cả StudentDao (bảng Users) và LoginDao (bảng Users)
+    // Các DAO nên có hàm updateStatusAndRole hoặc LoginDao có hàm updateUserRoleAndStatus
+    auto updateStatusRoleRes = _loginDao->updateUserRoleAndStatus(studentIdToApprove, UserRole::STUDENT, LoginStatus::ACTIVE);
+    if(!updateStatusRoleRes.has_value() || !updateStatusRoleRes.value()){
+         return std::unexpected(updateStatusRoleRes.has_value() ? 
+            Error{ErrorCode::OPERATION_FAILED, "Failed to update student role and status."} :
+            updateStatusRoleRes.error());
+    }
+    
+    // Tạo FeeRecord ban đầu cho sinh viên (ví dụ học phí cố định hoặc 0)
+    // Điều này nên được cấu hình hoặc nhập liệu
+    long initialFee = 5000000; // Ví dụ
+    auto feeRecordResult = _feeDao->add(FeeRecord(studentIdToApprove, initialFee, 0));
+    if (!feeRecordResult.has_value()) {
+        LOG_WARN("Student " + studentIdToApprove + " approved, but failed to create initial fee record: " + feeRecordResult.error().message);
+        // Không coi đây là lỗi chặn việc approve, nhưng cần log lại. Admin có thể tạo sau.
+    }
+
+
+    LOG_INFO("Student registration approved for ID: " + studentIdToApprove);
+    return true;
+}
+
+std::expected<std::vector<Student>, Error> AdminService::getStudentsByStatus(LoginStatus status) const {
+    if (!isAdminAuthenticated()) {
+        return std::unexpected(Error{ErrorCode::PERMISSION_DENIED, "Only admins can view students by status."});
+    }
+    return _studentDao->findByStatus(status);
+}
+
+std::expected<Student, Error> AdminService::addStudentByAdmin(const NewStudentDataByAdmin& data) {
+    if (!isAdminAuthenticated()) {
+        return std::unexpected(Error{ErrorCode::PERMISSION_DENIED, "Only admins can add students."});
+    }
+    // Validate tương tự AuthService::registerStudent, nhưng có thể bỏ qua một số bước nếu admin được tin cậy hơn
+    // hoặc set status là ACTIVE ngay.
+    // Tạm thời, quy trình giống register nhưng set ACTIVE.
+
+    ValidationResult vrTotal;
+    auto appendErrors = [&](const ValidationResult& vr) {
+        for(const auto& err : vr.errors) vrTotal.addError(err);
+    };
+    const auto& studentInfo = data.studentInfo;
+    appendErrors(_inputValidator->validateEmail(studentInfo.email));
+    appendErrors(_inputValidator->validatePasswordComplexity(data.initialPassword)); // Validate password admin đặt
+    // ... (các validate khác cho studentInfo như trong AuthService::registerStudent) ...
+    if (StringUtils::trim(studentInfo.citizenId).empty()){
+        vrTotal.addError(ErrorCode::VALIDATION_ERROR, "Citizen ID is required.");
+    } else {
+        appendErrors(_inputValidator->validateCitizenId(studentInfo.citizenId));
+    }
+     if (!vrTotal.isValid) return std::unexpected(vrTotal.errors[0]);
+
+
+    auto studentByEmail = _studentDao->findByEmail(studentInfo.email);
+    if (studentByEmail.has_value()) return std::unexpected(Error{ErrorCode::ALREADY_EXISTS, "Email already registered."});
+    if (studentByEmail.error().code != ErrorCode::NOT_FOUND) return std::unexpected(studentByEmail.error());
+
+    // Tạo Student ID
+    std::string studentId; // Logic tạo ID như trong AuthService
+    std::string cIdSuffix = studentInfo.citizenId.length() > 3 ? studentInfo.citizenId.substr(studentInfo.citizenId.length() - 3) : studentInfo.citizenId;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> distrib(100, 999);
+    int retryCount = 0;
+    bool idOk = false;
+    do {
+        studentId = "S" + cIdSuffix + std::to_string(distrib(gen)); // Prefix "S"
+        auto studentExists = _studentDao->exists(studentId); 
+        if (!studentExists.has_value()) return std::unexpected(studentExists.error());
+        if (!studentExists.value()) { idOk = true; break; }
+        retryCount++;
+    } while (retryCount < 20);
+    if (!idOk) return std::unexpected(Error{ErrorCode::OPERATION_FAILED, "Could not generate unique student ID."});
+
+    Student newStudent(studentId, studentInfo.firstName, studentInfo.lastName, studentInfo.facultyId, LoginStatus::ACTIVE); // ACTIVE ngay
+    newStudent.setBirthday(studentInfo.birthDay, studentInfo.birthMonth, studentInfo.birthYear);
+    newStudent.setAddress(studentInfo.address);
+    newStudent.setCitizenId(studentInfo.citizenId);
+    newStudent.setEmail(studentInfo.email);
+    newStudent.setPhoneNumber(studentInfo.phoneNumber);
+    newStudent.setRole(UserRole::STUDENT); // Role STUDENT ngay
+
+    auto addStudentResult = _studentDao->add(newStudent);
+    if (!addStudentResult.has_value()) return std::unexpected(addStudentResult.error());
+
+    std::string salt = PasswordUtils::generateSalt();
+    std::string hashedPassword = PasswordUtils::hashPassword(data.initialPassword, salt);
+    auto addCredsResult = _loginDao->addUserCredentials(studentId, hashedPassword, salt, UserRole::STUDENT, LoginStatus::ACTIVE);
+    if (!addCredsResult.has_value() || !addCredsResult.value()) {
+        _studentDao->remove(studentId); // Rollback
+        return std::unexpected(addCredsResult.has_value() ? Error{ErrorCode::OPERATION_FAILED, "Failed to set credentials."} : addCredsResult.error());
+    }
+
+    // Tạo FeeRecord ban đầu
+    long initialFee = 5000000; // Ví dụ
+    auto feeRecordResult = _feeDao->add(FeeRecord(studentId, initialFee, 0));
+     if (!feeRecordResult.has_value()) {
+        LOG_WARN("Student " + studentId + " added by admin, but failed to create initial fee record: " + feeRecordResult.error().message);
+        // Không rollback student, admin có thể tạo fee sau
+    }
+
+    LOG_INFO("Student " + studentId + " added by admin successfully.");
+    return addStudentResult.value();
+}
+
+std::expected<bool, Error> AdminService::removeStudentAccount(const std::string& studentId) {
+    if (!isAdminAuthenticated()) {
+        return std::unexpected(Error{ErrorCode::PERMISSION_DENIED, "Only admins can remove student accounts."});
+    }
+    ValidationResult idVr = _inputValidator->validateIdFormat(studentId, "Student ID");
+    if (!idVr.isValid) return std::unexpected(idVr.errors[0]);
+
+    // DAO Student::remove sẽ xóa User, và DB schema sẽ cascade xóa Students, Logins, Enrollments, CourseResults, FeeRecords
+    // Nên chỉ cần gọi _studentDao->remove(studentId)
+    auto removeResult = _studentDao->remove(studentId);
+    if (removeResult.has_value() && removeResult.value()) {
+        LOG_INFO("Student account removed: " + studentId);
+    }
+    return removeResult;
+}
+
+
+std::expected<Teacher, Error> AdminService::addTeacherByAdmin(const NewTeacherDataByAdmin& data) {
+    if (!isAdminAuthenticated()) {
+        return std::unexpected(Error{ErrorCode::PERMISSION_DENIED, "Only admins can add teachers."});
+    }
+     ValidationResult vrTotal;
+    auto appendErrors = [&](const ValidationResult& vr) {
+        for(const auto& err : vr.errors) vrTotal.addError(err);
+    };
+
+    appendErrors(_inputValidator->validateIdFormat(data.id, "Teacher ID", 3, 20));
+    appendErrors(_inputValidator->validateEmail(data.email));
+    appendErrors(_inputValidator->validatePasswordComplexity(data.initialPassword));
+    // ... (validate các trường khác của NewTeacherDataByAdmin) ...
+    if (StringUtils::trim(data.citizenId).empty()){
+        vrTotal.addError(ErrorCode::VALIDATION_ERROR, "Citizen ID is required for teacher.");
+    } else {
+        appendErrors(_inputValidator->validateCitizenId(data.citizenId));
+    }
+    if (!vrTotal.isValid) return std::unexpected(vrTotal.errors[0]);
+
+    auto teacherById = _teacherDao->exists(data.id);
+    if(!teacherById.has_value()) return std::unexpected(teacherById.error());
+    if(teacherById.value()) return std::unexpected(Error{ErrorCode::ALREADY_EXISTS, "Teacher ID '" + data.id + "' already exists."});
+    
+    auto teacherByEmail = _teacherDao->findByEmail(data.email);
+    if (teacherByEmail.has_value()) return std::unexpected(Error{ErrorCode::ALREADY_EXISTS, "Email '" + data.email + "' already registered for a teacher."});
+    if (teacherByEmail.error().code != ErrorCode::NOT_FOUND) return std::unexpected(teacherByEmail.error());
+
+    auto studentByEmail = _studentDao->findByEmail(data.email);
+    if (studentByEmail.has_value()) return std::unexpected(Error{ErrorCode::ALREADY_EXISTS, "Email '" + data.email + "' already registered for a student."});
+    if (studentByEmail.error().code != ErrorCode::NOT_FOUND) return std::unexpected(studentByEmail.error());
+
+
+    Teacher newTeacher(data.id, data.firstName, data.lastName, data.facultyId, LoginStatus::ACTIVE);
+    newTeacher.setBirthday(data.birthDay, data.birthMonth, data.birthYear);
+    newTeacher.setAddress(data.address);
+    newTeacher.setCitizenId(data.citizenId);
+    newTeacher.setEmail(data.email);
+    newTeacher.setPhoneNumber(data.phoneNumber);
+    newTeacher.setQualification(data.qualification);
+    newTeacher.setSpecializationSubjects(data.specializationSubjects);
+    newTeacher.setDesignation(data.designation);
+    newTeacher.setExperienceYears(data.experienceYears);
+    newTeacher.setRole(UserRole::TEACHER);
+
+    auto addTeacherResult = _teacherDao->add(newTeacher); // Sẽ thêm vào Users và Teachers
+    if (!addTeacherResult.has_value()) return std::unexpected(addTeacherResult.error());
+
+    std::string salt = PasswordUtils::generateSalt();
+    std::string hashedPassword = PasswordUtils::hashPassword(data.initialPassword, salt);
+    auto addCredsResult = _loginDao->addUserCredentials(data.id, hashedPassword, salt, UserRole::TEACHER, LoginStatus::ACTIVE);
+    if (!addCredsResult.has_value() || !addCredsResult.value()) {
+        _teacherDao->remove(data.id); // Rollback
+        return std::unexpected(addCredsResult.has_value() ? Error{ErrorCode::OPERATION_FAILED, "Failed to set credentials for teacher."} : addCredsResult.error());
+    }
+    
+    // Tạo SalaryRecord ban đầu
+    long initialSalary = data.experienceYears > 5 ? 10000000 : 7000000; // Ví dụ
+    auto salaryRecordResult = _salaryDao->add(SalaryRecord(data.id, initialSalary));
+    if (!salaryRecordResult.has_value()) {
+        LOG_WARN("Teacher " + data.id + " added by admin, but failed to create initial salary record: " + salaryRecordResult.error().message);
+    }
+
+
+    LOG_INFO("Teacher " + data.id + " added by admin successfully.");
+    return addTeacherResult.value();
+}
+
+std::expected<bool, Error> AdminService::removeTeacherAccount(const std::string& teacherId) {
+    if (!isAdminAuthenticated()) {
+        return std::unexpected(Error{ErrorCode::PERMISSION_DENIED, "Only admins can remove teacher accounts."});
+    }
+    ValidationResult idVr = _inputValidator->validateIdFormat(teacherId, "Teacher ID");
+    if (!idVr.isValid) return std::unexpected(idVr.errors[0]);
+
+    // DAO Teacher::remove sẽ xóa User, và DB schema sẽ cascade xóa Teachers, Logins, SalaryRecords
+    auto removeResult = _teacherDao->remove(teacherId);
+     if (removeResult.has_value() && removeResult.value()) {
+        LOG_INFO("Teacher account removed: " + teacherId);
+    }
+    return removeResult;
+}
+
+
+std::expected<bool, Error> AdminService::resetUserPassword(const std::string& userId, const std::string& newPassword) {
+    if (!isAdminAuthenticated()) {
+        return std::unexpected(Error{ErrorCode::PERMISSION_DENIED, "Only admins can reset user passwords."});
+    }
+    ValidationResult idVr = _inputValidator->validateIdFormat(userId, "User ID");
+    if (!idVr.isValid) return std::unexpected(idVr.errors[0]);
+
+    ValidationResult passVr = _inputValidator->validatePasswordComplexity(newPassword);
+    if (!passVr.isValid) return std::unexpected(passVr.errors[0]);
+
+    // Kiểm tra User tồn tại (bất kể role)
+    auto userCreds = _loginDao->findCredentialsByUserId(userId); // Check bảng Logins trước
+    if(!userCreds.has_value() && userCreds.error().code == ErrorCode::NOT_FOUND){
+        // Nếu không có trong Logins, có thể user đó chưa từng có pass (hiếm) hoặc ID sai
+        // Kiểm tra trong Users để chắc chắn user có tồn tại.
+        auto roleRes = _loginDao->getUserRole(userId); // getUserRole truy vấn bảng Users
+        if(!roleRes.has_value()){
+            return std::unexpected(Error{ErrorCode::NOT_FOUND, "User ID " + userId + " not found."});
+        }
+    } else if (!userCreds.has_value()){
+        return std::unexpected(userCreds.error()); // Lỗi khác khi tìm creds
+    }
+
+
+    std::string newSalt = PasswordUtils::generateSalt();
+    std::string newHashedPassword = PasswordUtils::hashPassword(newPassword, newSalt);
+
+    auto updateResult = _loginDao->updatePassword(userId, newHashedPassword, newSalt);
+     if (!updateResult.has_value() || !updateResult.value()) {
+        // Nếu updatePassword báo NOT_FOUND, có thể user đó chưa có record trong Logins
+        // Trong trường hợp này, ta cần add credentials mới thay vì update.
+        if(updateResult.error().code == ErrorCode::NOT_FOUND){
+            // Lấy role và status từ Users table để gọi addUserCredentials
+            auto roleExp = _loginDao->getUserRole(userId);
+            if(!roleExp.has_value()) return std::unexpected(roleExp.error());
+            auto statusExp = _loginDao->getUserStatus(userId);
+            if(!statusExp.has_value()) return std::unexpected(statusExp.error());
+
+            auto addCredsRes = _loginDao->addUserCredentials(userId, newHashedPassword, newSalt, roleExp.value(), statusExp.value());
+            if(!addCredsRes.has_value() || !addCredsRes.value()){
+                 return std::unexpected(addCredsRes.has_value() ? Error{ErrorCode::OPERATION_FAILED, "Failed to set new password for user."} : addCredsRes.error());
+            }
+        } else {
+             return std::unexpected(updateResult.has_value() ? Error{ErrorCode::OPERATION_FAILED, "Failed to reset password."} : updateResult.error());
+        }
+    }
+    LOG_INFO("Password reset successfully for user " + userId);
+    return true;
+}
+
+std::expected<bool, Error> AdminService::disableUserAccount(const std::string& userId) {
+    if (!isAdminAuthenticated()) {
+        return std::unexpected(Error{ErrorCode::PERMISSION_DENIED, "Only admins can disable user accounts."});
+    }
+    ValidationResult idVr = _inputValidator->validateIdFormat(userId, "User ID");
+    if (!idVr.isValid) return std::unexpected(idVr.errors[0]);
+
+    // Lấy role hiện tại để truyền vào updateUserRoleAndStatus
+    auto roleExp = _loginDao->getUserRole(userId);
+    if (!roleExp.has_value()) return std::unexpected(roleExp.error());
+
+    auto updateResult = _loginDao->updateUserRoleAndStatus(userId, roleExp.value(), LoginStatus::DISABLED);
+    if (updateResult.has_value() && updateResult.value()) {
+        LOG_INFO("User account disabled: " + userId);
+    }
+    return updateResult;
+}
+
+std::expected<bool, Error> AdminService::enableUserAccount(const std::string& userId) {
+    if (!isAdminAuthenticated()) {
+        return std::unexpected(Error{ErrorCode::PERMISSION_DENIED, "Only admins can enable user accounts."});
+    }
+    ValidationResult idVr = _inputValidator->validateIdFormat(userId, "User ID");
+    if (!idVr.isValid) return std::unexpected(idVr.errors[0]);
+
+    auto roleExp = _loginDao->getUserRole(userId);
+    if (!roleExp.has_value()) return std::unexpected(roleExp.error());
+    
+    // Nếu user là PENDING_STUDENT, khi enable thì chuyển thành STUDENT + ACTIVE
+    UserRole targetRole = roleExp.value();
+    if (targetRole == UserRole::PENDING_STUDENT) {
+        targetRole = UserRole::STUDENT;
+    }
+
+    auto updateResult = _loginDao->updateUserRoleAndStatus(userId, targetRole, LoginStatus::ACTIVE);
+     if (updateResult.has_value() && updateResult.value()) {
+        LOG_INFO("User account enabled: " + userId);
+    }
+    return updateResult;
+}

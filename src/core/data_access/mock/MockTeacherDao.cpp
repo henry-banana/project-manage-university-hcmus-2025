@@ -5,11 +5,9 @@
 #include <string>
 #include <algorithm>
 #include <map>
-#include <expected> // (➕)
+#include <expected> 
 
-// Namespace ẩn danh và initializeMockTeacherDataIfNeeded giữ nguyên như trước
-
-namespace { // Copy lại phần này
+namespace { 
     std::map<std::string, Teacher> mock_teachers_data;
     bool mock_teacher_data_initialized = false;
 
@@ -19,19 +17,19 @@ namespace { // Copy lại phần này
             t1.setBirthday(9, 1, 1960); t1.setEmail("snape@example.com"); t1.setCitizenId("100100100");
             t1.setQualification("Master of Potions"); t1.setSpecializationSubjects("Potions, Dark Arts Defense");
             t1.setDesignation("Professor, Head of Slytherin"); t1.setExperienceYears(20);
-            mock_teachers_data[t1.getId()] = t1;
+            mock_teachers_data.emplace(t1.getId(), t1); // Dùng emplace
 
             Teacher t2("T002", "Minerva", "McGonagall", "TRAN", LoginStatus::ACTIVE);
             t2.setBirthday(4, 10, 1935); t2.setEmail("mcgonagall@example.com"); t2.setCitizenId("100100101");
             t2.setQualification("Animagus Mistress"); t2.setSpecializationSubjects("Transfiguration");
             t2.setDesignation("Professor, Head of Gryffindor, Deputy Headmistress"); t2.setExperienceYears(40);
-            mock_teachers_data[t2.getId()] = t2;
+            mock_teachers_data.emplace(t2.getId(), t2); // Dùng emplace
 
             Teacher t3("T003", "Filius", "Flitwick", "CHAR", LoginStatus::DISABLED);
             t3.setBirthday(17,10,1958); t3.setEmail("flitwick@example.com"); t3.setCitizenId("100100102");
             t3.setQualification("Charms Master"); t3.setSpecializationSubjects("Charms");
             t3.setDesignation("Professor, Head of Ravenclaw"); t3.setExperienceYears(30);
-            mock_teachers_data[t3.getId()] = t3;
+            mock_teachers_data.emplace(t3.getId(), t3); // Dùng emplace
 
             mock_teacher_data_initialized = true;
         }
@@ -62,7 +60,11 @@ std::expected<Teacher, Error> MockTeacherDao::add(const Teacher& teacher) {
     if (mock_teachers_data.count(teacher.getId())) {
         return std::unexpected(Error{ErrorCode::ALREADY_EXISTS, "Mock Teacher with ID " + teacher.getId() + " already exists"});
     }
-    mock_teachers_data[teacher.getId()] = teacher;
+    // mock_teachers_data[teacher.getId()] = teacher; // Dòng cũ
+    auto insert_result = mock_teachers_data.emplace(teacher.getId(), teacher);
+    if (!insert_result.second) {
+        return std::unexpected(Error{ErrorCode::OPERATION_FAILED, "Failed to emplace teacher into mock data."});
+    }
     return teacher;
 }
 
@@ -99,7 +101,6 @@ std::expected<std::vector<Teacher>, Error> MockTeacherDao::findByFacultyId(const
 std::expected<std::vector<Teacher>, Error> MockTeacherDao::findByDesignation(const std::string& designation) const {
     std::vector<Teacher> result;
     for (const auto& pair : mock_teachers_data) {
-        // Tìm kiếm chính xác hoặc tìm chuỗi con tùy yêu cầu
         if (pair.second.getDesignation().find(designation) != std::string::npos) {
             result.push_back(pair.second);
         }

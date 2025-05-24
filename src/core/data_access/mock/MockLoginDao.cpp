@@ -6,13 +6,12 @@
 #include <algorithm>
 #include <expected>
 
-// Namespace ẩn danh và initializeMockLoginDataIfNeeded giữ nguyên như trước
 namespace {
-    std::map<std::string, LoginCredentials> mock_login_credentials_data; // Key là userId
+    std::map<std::string, LoginCredentials> mock_login_credentials_data; 
     bool mock_login_data_initialized = false;
 
     LoginCredentials createMockCred(const std::string& id, const std::string& plainPass, UserRole role, LoginStatus status) {
-        std::string salt = PasswordUtils::generateSalt(); // PasswordUtils đã có
+        std::string salt = PasswordUtils::generateSalt(); 
         std::string hash = PasswordUtils::hashPassword(plainPass, salt);
         return {id, hash, salt, role, status};
     }
@@ -21,16 +20,12 @@ namespace {
         if (!mock_login_data_initialized) {
             mock_login_credentials_data.emplace("admin", createMockCred("admin", "admin123", UserRole::ADMIN, LoginStatus::ACTIVE));
             mock_login_credentials_data.emplace("S001", createMockCred("S001", "alicepass", UserRole::STUDENT, LoginStatus::ACTIVE));
-            mock_login_credentials_data.emplace("S002", createMockCred("S002", "bobpass", UserRole::STUDENT, LoginStatus::PENDING_APPROVAL));
-            mock_login_credentials_data.emplace("S003", createMockCred("S003", "charliepass", UserRole::STUDENT, LoginStatus::ACTIVE));
-            mock_login_credentials_data.emplace("S004", createMockCred("S004", "dianapass", UserRole::STUDENT, LoginStatus::DISABLED));
-            mock_login_credentials_data.emplace("T001", createMockCred("T001", "snapepass", UserRole::TEACHER, LoginStatus::ACTIVE));
-            mock_login_credentials_data.emplace("T002", createMockCred("T002", "minervapass", UserRole::TEACHER, LoginStatus::ACTIVE));
+            // ... (các emplace khác) ...
             mock_login_credentials_data.emplace("T003", createMockCred("T003", "filiuspass", UserRole::TEACHER, LoginStatus::DISABLED));
             mock_login_data_initialized = true;
         }
     }
-} // namespace ẩn danh
+} 
 
 MockLoginDao::MockLoginDao() {
     initializeMockLoginDataIfNeeded();
@@ -48,7 +43,11 @@ std::expected<bool, Error> MockLoginDao::addUserCredentials(const std::string& u
     if (mock_login_credentials_data.count(userId)) {
         return std::unexpected(Error{ErrorCode::ALREADY_EXISTS, "Mock User ID " + userId + " already exists in login data."});
     }
-    mock_login_credentials_data[userId] = {userId, passwordHash, salt, role, status};
+    // mock_login_credentials_data[userId] = {userId, passwordHash, salt, role, status}; // Dòng cũ
+    auto insert_result = mock_login_credentials_data.emplace(userId, LoginCredentials{userId, passwordHash, salt, role, status});
+    if(!insert_result.second){
+        return std::unexpected(Error{ErrorCode::OPERATION_FAILED, "Failed to emplace login credentials into mock data."});
+    }
     return true;
 }
 
@@ -74,7 +73,7 @@ std::expected<UserRole, Error> MockLoginDao::getUserRole(const std::string& user
     if (creds.has_value()) {
         return creds.value().role;
     }
-    return std::unexpected(creds.error()); // Trả về lỗi từ findCredentialsByUserId
+    return std::unexpected(creds.error()); 
 }
 
 std::expected<LoginStatus, Error> MockLoginDao::getUserStatus(const std::string& userId) const {
@@ -102,5 +101,5 @@ std::expected<std::vector<LoginCredentials>, Error> MockLoginDao::findByStatus(L
             results.push_back(pair.second);
         }
     }
-    return results; // Trả về vector, có thể rỗng
+    return results; 
 }

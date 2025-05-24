@@ -47,32 +47,32 @@ std::expected<Teacher, Error> TeacherSqlParser::parse(const DbQueryResultRow& ro
 std::expected<DbQueryResultRow, Error> TeacherSqlParser::serialize(const Teacher& teacher) const {
     DbQueryResultRow row;
     // User fields
-    row["id"] = teacher.getId(); // id trong Users table
-    row["userId"] = teacher.getId(); // userId trong Teachers table
-    row["firstName"] = teacher.getFirstName();
-    row["lastName"] = teacher.getLastName();
+    row.emplace("id", teacher.getId()); // id trong Users table
+    row.emplace("userId", teacher.getId()); // userId trong Teachers table
+    row.emplace("firstName", teacher.getFirstName());
+    row.emplace("lastName", teacher.getLastName());
     if (teacher.getBirthday().isSet()) {
-        row["birthDay"] = teacher.getBirthday().getDay();
-        row["birthMonth"] = teacher.getBirthday().getMonth();
-        row["birthYear"] = teacher.getBirthday().getYear();
+        row.emplace("birthDay", teacher.getBirthday().getDay());
+        row.emplace("birthMonth", teacher.getBirthday().getMonth());
+        row.emplace("birthYear", teacher.getBirthday().getYear());
     } else {
-        row["birthDay"] = std::any{}; 
-        row["birthMonth"] = std::any{};
-        row["birthYear"] = std::any{};
+        row.emplace("birthDay", std::any{}); 
+        row.emplace("birthMonth", std::any{});
+        row.emplace("birthYear", std::any{});
     }
-    row["address"] = teacher.getAddress().empty() ? std::any{} : std::any{teacher.getAddress()};
-    row["citizenId"] = teacher.getCitizenId().empty() ? std::any{} : std::any{teacher.getCitizenId()};
-    row["email"] = teacher.getEmail().empty() ? std::any{} : std::any{teacher.getEmail()};
-    row["phoneNumber"] = teacher.getPhoneNumber().empty() ? std::any{} : std::any{teacher.getPhoneNumber()};
-    row["role"] = static_cast<int>(teacher.getRole());
-    row["status"] = static_cast<int>(teacher.getStatus());
+    row.emplace("address", teacher.getAddress().empty() ? std::any{} : std::any{teacher.getAddress()});
+    row.emplace("citizenId", teacher.getCitizenId().empty() ? std::any{} : std::any{teacher.getCitizenId()});
+    row.emplace("email", teacher.getEmail().empty() ? std::any{} : std::any{teacher.getEmail()});
+    row.emplace("phoneNumber", teacher.getPhoneNumber().empty() ? std::any{} : std::any{teacher.getPhoneNumber()});
+    row.emplace("role", static_cast<int>(teacher.getRole()));
+    row.emplace("status", static_cast<int>(teacher.getStatus()));
 
     // Teacher specific fields
-    row["facultyId"] = teacher.getFacultyId().empty() ? std::any{} : std::any{teacher.getFacultyId()};
-    row["qualification"] = teacher.getQualification().empty() ? std::any{} : std::any{teacher.getQualification()};
-    row["specializationSubjects"] = teacher.getSpecializationSubjects().empty() ? std::any{} : std::any{teacher.getSpecializationSubjects()};
-    row["designation"] = teacher.getDesignation().empty() ? std::any{} : std::any{teacher.getDesignation()};
-    row["experienceYears"] = teacher.getExperienceYears();
+    row.emplace("facultyId", teacher.getFacultyId().empty() ? std::any{} : std::any{teacher.getFacultyId()});
+    row.emplace("qualification", teacher.getQualification().empty() ? std::any{} : std::any{teacher.getQualification()});
+    row.emplace("specializationSubjects", teacher.getSpecializationSubjects().empty() ? std::any{} : std::any{teacher.getSpecializationSubjects()});
+    row.emplace("designation", teacher.getDesignation().empty() ? std::any{} : std::any{teacher.getDesignation()});
+    row.emplace("experienceYears", teacher.getExperienceYears());
     
     return row;
 }

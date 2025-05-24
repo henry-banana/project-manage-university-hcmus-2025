@@ -38,13 +38,13 @@ std::expected<LoginCredentials, Error> LoginCredentialsSqlParser::parse(const Db
 
 std::expected<DbQueryResultRow, Error> LoginCredentialsSqlParser::serialize(const LoginCredentials& creds) const {
     DbQueryResultRow row;
-    row["userId"] = creds.userId;
-    row["passwordHash"] = creds.passwordHash;
-    row["salt"] = creds.salt;
+    row.emplace("userId", creds.userId);
+    row.emplace("passwordHash", creds.passwordHash);
+    row.emplace("salt", creds.salt);
     // Role và Status không lưu trực tiếp trong bảng Logins theo schema hiện tại
     // Chúng nằm trong bảng Users.
-    // row["role"] = static_cast<int>(creds.role); 
-    // row["status"] = static_cast<int>(creds.status);
+    // row.emplace("role", static_cast<int>(creds.role)); 
+    // row.emplace("status", static_cast<int>(creds.status));
     return row;
 }
 

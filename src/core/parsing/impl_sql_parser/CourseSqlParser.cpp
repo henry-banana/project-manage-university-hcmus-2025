@@ -29,10 +29,10 @@ std::expected<Course, Error> CourseSqlParser::parse(const DbQueryResultRow& row)
 
 std::expected<DbQueryResultRow, Error> CourseSqlParser::serialize(const Course& course) const {
     DbQueryResultRow row;
-    row["id"] = course.getId();
-    row["name"] = course.getName();
-    row["credits"] = course.getCredits();
-    row["facultyId"] = course.getFacultyId().empty() ? std::any{} : std::any{course.getFacultyId()};
+    row.emplace("id", course.getId());
+    row.emplace("name", course.getName());
+    row.emplace("credits", course.getCredits());
+    row.emplace("facultyId", course.getFacultyId().empty() ? std::any{} : std::any{course.getFacultyId()});
     return row;
 }
 

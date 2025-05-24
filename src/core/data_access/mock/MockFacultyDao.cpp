@@ -7,12 +7,13 @@
 #include <algorithm>
 #include <expected>
 
-namespace { // Copy lại phần này
+namespace { 
     std::map<std::string, Faculty> mock_faculties_data;
     bool mock_faculty_data_initialized = false;
 
     void initializeMockFacultyDataIfNeeded() {
         if (!mock_faculty_data_initialized) {
+            // (SỬA Ở ĐÂY) Dùng emplace
             mock_faculties_data.emplace("IT", Faculty("IT", "Information Technology"));
             mock_faculties_data.emplace("CS", Faculty("CS", "Computer Science"));
             mock_faculties_data.emplace("EE", Faculty("EE", "Electrical Engineering"));
@@ -20,7 +21,6 @@ namespace { // Copy lại phần này
             mock_faculties_data.emplace("TRAN", Faculty("TRAN", "Transfiguration Studies"));
             mock_faculties_data.emplace("CHAR", Faculty("CHAR", "Charms & Enchantments"));
             mock_faculties_data.emplace("LAW", Faculty("LAW", "Magical Law"));
-
             mock_faculty_data_initialized = true;
         }
     }
@@ -55,7 +55,12 @@ std::expected<Faculty, Error> MockFacultyDao::add(const Faculty& faculty) {
              return std::unexpected(Error{ErrorCode::ALREADY_EXISTS, "Mock Faculty with Name " + faculty.getName() + " already exists"});
         }
     }
-    mock_faculties_data[faculty.getId()] = faculty;
+    // (SỬA Ở ĐÂY) Dùng emplace
+    // mock_faculties_data[faculty.getId()] = faculty; // Dòng cũ
+    auto insert_result = mock_faculties_data.emplace(faculty.getId(), faculty);
+    if(!insert_result.second){
+         return std::unexpected(Error{ErrorCode::OPERATION_FAILED, "Failed to emplace faculty into mock data."});
+    }
     return faculty;
 }
 
@@ -67,7 +72,7 @@ std::expected<bool, Error> MockFacultyDao::update(const Faculty& faculty) {
                 return std::unexpected(Error{ErrorCode::ALREADY_EXISTS, "Mock Faculty Name " + faculty.getName() + " conflicts with another faculty."});
             }
         }
-        it->second = faculty;
+        it->second = faculty; // Gán trực tiếp khi đã tìm thấy là OK
         return true;
     }
     return std::unexpected(Error{ErrorCode::NOT_FOUND, "Mock Faculty with ID " + faculty.getId() + " not found for update"});
@@ -90,5 +95,5 @@ std::expected<Faculty, Error> MockFacultyDao::findByName(const std::string& name
             return pair.second;
         }
     }
-    return std::unexpected(Error{ErrorCode::NOT_FOUND, "Mock Faculty with name " + name + " not found"});
+    return std::unexpected(Error{ErrorCode::NOT_FOUND, "Mock Faculty with name '" + name + "' not found"});
 }

@@ -31,15 +31,15 @@ std::expected<CourseResult, Error> CourseResultSqlParser::parse(const DbQueryRes
 
 std::expected<DbQueryResultRow, Error> CourseResultSqlParser::serialize(const CourseResult& result) const {
     DbQueryResultRow row;
-    row["studentId"] = result.getStudentId();
-    row["courseId"] = result.getCourseId();
+    row.emplace("studentId", result.getStudentId());
+    row.emplace("courseId", result.getCourseId());
     if (result.getMarks() == -1) {
-        row["marks"] = std::any{}; // SQL NULL
+        row.emplace("marks", std::any{}); // SQL NULL
     } else {
-        row["marks"] = result.getMarks();
+        row.emplace("marks", result.getMarks());
     }
     // Grade được tính, nhưng nếu schema DB có cột grade thì cũng nên set
-    // row["grade"] = std::string(1, result.getGrade());
+    // row.emplace("grade", std::string(1, result.getGrade()));
     return row;
 }
 

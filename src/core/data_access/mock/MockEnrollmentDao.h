@@ -7,14 +7,15 @@ class MockEnrollmentDao : public IEnrollmentDao {
 public:
     MockEnrollmentDao();
     ~MockEnrollmentDao() override = default;
-    std::expected<bool, Error> MockEnrollmentDao::addEnrollment(const std::string& studentId, const std::string& courseId) override;
-    std::expected<bool, Error> MockEnrollmentDao::removeEnrollment(const std::string& studentId, const std::string& courseId) override;
-    std::expected<bool, Error> MockEnrollmentDao::removeEnrollmentsByStudent(const std::string& studentId) override;
-    std::expected<bool, Error> MockEnrollmentDao::removeEnrollmentsByCourse(const std::string& courseId) override;
-    std::expected<bool, Error> MockEnrollmentDao::isEnrolled(const std::string& studentId, const std::string& courseId) const override;
-    std::expected<std::vector<std::string>, Error> MockEnrollmentDao::findCourseIdsByStudentId(const std::string& studentId) const override;
-    std::expected<std::vector<std::string>, Error> MockEnrollmentDao::findStudentIdsByCourseId(const std::string& courseId) const override;
-    std::expected<std::vector<EnrollmentRecord>, Error> MockEnrollmentDao::getAllEnrollments() const  override;
+    // (➖) Bỏ MockEnrollmentDao:: ở đây
+    std::expected<bool, Error> addEnrollment(const std::string& studentId, const std::string& courseId) override;
+    std::expected<bool, Error> removeEnrollment(const std::string& studentId, const std::string& courseId) override;
+    std::expected<bool, Error> removeEnrollmentsByStudent(const std::string& studentId) override;
+    std::expected<bool, Error> removeEnrollmentsByCourse(const std::string& courseId) override;
+    std::expected<bool, Error> isEnrolled(const std::string& studentId, const std::string& courseId) const override;
+    std::expected<std::vector<std::string>, Error> findCourseIdsByStudentId(const std::string& studentId) const override;
+    std::expected<std::vector<std::string>, Error> findStudentIdsByCourseId(const std::string& courseId) const override;
+    std::expected<std::vector<EnrollmentRecord>, Error> getAllEnrollments() const  override;
 };
 
 #endif // MOCK_ENROLLMENT_DAO_H

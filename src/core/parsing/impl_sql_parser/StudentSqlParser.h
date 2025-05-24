@@ -9,6 +9,43 @@
 #include "../../../common/UserRole.h"
 #include <any> // Cho std::any_cast
 
+namespace SqlParserUtils {
+    // (➕) Thêm inline
+    template <typename T>
+    inline T getOptional(const DbQueryResultRow& row, const std::string& columnName, T defaultValue = T{}) {
+        auto it = row.find(columnName);
+        if (it != row.end() && it->second.has_value()) {
+            try {
+                return std::any_cast<T>(it->second);
+            } catch (const std::bad_any_cast& e) {
+                // LOG_WARN("Bad any_cast for column: " + columnName + " to expected type. Error: " + e.what());
+                // std::cerr << "Bad any_cast for column: " << columnName << " - " << e.what() << std::endl;
+                return defaultValue;
+            }
+        }
+        return defaultValue;
+    }
+
+    // (➕) Thêm inline
+    template <>
+    inline std::string getOptional<std::string>(const DbQueryResultRow& row, const std::string& columnName, std::string defaultValue) {
+        auto it = row.find(columnName);
+        if (it != row.end() && it->second.has_value()) {
+            try {
+                return std::any_cast<std::string>(it->second);
+            } catch (const std::bad_any_cast&) {
+                 try { 
+                    return std::string(std::any_cast<const char*>(it->second));
+                } catch (const std::bad_any_cast& e) {
+                    // LOG_WARN("Bad any_cast for string column: " + columnName + ". Error: " + e.what());
+                    // std::cerr << "Bad any_cast for string column: " << columnName << " - " << e.what() << std::endl;
+                    return defaultValue;
+                }
+            }
+        }
+        return defaultValue;
+    }
+} // namespace SqlParserUtils
 
 class StudentSqlParser : public IEntityParser<Student, DbQueryResultRow> {
 public:

@@ -23,9 +23,9 @@ std::expected<EnrollmentRecord, Error> EnrollmentRecordSqlParser::parse(const Db
 
 std::expected<DbQueryResultRow, Error> EnrollmentRecordSqlParser::serialize(const EnrollmentRecord& record) const {
     DbQueryResultRow row;
-    row["studentId"] = record.studentId;
-    row["courseId"] = record.courseId;
-    // row["enrollmentDate"] = record.enrollmentDate; // nếu có
+    row.emplace("studentId", record.studentId);
+    row.emplace("courseId", record.courseId);
+    // row.emplace("enrollmentDate", record.enrollmentDate); // nếu có
     return row;
 }
 

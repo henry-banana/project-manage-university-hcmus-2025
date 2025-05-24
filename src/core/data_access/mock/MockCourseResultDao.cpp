@@ -19,6 +19,7 @@ namespace {
 
     void initializeMockCourseResultDataIfNeeded() {
         if (!mock_course_result_data_initialized) {
+            // SỬA Ở ĐÂY:
             mock_course_results_data.emplace(makeCourseResultKey("S001", "CS101"), CourseResult("S001", "CS101", 85));
             mock_course_results_data.emplace(makeCourseResultKey("S001", "IT202"), CourseResult("S001", "IT202", 70));
             mock_course_results_data.emplace(makeCourseResultKey("S002", "CS101"), CourseResult("S002", "CS101", 92));
@@ -26,12 +27,11 @@ namespace {
             mock_course_results_data.emplace(makeCourseResultKey("S003", "EE301"), CourseResult("S003", "EE301", 75));
             mock_course_results_data.emplace(makeCourseResultKey("S001", "POT101"), CourseResult("S001", "POT101", 95));
             mock_course_results_data.emplace(makeCourseResultKey("S002", "TRN101"), CourseResult("S002", "TRN101", 88));
-            mock_course_results_data.emplace(makeCourseResultKey("S001", "EE301"), CourseResult("S001", "EE301", -1)); // Chưa có điểm
+            mock_course_results_data.emplace(makeCourseResultKey("S001", "EE301"), CourseResult("S001", "EE301", -1)); // Chưa có điểm        
             mock_course_result_data_initialized = true;
         }
     }
-} // namespace ẩn danh
-
+}
 MockCourseResultDao::MockCourseResultDao() {
     initializeMockCourseResultDataIfNeeded();
 }
@@ -68,12 +68,24 @@ std::expected<std::vector<CourseResult>, Error> MockCourseResultDao::findByCours
 }
 
 std::expected<bool, Error> MockCourseResultDao::addOrUpdate(const CourseResult& result) {
-    ValidationResult vr = result.validate(); // Gọi hàm validate của CourseResult
+    ValidationResult vr = result.validate(); 
     if (!vr.isValid) {
         return std::unexpected(Error{ErrorCode::VALIDATION_ERROR, "Invalid CourseResult data: " + vr.getErrorMessagesCombined()});
     }
     auto key = makeCourseResultKey(result.getStudentId(), result.getCourseId());
-    mock_course_results_data[key] = result; // Thêm mới hoặc ghi đè
+
+    // SỬA Ở ĐÂY:
+    auto it = mock_course_results_data.find(key);
+    if (it != mock_course_results_data.end()) {
+        // Key đã tồn tại, thực hiện update (ghi đè)
+        it->second = result; 
+    } else {
+        // Key chưa tồn tại, thực hiện emplace (thêm mới)
+        mock_course_results_data.emplace(key, result);
+    }
+    // Hoặc một cách ngắn gọn hơn cho logic "thêm hoặc cập nhật" nếu bạn dùng C++17 trở lên:
+    // mock_course_results_data.insert_or_assign(key, result);
+
     return true;
 }
 

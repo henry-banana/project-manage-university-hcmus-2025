@@ -20,8 +20,8 @@ std::expected<Faculty, Error> FacultySqlParser::parse(const DbQueryResultRow& ro
 
 std::expected<DbQueryResultRow, Error> FacultySqlParser::serialize(const Faculty& faculty) const {
     DbQueryResultRow row;
-    row["id"] = faculty.getId();
-    row["name"] = faculty.getName();
+    row.emplace("id", faculty.getId());
+    row.emplace("name", faculty.getName());
     return row;
 }
 

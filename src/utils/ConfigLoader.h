@@ -4,16 +4,23 @@
 #include <string>
 #include <filesystem>
 #include "../common/AppConfig.h" // Để trả về AppConfig object
-#include "../common/OperationResult.h" // Để trả về lỗi nếu load config thất bại
+#include "../common/ErrorType.h"
+#include <expected>
 
 class ConfigLoader {
 private:
     std::filesystem::path _configFilePath;
     // (Private helper methods để parse file INI/JSON/YAML)
-    OperationResult<AppConfig> parseIniFile() const; // Ví dụ
+    std::expected<AppConfig, Error> parseIniFile() const; // Ví dụ
 public:
     ConfigLoader(const std::filesystem::path& configFilePath);
-    OperationResult<AppConfig> loadConfig() const;
+    std::expected<AppConfig, Error> loadConfig() const;
 };
+
+// Helper function to parse AppConfig::DataSourceType from string
+DataSourceType parseDataSourceType(const std::string& str);
+
+// Helper function to parse Logger::Level from string
+Logger::Level parseLogLevel(const std::string& str);
 
 #endif

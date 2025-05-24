@@ -6,11 +6,9 @@
 #include <string>
 #include <algorithm>
 #include <map>
-#include <expected> // (➕)
+#include <expected> 
 
-// Namespace ẩn danh và initializeMockStudentDataIfNeeded giữ nguyên như trước
-
-namespace { // Copy lại phần này từ lần trước
+namespace { 
     std::map<std::string, Student> mock_students_data;
     bool mock_student_data_initialized = false;
 
@@ -18,19 +16,19 @@ namespace { // Copy lại phần này từ lần trước
         if (!mock_student_data_initialized) {
             Student s1("S001", "Alice", "Smith", "IT", LoginStatus::ACTIVE);
             s1.setBirthday(1, 1, 2000); s1.setEmail("alice.smith@example.com"); s1.setCitizenId("001001001");
-            mock_students_data[s1.getId()] = s1;
+            mock_students_data.emplace(s1.getId(), s1); // Dùng emplace
 
             Student s2("S002", "Bob", "Johnson", "CS", LoginStatus::PENDING_APPROVAL);
             s2.setBirthday(15, 5, 2001); s2.setEmail("bob.j@example.com"); s2.setCitizenId("002002002");
-            mock_students_data[s2.getId()] = s2;
+            mock_students_data.emplace(s2.getId(), s2); // Dùng emplace
 
             Student s3("S003", "Charlie", "Brown", "IT", LoginStatus::ACTIVE);
             s3.setBirthday(20, 8, 1999); s3.setEmail("charlie.b@example.com"); s3.setCitizenId("003003003");
-            mock_students_data[s3.getId()] = s3;
+            mock_students_data.emplace(s3.getId(), s3); // Dùng emplace
 
             Student s4("S004", "Diana", "Prince", "LAW", LoginStatus::DISABLED);
             s4.setBirthday(10, 3, 2000); s4.setEmail("diana.p@example.com"); s4.setCitizenId("004004004");
-            mock_students_data[s4.getId()] = s4;
+            mock_students_data.emplace(s4.getId(), s4); // Dùng emplace
 
             mock_student_data_initialized = true;
         }
@@ -41,7 +39,6 @@ MockStudentDao::MockStudentDao() {
     initializeMockStudentDataIfNeeded();
 }
 
-// IDao methods
 std::expected<Student, Error> MockStudentDao::getById(const std::string& id) const {
     auto it = mock_students_data.find(id);
     if (it != mock_students_data.end()) {
@@ -55,21 +52,25 @@ std::expected<std::vector<Student>, Error> MockStudentDao::getAll() const {
     for (const auto& pair : mock_students_data) {
         all_students.push_back(pair.second);
     }
-    return all_students; // Luôn thành công trong mock, trả về vector (có thể rỗng)
+    return all_students; 
 }
 
 std::expected<Student, Error> MockStudentDao::add(const Student& student) {
     if (mock_students_data.count(student.getId())) {
         return std::unexpected(Error{ErrorCode::ALREADY_EXISTS, "Mock Student with ID " + student.getId() + " already exists"});
     }
-    mock_students_data[student.getId()] = student;
+    // mock_students_data[student.getId()] = student; // Dòng cũ
+    auto insert_result = mock_students_data.emplace(student.getId(), student);
+    if (!insert_result.second) {
+        return std::unexpected(Error{ErrorCode::OPERATION_FAILED, "Failed to emplace student into mock data."});
+    }
     return student;
 }
 
 std::expected<bool, Error> MockStudentDao::update(const Student& student) {
     auto it = mock_students_data.find(student.getId());
     if (it != mock_students_data.end()) {
-        it->second = student;
+        it->second = student; 
         return true;
     }
     return std::unexpected(Error{ErrorCode::NOT_FOUND, "Mock Student with ID " + student.getId() + " not found for update"});
@@ -83,10 +84,9 @@ std::expected<bool, Error> MockStudentDao::remove(const std::string& id) {
 }
 
 std::expected<bool, Error> MockStudentDao::exists(const std::string& id) const {
-    return mock_students_data.count(id) > 0; // Mock này đơn giản là trả về bool
+    return mock_students_data.count(id) > 0; 
 }
 
-// IStudentDao specific methods
 std::expected<std::vector<Student>, Error> MockStudentDao::findByFacultyId(const std::string& facultyId) const {
     std::vector<Student> result;
     for (const auto& pair : mock_students_data) {
@@ -94,7 +94,7 @@ std::expected<std::vector<Student>, Error> MockStudentDao::findByFacultyId(const
             result.push_back(pair.second);
         }
     }
-    return result; // Trả về vector (có thể rỗng)
+    return result; 
 }
 
 std::expected<Student, Error> MockStudentDao::findByEmail(const std::string& email) const {
@@ -113,13 +113,13 @@ std::expected<std::vector<Student>, Error> MockStudentDao::findByStatus(LoginSta
             result.push_back(pair.second);
         }
     }
-    return result; // Trả về vector (có thể rỗng)
+    return result; 
 }
 
 std::expected<bool, Error> MockStudentDao::updateStatus(const std::string& studentId, LoginStatus newStatus) {
     auto it = mock_students_data.find(studentId);
     if (it != mock_students_data.end()) {
-        it->second.setStatus(newStatus);
+        it->second.setStatus(newStatus); 
         return true;
     }
     return std::unexpected(Error{ErrorCode::NOT_FOUND, "Mock Student with ID " + studentId + " not found for status update"});

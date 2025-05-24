@@ -19,9 +19,9 @@ std::expected<FeeRecord, Error> FeeRecordSqlParser::parse(const DbQueryResultRow
 
 std::expected<DbQueryResultRow, Error> FeeRecordSqlParser::serialize(const FeeRecord& record) const {
     DbQueryResultRow row;
-    row["studentId"] = record.getStudentId();
-    row["totalFee"] = record.getTotalFee();
-    row["paidFee"] = record.getPaidFee();
+    row.emplace("studentId", record.getStudentId());
+    row.emplace("totalFee", record.getTotalFee());
+    row.emplace("paidFee", record.getPaidFee());
     return row;
 }
 

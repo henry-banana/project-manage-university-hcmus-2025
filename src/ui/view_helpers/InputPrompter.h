@@ -2,9 +2,9 @@
 #define INPUTPROMPTER_H
 
 #include <string>
-#include <limits> // For numeric_limits
-#include <iostream> // For cin, cout
-#include "../../common/ValidationResult.h" // (Optional) để trả về lỗi input
+#include <limits> 
+#include <iostream> 
+// #include "../../common/ValidationResult.h" // Loại bỏ nếu không dùng trong prompter
 
 class InputPrompter {
 public:
@@ -15,8 +15,11 @@ public:
     int promptForInt(const std::string& promptMessage, int minVal = std::numeric_limits<int>::min(), int maxVal = std::numeric_limits<int>::max()) const;
     double promptForDouble(const std::string& promptMessage, double minVal = std::numeric_limits<double>::lowest(), double maxVal = std::numeric_limits<double>::max()) const;
     bool promptForYesNo(const std::string& promptMessage, char yesChar = 'y', char noChar = 'n') const;
-    std::string promptForPassword(const std::string& promptMessage) const; // Sẽ gọi PasswordUtils
-    std::string promptForEmail(const std::string& promptMessage) const; // Có thể tích hợp GeneralInputValidator
+    // PasswordUtils sẽ được gọi từ AuthService hoặc UI khi cần hash/verify,
+    // promptForPassword chỉ cần lấy input.
+    std::string promptForPassword(const std::string& promptMessage, bool masked = true) const;
+    // Email validation sẽ do AuthService/StudentService thực hiện dùng IGeneralInputValidator
+    std::string promptForEmail(const std::string& promptMessage) const;
 };
 
 #endif

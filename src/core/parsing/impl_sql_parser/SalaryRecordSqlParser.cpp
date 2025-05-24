@@ -18,8 +18,8 @@ std::expected<SalaryRecord, Error> SalaryRecordSqlParser::parse(const DbQueryRes
 
 std::expected<DbQueryResultRow, Error> SalaryRecordSqlParser::serialize(const SalaryRecord& record) const {
     DbQueryResultRow row;
-    row["teacherId"] = record.getTeacherId();
-    row["basicMonthlyPay"] = record.getBasicMonthlyPay();
+    row.emplace("teacherId", record.getTeacherId());
+    row.emplace("basicMonthlyPay", record.getBasicMonthlyPay());
     return row;
 }
 
