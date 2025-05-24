@@ -271,30 +271,23 @@ void ConsoleUI::run() {
  * Phương thức này sử dụng std::visit để gọi hàm xử lý tương ứng với trạng thái hiện tại.
  * Nó cũng thực hiện việc xóa màn hình và chuẩn bị cho việc hiển thị menu mới.
  */
+
 void ConsoleUI::processCurrentState() {
     clearScreen(); // Xóa màn hình trước khi xử lý state mới
-    
-    // Hiển thị thông tin phiên đăng nhập nếu đã xác thực
-    if(_authService->isAuthenticated()) {
-        auto user = _authService->getCurrentUser();
-        auto role = _authService->getCurrentUserRole();
-        if(user.has_value() && role.has_value()) {
-            std::string roleName;
-            switch(role.value()) {
-                case UserRole::ADMIN: roleName = "Admin"; break;
-                case UserRole::STUDENT: roleName = "Student"; break;
-                case UserRole::TEACHER: roleName = "Teacher"; break;
-                default: roleName = "Unknown";
-            }
-            std::cout << "Logged in as: " << (*user.value())->getName() 
-                      << " (" << roleName << ") [ID: " << (*user.value())->getId() << "]" 
-                      << std::endl << std::endl;
-        }
-    }
-
-    // Sử dụng std::visit để xử lý state tương ứng
-    std::visit([this](auto&& state) {
-        this->handleState(state);
+    std::visit([this](auto&& state_arg) { 
+        using T = std::decay_t<decltype(state_arg)>;
+        if constexpr (std::is_same_v<T, UnauthenticatedState>)                this->handleState(state_arg);
+        else if constexpr (std::is_same_v<T, LoginPromptState>)               this->handleState(state_arg);
+        else if constexpr (std::is_same_v<T, StudentRegistrationPromptState>) this->handleState(state_arg);
+        else if constexpr (std::is_same_v<T, ChangePasswordPromptState>)      this->handleState(state_arg);
+        else if constexpr (std::is_same_v<T, AdminPanelState>)                this->handleState(state_arg);
+        else if constexpr (std::is_same_v<T, StudentPanelState>)              this->handleState(state_arg);
+        else if constexpr (std::is_same_v<T, TeacherPanelState>)              this->handleState(state_arg);
+        else if constexpr (std::is_same_v<T, AdminStudentManagementState>)    this->handleState(state_arg);
+        else if constexpr (std::is_same_v<T, AdminTeacherManagementState>)    this->handleState(state_arg);
+        else if constexpr (std::is_same_v<T, AdminFacultyManagementState>)    this->handleState(state_arg);
+        else if constexpr (std::is_same_v<T, AdminCourseManagementState>)     this->handleState(state_arg);
+        else if constexpr (std::is_same_v<T, AdminAccountManagementState>)    this->handleState(state_arg);
     }, _currentState);
 }
 
@@ -387,6 +380,19 @@ void ConsoleUI::handleState(ChangePasswordPromptState&) {
     }
 }
 
+/**
+ * @brief Xử lý trạng thái AdminPanelState - màn hình quản lý chính của Admin
+ * 
+ * Hiển thị menu quản lý chính cho Admin với các tùy chọn:
+ * - Quản lý sinh viên
+ * - Quản lý giảng viên
+ * - Quản lý khoa
+ * - Quản lý khóa học
+ * - Tiện ích quản lý tài khoản
+ * - Đổi mật khẩu, đăng xuất và thoát ứng dụng
+ * 
+ * @param state Tham chiếu đến đối tượng trạng thái
+ */
 void ConsoleUI::handleState(AdminPanelState&) {
     if (!_authService->isAuthenticated() || _authService->getCurrentUserRole() != UserRole::ADMIN) {
         showErrorMessage("Access Denied. Not an Admin.");
@@ -447,6 +453,18 @@ void ConsoleUI::handleState(StudentPanelState&) {
     processMenu("STUDENT PANEL", items, actions, false);
 }
 
+/**
+ * @brief Xử lý trạng thái TeacherPanelState - màn hình quản lý của Giảng viên
+ * 
+ * Hiển thị menu quản lý cho Giảng viên với các tùy chọn:
+ * - Xem thông tin cá nhân
+ * - Nhập/Cập nhật điểm cho khóa học
+ * - Xem thông tin lương
+ * - Xem danh sách sinh viên đăng ký theo khóa học
+ * - Đổi mật khẩu, đăng xuất và thoát ứng dụng
+ * 
+ * @param state Tham chiếu đến đối tượng trạng thái
+ */
 void ConsoleUI::handleState(TeacherPanelState&) {
     if (!_authService->isAuthenticated() || _authService->getCurrentUserRole() != UserRole::TEACHER) {
         showErrorMessage("Access Denied. Not a Teacher.");
@@ -474,8 +492,21 @@ void ConsoleUI::handleState(TeacherPanelState&) {
     processMenu("TEACHER PANEL", items, actions, false);
 }
 
-
 // --- State Handlers for Admin Sub-Menus ---
+/**
+ * @brief Xử lý trạng thái AdminStudentManagementState - màn hình quản lý sinh viên của Admin
+ * 
+ * Hiển thị menu quản lý sinh viên với các tùy chọn:
+ * - Phê duyệt đăng ký sinh viên đang chờ
+ * - Xem sinh viên theo trạng thái
+ * - Thêm sinh viên mới
+ * - Cập nhật thông tin sinh viên
+ * - Xóa tài khoản sinh viên
+ * - Xem tất cả sinh viên
+ * - Tìm sinh viên theo ID
+ * 
+ * @param state Tham chiếu đến đối tượng trạng thái
+ */
 void ConsoleUI::handleState(AdminStudentManagementState&) {
     std::vector<MenuItemDisplay> items = {
         {"1", "Approve Pending Student Registrations"},
@@ -500,6 +531,19 @@ void ConsoleUI::handleState(AdminStudentManagementState&) {
     processMenu("ADMIN - STUDENT MANAGEMENT", items, actions, true);
 }
 
+/**
+ * @brief Xử lý trạng thái AdminTeacherManagementState - màn hình quản lý giảng viên của Admin
+ * 
+ * Hiển thị menu quản lý giảng viên với các tùy chọn:
+ * - Thêm giảng viên mới
+ * - Xem thông tin giảng viên
+ * - Cập nhật thông tin giảng viên
+ * - Xóa tài khoản giảng viên
+ * - Xem tất cả giảng viên
+ * - Xem giảng viên theo khoa
+ * 
+ * @param state Tham chiếu đến đối tượng trạng thái
+ */
 void ConsoleUI::handleState(AdminTeacherManagementState&) {
      std::vector<MenuItemDisplay> items = {
         {"1", "Add New Teacher"},
@@ -1533,6 +1577,7 @@ void ConsoleUI::displayFacultiesList(const std::vector<Faculty>& faculties){
     }
     _displayer->displayTable(headers, rows, widths);
 }
+
 void ConsoleUI::displayCourseDetails(const Course& course){
      std::vector<std::string> content = {
         "Course ID    : " + course.getId(),
@@ -1545,6 +1590,7 @@ void ConsoleUI::displayCourseDetails(const Course& course){
     content.push_back("Faculty      : " + facultyName);
     drawBox(content, '=', 60);
 }
+
 void ConsoleUI::displayCoursesList(const std::vector<Course>& courses){
     if (courses.empty()) { std::cout << "No courses to display." << std::endl; return; }
     std::vector<std::string> headers = {"ID", "Name", "Credits", "Faculty ID"};
