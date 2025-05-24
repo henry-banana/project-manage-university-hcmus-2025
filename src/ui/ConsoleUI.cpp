@@ -9,6 +9,10 @@
 #include <algorithm> 
 #include <sstream> // For report generation
 #include "../core/entities/User.h"
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 
 
 ConsoleUI::ConsoleUI(
@@ -65,110 +69,118 @@ void ConsoleUI::clearAndPause(const std::string& message){
 // --- Menu Processing Helper ---
 void ConsoleUI::processMenu(const std::string& title, const std::vector<MenuItemDisplay>& items, 
                             const std::vector<std::function<void()>>& actions, bool isSubMenu) {
+    if (items.empty()) { // (➕) Xử lý menu rỗng ngay từ đầu
+        // clearScreen(); // Đã clear ở processCurrentState
+        _menuRenderer->renderMenu(title, items); // Vẫn render để hiển thị "No options"
+        std::cout << "No options available in this menu." << std::endl;
+        if (isSubMenu) {
+            // Nếu là submenu rỗng, hành động mặc định là quay lại state cha
+            // (Cần logic để xác định state cha hoặc action[0] là back)
+            // Tạm thời, chúng ta sẽ để handleState của menu cha quyết định khi processMenu này thoát
+        } else {
+            // Nếu menu chính rỗng (lỗi cấu hình), có thể thoát hoặc về state an toàn
+            showErrorMessage("Critical Error: Main menu is empty.");
+            doExitApplication();
+        }
+        clearAndPause("Press Enter to continue...");
+        return;
+    }
+
+
     if (items.size() != actions.size()) {
         showErrorMessage("Internal Error: Menu items and actions count mismatch for menu: " + title);
         LOG_ERROR("Menu items and actions count mismatch for menu: " + title);
+        // Logic phục hồi state đã có ở trên, giữ nguyên
         if (isSubMenu) {
-            // Xác định state cha dựa trên state hiện tại của menu con (ví dụ)
             if (std::holds_alternative<AdminStudentManagementState>(_currentState) ||
-                std::holds_alternative<AdminTeacherManagementState>(_currentState) ||
-                std::holds_alternative<AdminFacultyManagementState>(_currentState) ||
-                std::holds_alternative<AdminCourseManagementState>(_currentState) ||
+                /* ... các state con khác của Admin ... */
                 std::holds_alternative<AdminAccountManagementState>(_currentState) ) {
                 _currentState = AdminPanelState{};
             } else { 
-                // (➕) SỬA LỖI Ở ĐÂY
                 if (_authService->isAuthenticated()) {
                     UserRole role = _authService->getCurrentUserRole().value_or(UserRole::UNKNOWN);
-                    if (role == UserRole::ADMIN) {
-                        _currentState = AdminPanelState{};
-                    } else if (role == UserRole::STUDENT) {
-                        _currentState = StudentPanelState{};
-                    } else if (role == UserRole::TEACHER) {
-                        _currentState = TeacherPanelState{};
-                    } else {
-                        _currentState = UnauthenticatedState{}; // Hoặc một state mặc định khác nếu đã đăng nhập nhưng role lạ
-                    }
+                    if (role == UserRole::ADMIN) _currentState = AdminPanelState{};
+                    else if (role == UserRole::STUDENT) _currentState = StudentPanelState{};
+                    else if (role == UserRole::TEACHER) _currentState = TeacherPanelState{};
+                    else _currentState = UnauthenticatedState{};
                 } else {
                     _currentState = UnauthenticatedState{};
                 }
             }
-        } else { // Lỗi ở menu chính (không phải submenu)
+        } else { 
             _currentState = UnauthenticatedState{}; 
         }
         clearAndPause("Press Enter to acknowledge menu error...");
         return;
     }
     
-    bool keepMenuOpen = true;
-    while (keepMenuOpen && _isRunning) {
-        // clearScreen(); // Đã clear ở processCurrentState
-        _menuRenderer->renderMenu(title, items);
-        
-        std::string exitKeyText = "Exit/Back";
-        int minChoice = 1000, maxChoice = -1; 
-        bool hasZeroOption = false;
+    // (➖) Bỏ vòng lặp while (keepMenuOpen && _isRunning) ở đây
+    // processMenu giờ chỉ chạy một lần cho mỗi lần gọi từ handleState
 
-        for(const auto& item : items){
-            if (item.key == "0") {
-                exitKeyText = item.description;
-                hasZeroOption = true;
-                minChoice = 0; // 0 is always the min if it exists
-                if (0 > maxChoice) maxChoice = 0;
-            } else {
-                try {
-                    int k = std::stoi(item.key);
-                    if (k < minChoice) minChoice = k;
-                    if (k > maxChoice) maxChoice = k;
-                } catch(...) { /* Bỏ qua key không phải số */ }
-            }
-        }
-         if (items.empty()){ // Menu rỗng
-            std::cout << "No options in this menu." << std::endl;
-            keepMenuOpen = false; // Thoát menu rỗng
-            clearAndPause();
-            return;
-        }
-        if (maxChoice == -1 && hasZeroOption) maxChoice = 0; // Chỉ có option "0"
-        else if (maxChoice == -1 && !hasZeroOption) { // Không có option số nào cả (lỗi)
-            showErrorMessage("Internal Error: Menu has no valid numeric options.");
-            keepMenuOpen = false; clearAndPause(); return;
-        }
-        if (minChoice == 1000 && hasZeroOption) minChoice = 0;
-        else if (minChoice == 1000 && !hasZeroOption) minChoice = 1; // Mặc định nếu không có "0"
+    // clearScreen(); // Đã clear ở processCurrentState hoặc đầu handleState
+    _menuRenderer->renderMenu(title, items);
+    
+    std::string exitKeyText = "Exit/Back";
+    int minChoice = 1000, maxChoice = -1; 
+    bool hasZeroOption = false;
 
-        int choice = _prompter->promptForInt("Enter your choice" + (hasZeroOption ? " (0 to " + exitKeyText + ")" : "") + ":", 
-                                             minChoice , maxChoice);
-
-        bool actionTaken = false;
-        if (choice == 0 && hasZeroOption) { // Chỉ xử lý "0" nếu nó là một option hợp lệ
-            // Tìm action cho key "0"
-            auto it = std::find_if(items.begin(), items.end(), [](const MenuItemDisplay& item){ return item.key == "0"; });
-            if(it != items.end()){
-                size_t index = std::distance(items.begin(), it);
-                if (actions[index]) actions[index]();
-            }
-            keepMenuOpen = false;      
-            actionTaken = true;
+    // Tìm key "0" và xác định min/max choice
+    for(size_t i = 0; i < items.size(); ++i) {
+        const auto& item = items[i];
+        if (item.key == "0") {
+            exitKeyText = item.description;
+            hasZeroOption = true;
+            minChoice = std::min(minChoice, 0);
+            maxChoice = std::max(maxChoice, 0);
         } else {
-            for (size_t i = 0; i < items.size(); ++i) {
-                if (items[i].key == std::to_string(choice)) {
-                    if (actions[i]) {
-                        actions[i](); 
-                    } else {
-                        showErrorMessage("No action defined for menu item: " + items[i].description);
-                    }
-                    actionTaken = true;
-                    break; 
-                }
-            }
-        }
-        
-        if (!actionTaken) { // Bao gồm cả trường hợp choice là 0 nhưng không có item nào key "0"
-             showErrorMessage("Invalid choice. Please try again.");
-             clearAndPause(); 
+            try {
+                int k = std::stoi(item.key);
+                minChoice = std::min(minChoice, k);
+                maxChoice = std::max(maxChoice, k);
+            } catch(...) { /* Bỏ qua key không phải số, hoặc log lỗi nếu cần */ }
         }
     }
+
+    // Nếu không có lựa chọn hợp lệ nào (ví dụ: tất cả key đều không phải số và không có "0")
+    if (maxChoice == -1 && !hasZeroOption) {
+        showErrorMessage("Internal Error: Menu has no valid numeric options. (" + title + ")");
+        clearAndPause();
+        // Quyết định state tiếp theo nếu menu lỗi (ví dụ: quay lại state cha hoặc Unauthenticated)
+        // (Logic này có thể cần được điều chỉnh tùy theo cách bạn muốn xử lý lỗi menu)
+        if (isSubMenu) { /* Logic quay lại state cha như ở trên */ } 
+        else { _currentState = UnauthenticatedState{}; }
+        return;
+    }
+    // Nếu chỉ có "0" hoặc không có lựa chọn nào khác "0"
+    if (minChoice == 1000 && hasZeroOption) minChoice = 0; 
+    else if (minChoice == 1000 && items.size() > 0) minChoice = std::stoi(items[0].key); // Lấy key đầu tiên nếu không có "0" và minChoice chưa được set
+
+
+    int choice = _prompter->promptForInt("Enter your choice" + (hasZeroOption ? " (0 to " + exitKeyText + ")" : "") + ":", 
+                                         minChoice , maxChoice);
+
+    bool actionTaken = false;
+    // Tìm action tương ứng với choice
+    for (size_t i = 0; i < items.size(); ++i) {
+        if (items[i].key == std::to_string(choice)) {
+            if (actions[i]) {
+                actions[i](); // Gọi hàm action. 
+                              // Hàm action này (hoặc handleState gọi nó) sẽ chịu trách nhiệm set _currentState mới.
+            } else {
+                showErrorMessage("No action defined for menu item: " + items[i].description);
+                clearAndPause(); // Cho người dùng đọc lỗi, state hiện tại sẽ được vẽ lại
+            }
+            actionTaken = true;
+            break; 
+        }
+    }
+    
+    if (!actionTaken) { 
+         showErrorMessage("Invalid choice. Please try again.");
+         // Không thay đổi _currentState, vòng lặp run() -> processCurrentState() sẽ vẽ lại menu hiện tại
+         clearAndPause(); 
+    }
+    // Kết thúc processMenu. Vòng lặp run() sẽ tiếp tục với _currentState (có thể đã được thay đổi bởi action).
 }
 
 // --- Main Application Loop and State Processing ---
@@ -181,8 +193,16 @@ void ConsoleUI::run() {
         processCurrentState(); 
     }
     LOG_INFO("ConsoleUI run loop finished.");
-    std::cout << "\nExiting University Management System. Goodbye!" << std::endl;
-    Logger::releaseInstance();
+    std::cout << "\nExiting University Management System. Goodbye!\n\n";
+    std::cout << "============================================================\n";
+    std::cout << "University Management System - Application Shutting Down...\n";
+    std::cout << "============================================================\n";
+    #ifdef _WIN32
+        Sleep(2000); // Windows sleep in milliseconds
+    #else
+        sleep(2); // Unix/Linux sleep in seconds
+    #endif
+    // Logger::releaseInstance();
 }
 
 void ConsoleUI::processCurrentState() {

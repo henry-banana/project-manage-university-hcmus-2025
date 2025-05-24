@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
         appConfig.logFilePath = "logs/app_default_error.log";
         if (appConfig.dataSourceType == DataSourceType::SQL) {
             // Cần một đường dẫn mặc định hợp lý hoặc yêu cầu người dùng cung cấp
-            appConfig.sqlConnectionString = "database/university_default.db"; 
+            appConfig.sqlConnectionString = "database/university.db"; 
         }
         std::cerr << "Using emergency default configuration with "
                   << (appConfig.dataSourceType == DataSourceType::MOCK ? "Mock DAOs." : 
@@ -74,6 +74,8 @@ int main(int argc, char* argv[]) {
         // Không thể ghi log nếu logger lỗi, nên chỉ in ra cerr
         return 1; // Thoát nếu logger không thể khởi tạo
     }
+    
+    // std::cin.get(); // Đảm bảo cin không bị lỗi khi đọc dòng đầu tiên
     
     LOG_INFO("============================================================");
     LOG_INFO("University Management System - Application Starting...");
@@ -228,7 +230,7 @@ int main(int argc, char* argv[]) {
     LOG_INFO("University Management System - Application Shutting Down...");
     LOG_INFO("============================================================");
     
-    // DaoFactory::cleanup(); // Nếu bạn đã triển khai hàm này để đóng DB adapter
+    DaoFactory::cleanup(); // Nếu bạn đã triển khai hàm này để đóng DB adapter
     // Hiện tại, DB adapter (SQLiteAdapter) sẽ tự đóng kết nối trong destructor của nó
     // khi _dbAdapterInstance trong DaoFactory được giải phóng (khi chương trình kết thúc).
 

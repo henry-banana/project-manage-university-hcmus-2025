@@ -6,8 +6,6 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
 find_package(SQLite3 REQUIRED)
 
 # Thêm các thư mục include (vẫn giữ nguyên phần này để trình biên dịch biết tìm header ở đâu)
@@ -81,16 +79,20 @@ set(SOURCES
 # list(FILTER SOURCES EXCLUDE REGEX ".+\\.h$")
 
 # Thêm file thực thi
-add_executable(university_app ${SOURCES})
+add_executable(university_manager ${SOURCES})
+
+set_target_properties(university_manager PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}  
+)
 
 # Liên kết với SQLite3
-target_link_libraries(university_app PRIVATE SQLite::SQLite3)
+target_link_libraries(university_manager PRIVATE SQLite::SQLite3)
 
 # Cờ biên dịch cho std::filesystem
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
-    target_link_libraries(university_app PRIVATE stdc++fs)
+    target_link_libraries(university_manager PRIVATE stdc++fs)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0 AND NOT APPLE)
-    target_link_libraries(university_app PRIVATE stdc++fs)
+    target_link_libraries(university_manager PRIVATE stdc++fs)
 endif()
 
 # Liên kết với pthread cho getMaskedPassword trên Linux/macOS
@@ -98,10 +100,10 @@ if (UNIX)
     include(CheckIncludeFile)
     check_include_file("termios.h" HAVE_TERMIOS_H)
     if (HAVE_TERMIOS_H)
-        target_compile_definitions(university_app PRIVATE HAVE_TERMIOS_H)
+        target_compile_definitions(university_manager PRIVATE HAVE_TERMIOS_H)
         if(NOT APPLE) 
              find_package(Threads REQUIRED)
-             target_link_libraries(university_app PRIVATE Threads::Threads)
+             target_link_libraries(university_manager PRIVATE Threads::Threads)
         endif()
     endif()
 endif()

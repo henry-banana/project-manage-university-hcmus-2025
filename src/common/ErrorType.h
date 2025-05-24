@@ -53,6 +53,8 @@ namespace ErrorCode {
     constexpr int TRANSACTION_COMMIT_FAILED = 1502;
     constexpr int TRANSACTION_ROLLBACK_FAILED = 1503;
     constexpr int TRANSACTION_NESTED_ERROR = 1504;
+
+    constexpr int CONSTRAINT_VIOLATION = 1601;
 }
 
 #endif // ERRORTYPE_H

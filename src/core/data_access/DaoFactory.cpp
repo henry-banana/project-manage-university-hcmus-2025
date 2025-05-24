@@ -257,12 +257,15 @@ std::shared_ptr<ISalaryRecordDao> DaoFactory::createSalaryRecordDao(const AppCon
 }
 
 void DaoFactory::cleanup() {
-   std::lock_guard<std::mutex> lock(_dbAdapterMutex);
-   if (_dbAdapterInstance) {
-       _dbAdapterInstance->disconnect();
-       _dbAdapterInstance.reset();
-   }
-   std::lock_guard<std::mutex> lockParser(_parserMutex);
+    std::lock_guard<std::mutex> lock(_dbAdapterMutex);
+    if (_dbAdapterInstance) {
+        LOG_INFO("DaoFactory: Cleaning up database adapter.");
+        // Destructor của IDatabaseAdapter sẽ được gọi khi _dbAdapterInstance.reset()
+        // hoặc khi shared_ptr cuối cùng trỏ đến nó bị hủy.
+        // Nếu IDatabaseAdapter::disconnect() có ghi log, nó vẫn hoạt động ở đây.
+        _dbAdapterInstance.reset(); 
+    }
+    std::lock_guard<std::mutex> lock_parser(_parserMutex);
     _studentSqlParserInstance.reset();
     _teacherSqlParserInstance.reset();
     // ... reset all other parser instances
@@ -273,4 +276,5 @@ void DaoFactory::cleanup() {
     _courseResultSqlParserInstance.reset();
     _feeRecordSqlParserInstance.reset();
     _salaryRecordSqlParserInstance.reset();
+    LOG_INFO("DaoFactory: Static resources cleaned up.");
 }

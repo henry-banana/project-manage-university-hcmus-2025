@@ -55,7 +55,7 @@ bool SQLiteConnector::connect() {
 void SQLiteConnector::disconnect() {
     if (_db) {
         // std::cout << "SQLiteConnector::disconnect - Disconnecting from " << _dbPath << std::endl; // Debug
-        sqlite3_close(_db); // sqlite3_close_v2 an toàn hơn nếu có prepared statements chưa finalize
+        sqlite3_close_v2(_db); // sqlite3_close_v2 an toàn hơn nếu có prepared statements chưa finalize
         _db = nullptr;
     }
 }

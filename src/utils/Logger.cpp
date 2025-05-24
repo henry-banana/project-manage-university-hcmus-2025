@@ -11,7 +11,11 @@ std::mutex Logger::_mutex;
 Logger::Logger() : _logLevel(Logger::Level::INFO), _logFilename("app.log") {} // (➕) Dùng Logger::Level
 
 Logger::~Logger() {
+    // std::cout << "Logger destructor called." << std::endl; // Dùng cho debug nếu cần
     if (_logFile && _logFile->is_open()) {
+        // Không nên ghi log ở đây nữa vì instance có thể đã bị reset.
+        // Chỉ đơn giản là đóng file.
+        _logFile->flush();
         _logFile->close();
     }
 }
@@ -27,11 +31,15 @@ Logger& Logger::getInstance() {
 
 void Logger::releaseInstance() {
     std::lock_guard<std::mutex> lock(_mutex);
-    if (_instance && _instance->_logFile && _instance->_logFile->is_open()) {
-         // Có thể log 1 dòng cuối trước khi reset, nhưng cẩn thận nếu instance sắp bị hủy
-         _instance->log(Logger::Level::INFO, "Logger instance explicitly released and log file closed.");
+    if (_instance) { // Kiểm tra _instance còn tồn tại không
+        if (_instance->_logFile && _instance->_logFile->is_open()) {
+            // Ghi trực tiếp, không dùng this->log()
+            *(_instance->_logFile) << "[" << _instance->getCurrentTimestamp() << "] [" << _instance->levelToString(Logger::Level::INFO) << "] Logger instance explicitly released. Log file will be closed by destructor if not already." << std::endl;
+            _instance->_logFile->flush(); 
+            // Không close ở đây, để destructor của Logger làm việc đó khi _instance.reset()
+        }
+        _instance.reset(); 
     }
-    _instance.reset(); 
 }
 
 void Logger::configure(Logger::Level level, const std::string& filename) { // (➕) Dùng Logger::Level

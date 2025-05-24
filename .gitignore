@@ -10,3 +10,5 @@ s.md
 *.log
 *.log
 s1.md
+logs/
+database/
