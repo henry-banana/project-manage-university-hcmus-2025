@@ -1,6 +1,7 @@
 #include "StudentSqlParser.h"
 #include "../../../common/UserRole.h" // For UserRole enum to int conversion
 #include "../../../common/LoginStatus.h" // For LoginStatus enum to int conversion
+#include "SqlParserUtils.h" 
 
 std::expected<Student, Error> StudentSqlParser::parse(const DbQueryResultRow& row) const {
     try {

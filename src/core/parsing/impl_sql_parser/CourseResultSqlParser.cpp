@@ -1,4 +1,5 @@
 #include "CourseResultSqlParser.h"
+#include "SqlParserUtils.h"
 
 std::expected<CourseResult, Error> CourseResultSqlParser::parse(const DbQueryResultRow& row) const {
     try {

@@ -62,45 +62,4 @@ public:
 
 // Alias cho kiểu dữ liệu một dòng kết quả từ CSDL SQL
 using DbQueryResultRow = std::map<std::string, std::any>;
-
-// Helper function to safely cast std::any to a specific type
-// Returns a default value if cast fails or if std::any is empty
-namespace SqlParserUtils {
-    template <typename T>
-    T getOptional(const DbQueryResultRow& row, const std::string& columnName, T defaultValue = T{}) {
-        auto it = row.find(columnName);
-        if (it != row.end() && it->second.has_value()) {
-            try {
-                return std::any_cast<T>(it->second);
-            } catch (const std::bad_any_cast& e) {
-                // Log error or handle - for now, return default
-                // std::cerr << "Bad any_cast for column: " << columnName << " - " << e.what() << std::endl;
-                return defaultValue;
-            }
-        }
-        return defaultValue;
-    }
-
-    // Specialization for std::string to handle potential nulls better,
-    // although std::any_cast to std::string on an empty std::any might also throw.
-    // Let's assume strings are stored directly or as const char*
-    template <>
-    std::string getOptional<std::string>(const DbQueryResultRow& row, const std::string& columnName, std::string defaultValue) {
-        auto it = row.find(columnName);
-        if (it != row.end() && it->second.has_value()) {
-            try {
-                return std::any_cast<std::string>(it->second);
-            } catch (const std::bad_any_cast&) {
-                 try { // Thử cast từ const char* nếu là string literal
-                    return std::string(std::any_cast<const char*>(it->second));
-                } catch (const std::bad_any_cast&) {
-                    // Log error or handle
-                    return defaultValue;
-                }
-            }
-        }
-        return defaultValue;
-    }
-}
-
 #endif // IENTITYPARSER_H

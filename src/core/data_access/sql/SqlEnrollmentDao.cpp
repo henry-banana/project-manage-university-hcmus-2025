@@ -2,6 +2,7 @@
 #include <vector>
 #include <stdexcept> // For std::invalid_argument
 #include "../../database_adapter/sql/sqlite3.h"
+#include "../../parsing/impl_sql_parser/SqlParserUtils.h"
 
 SqlEnrollmentDao::SqlEnrollmentDao(std::shared_ptr<IDatabaseAdapter> dbAdapter,
                                    std::shared_ptr<IEntityParser<EnrollmentRecord, DbQueryResultRow>> parser)

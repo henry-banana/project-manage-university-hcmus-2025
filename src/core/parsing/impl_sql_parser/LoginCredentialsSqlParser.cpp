@@ -1,4 +1,5 @@
 #include "LoginCredentialsSqlParser.h"
+#include "SqlParserUtils.h"
 
 std::expected<LoginCredentials, Error> LoginCredentialsSqlParser::parse(const DbQueryResultRow& row) const {
     try {

@@ -25,7 +25,7 @@ include_directories(
     src/core/parsing
     src/core/parsing/interface
     src/core/parsing/impl
-    src/core/parsing/impl/SqlParsers
+    src/core/parsing/impl_sql_parser
     src/core/services
     src/core/services/interface
     src/core/services/impl

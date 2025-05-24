@@ -1,4 +1,5 @@
 #include "SalaryRecordSqlParser.h"
+#include "SqlParserUtils.h"
 
 std::expected<SalaryRecord, Error> SalaryRecordSqlParser::parse(const DbQueryResultRow& row) const {
     try {
