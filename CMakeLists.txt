@@ -24,7 +24,6 @@ include_directories(
     src/core/database_adapter/sql
     src/core/parsing
     src/core/parsing/interface
-    src/core/parsing/impl
     src/core/parsing/impl_sql_parser
     src/core/services
     src/core/services/interface
@@ -49,6 +48,7 @@ file(GLOB_RECURSE DB_ADAPTER_SQL_SOURCES src/core/database_adapter/sql/*.cpp)
 file(GLOB_RECURSE PARSING_SQL_SOURCES src/core/parsing/impl_sql_parser/*.cpp)
 
 file(GLOB_RECURSE SERVICES_IMPL_SOURCES src/core/services/impl/*.cpp)
+file(GLOB_RECURSE SERVICES_IMPL_SOURCES src/core/services/*.cpp)
 
 file(GLOB_RECURSE VALIDATORS_IMPL_SOURCES src/core/validators/impl/*.cpp)
 
