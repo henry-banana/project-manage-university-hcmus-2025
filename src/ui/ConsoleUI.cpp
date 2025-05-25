@@ -198,7 +198,7 @@ void ConsoleUI::run() {
     std::cout << "University Management System - Application Shutting Down...\n";
     std::cout << "============================================================\n";
     #ifdef _WIN32
-        Sleep(2000); // Windows sleep in milliseconds
+        Sleep(1000); // Windows sleep in milliseconds
     #else
         sleep(2); // Unix/Linux sleep in seconds
     #endif
