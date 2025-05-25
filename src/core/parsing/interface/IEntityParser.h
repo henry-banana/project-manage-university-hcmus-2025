@@ -1,6 +1,11 @@
 #ifndef IENTITYPARSER_H
 #define IENTITYPARSER_H
 
+/**
+ * @file IEntityParser.h
+ * @brief Định nghĩa giao diện cho bộ phân tích và chuyển đổi đối tượng Entity
+ */
+
 #include <vector>
 #include <string>
 #include <any> // For DbQueryResultRow in SQL context
@@ -8,17 +13,20 @@
 #include <expected>
 #include "../../../common/ErrorType.h" // For Error
 
-// Forward declaration for specific entity types if needed,
-// though typically they will be included by concrete parser implementations.
-// class Student; 
-// class Course;
-// ...
-
-// TInputRow là kiểu dữ liệu của một dòng đầu vào (ví dụ: std::vector<std::string> cho CSV, 
-//                                                std::map<std::string, std::any> cho SQL row)
+/**
+ * @class IEntityParser
+ * @brief Giao diện cho bộ phân tích và chuyển đổi đối tượng Entity
+ * 
+ * @tparam TEntity Kiểu dữ liệu của đối tượng Entity
+ * @tparam TInputRow Kiểu dữ liệu của một dòng đầu vào (ví dụ: std::vector<std::string> cho CSV, 
+ *                   std::map<std::string, std::any> cho SQL row)
+ */
 template <typename TEntity, typename TInputRow>
 class IEntityParser {
 public:
+    /**
+     * @brief Hàm hủy ảo mặc định
+     */
     virtual ~IEntityParser() = default;
 
     /**
@@ -38,28 +46,27 @@ public:
      * @param entity Đối tượng TEntity cần chuyển đổi.
      * @return std::expected chứa TInputRow nếu thành công, hoặc Error nếu thất bại.
      */
-    virtual std::expected<TInputRow, Error> serialize(const TEntity& entity) const = 0;
-
-    // (Optional) If preparing parameters for SQL (INSERT/UPDATE) is complex enough,
-    // it might warrant its own method distinct from serialize().
-    // For now, let's assume serialize() can handle both creating a representation for
-    // storage (like a CSV row) and a representation for query parameters (like a map for SQL).
+    virtual std::expected<TInputRow, Error> serialize(const TEntity& entity) const = 0;    // (Optional) If preparing parameters for SQL (INSERT/UPDATE) is complex enough,
 
     /**
-     * @brief Chuyển đổi một đối tượng TEntity thành một vector các tham số truy vấn cơ sở dữ liệu.
-     *        Hàm này đặc biệt hữu ích cho việc chuẩn bị tham số cho các câu lệnh SQL INSERT và UPDATE.
-     *        Thứ tự của các tham số trong vector phải khớp với thứ tự placeholder trong câu lệnh SQL.
-     * @param entity Đối tượng TEntity cần chuyển đổi.
-     * @param includeId true nếu ID của entity cũng nên được bao gồm trong danh sách tham số (ví dụ, cho UPDATE),
-     *                  false nếu ID không nên được bao gồm (ví dụ, cho INSERT với ID tự tăng hoặc đã được bind riêng).
-     * @return std::expected chứa std::vector<std::any> nếu thành công, hoặc Error nếu thất bại.
+     * @brief Chuyển đổi một đối tượng TEntity thành một vector các tham số truy vấn INSERT
+     * @param entity Đối tượng TEntity cần chuyển đổi
+     * @return Vector các tham số nếu thành công, hoặc Error nếu thất bại
      */
     virtual std::expected<std::vector<std::any>, Error> toQueryInsertParams(const TEntity& entity) const = 0;
     
+    /**
+     * @brief Chuyển đổi một đối tượng TEntity thành một vector các tham số truy vấn UPDATE
+     * @param entity Đối tượng TEntity cần chuyển đổi
+     * @return Vector các tham số nếu thành công, hoặc Error nếu thất bại
+     */
     virtual std::expected<std::vector<std::any>, Error> toQueryUpdateParams(const TEntity& entity) const = 0;
 
 };
 
-// Alias cho kiểu dữ liệu một dòng kết quả từ CSDL SQL
+/**
+ * @typedef DbQueryResultRow
+ * @brief Kiểu dữ liệu đại diện cho một hàng kết quả từ truy vấn cơ sở dữ liệu
+ */
 using DbQueryResultRow = std::map<std::string, std::any>;
 #endif // IENTITYPARSER_H
