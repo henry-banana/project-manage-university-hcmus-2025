@@ -15,14 +15,20 @@
 //     enum class Level;
 // }
 
-
+/**
+ * @struct AppConfig
+ * @brief Cấu trúc lưu trữ cấu hình ứng dụng
+ * 
+ * Cấu trúc này chứa các thông số cấu hình cho ứng dụng, bao gồm loại nguồn dữ liệu,
+ * đường dẫn đến các file CSV, chuỗi kết nối SQL, cấp độ ghi log, và đường dẫn file log.
+ */
 struct AppConfig {
-    DataSourceType dataSourceType = DataSourceType::MOCK;
-    std::map<EntityType, std::filesystem::path> csvFilePaths;
-    std::string sqlConnectionString;
+    DataSourceType dataSourceType = DataSourceType::MOCK; ///< Loại nguồn dữ liệu (MOCK, CSV, SQL)
+    std::map<EntityType, std::filesystem::path> csvFilePaths; ///< Ánh xạ từ loại thực thể đến đường dẫn file CSV
+    std::string sqlConnectionString; ///< Chuỗi kết nối SQL
 
-    Logger::Level logLevel = Logger::Level::INFO; // Mặc định là INFO
-    std::filesystem::path logFilePath = "logs/app.log";
+    Logger::Level logLevel = Logger::Level::INFO; ///< Cấp độ ghi log (mặc định là INFO)
+    std::filesystem::path logFilePath = "logs/app.log"; ///< Đường dẫn đến file log
 
     // // Dùng cho SQL
     // std::string dbHost;

@@ -1,5 +1,16 @@
 #include "TableDisplayer.h"
 
+/**
+ * @brief Hiển thị dữ liệu dạng bảng với tiêu đề và các hàng dữ liệu
+ * 
+ * Phương thức này hiển thị dữ liệu trong định dạng bảng với các đường viền,
+ * bao gồm tiêu đề cột và các hàng dữ liệu. Độ rộng cột được tự động tính toán
+ * hoặc có thể được chỉ định trước.
+ * 
+ * @param headers Mảng chứa tiêu đề các cột
+ * @param rows Mảng hai chiều chứa dữ liệu của các hàng và cột
+ * @param initialColumnWidths Mảng chứa độ rộng ban đầu cho mỗi cột (tùy chọn)
+ */
 void TableDisplayer::displayTable(const std::vector<std::string>& headers,
                                   const std::vector<std::vector<std::string>>& rows,
                                   const std::vector<int>& initialColumnWidths) const {
@@ -35,7 +46,11 @@ void TableDisplayer::displayTable(const std::vector<std::string>& headers,
         width += 2; // 1 padding mỗi bên
     }
 
-    // In dòng kẻ ngang
+    /**
+     * @brief Hàm lambda in đường kẻ ngang cho bảng
+     * 
+     * Hàm này in đường kẻ ngang với độ dài phù hợp với độ rộng của mỗi cột
+     */
     auto printHorizontalLine = [&]() {
         for (int width : columnWidths) {
             std::cout << "+";

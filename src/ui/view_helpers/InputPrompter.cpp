@@ -2,6 +2,16 @@
 #include "../../utils/StringUtils.h"   // For trim
 #include "../../utils/PasswordInput.h" // For getMaskedPassword
 
+/**
+ * @brief Yêu cầu người dùng nhập một chuỗi
+ * 
+ * Phương thức này hiển thị thông báo và yêu cầu người dùng nhập một chuỗi.
+ * Nó cũng xử lý các trường hợp lỗi và kiểm tra chuỗi rỗng.
+ * 
+ * @param promptMessage Thông báo hiển thị cho người dùng
+ * @param allowEmpty Có cho phép nhập chuỗi rỗng không
+ * @return std::string Chuỗi người dùng đã nhập
+ */
 std::string InputPrompter::promptForString(const std::string& promptMessage, bool allowEmpty) const {
     std::string input;
     while (true) {
@@ -29,6 +39,17 @@ std::string InputPrompter::promptForString(const std::string& promptMessage, boo
     return input;
 }
 
+/**
+ * @brief Yêu cầu người dùng nhập một số nguyên lớn (long)
+ * 
+ * Phương thức này hiển thị thông báo và yêu cầu người dùng nhập một số nguyên lớn
+ * trong khoảng từ minVal đến maxVal. Nó xử lý các trường hợp lỗi đầu vào.
+ * 
+ * @param promptMessage Thông báo hiển thị cho người dùng
+ * @param minVal Giá trị tối thiểu cho phép
+ * @param maxVal Giá trị tối đa cho phép
+ * @return long Số nguyên lớn người dùng đã nhập
+ */
 long InputPrompter::promptForLong(const std::string& promptMessage, long minVal, long maxVal) const {
     long value;
     std::string line;
@@ -61,11 +82,32 @@ long InputPrompter::promptForLong(const std::string& promptMessage, long minVal,
     return value;
 }
 
+/**
+ * @brief Yêu cầu người dùng nhập một số nguyên (int)
+ * 
+ * Phương thức này sử dụng promptForLong để nhận đầu vào và chuyển đổi kết quả sang int.
+ * 
+ * @param promptMessage Thông báo hiển thị cho người dùng
+ * @param minVal Giá trị tối thiểu cho phép
+ * @param maxVal Giá trị tối đa cho phép
+ * @return int Số nguyên người dùng đã nhập
+ */
 int InputPrompter::promptForInt(const std::string& promptMessage, int minVal, int maxVal) const {
     long longVal = promptForLong(promptMessage, minVal, maxVal); // Dùng lại promptForLong
     return static_cast<int>(longVal);
 }
 
+/**
+ * @brief Yêu cầu người dùng nhập một số thực (double)
+ * 
+ * Phương thức này hiển thị thông báo và yêu cầu người dùng nhập một số thực
+ * trong khoảng từ minVal đến maxVal. Nó xử lý các trường hợp lỗi đầu vào.
+ * 
+ * @param promptMessage Thông báo hiển thị cho người dùng
+ * @param minVal Giá trị tối thiểu cho phép
+ * @param maxVal Giá trị tối đa cho phép
+ * @return double Số thực người dùng đã nhập
+ */
 double InputPrompter::promptForDouble(const std::string& promptMessage, double minVal, double maxVal) const {
     double value;
     std::string line;
@@ -105,6 +147,18 @@ double InputPrompter::promptForDouble(const std::string& promptMessage, double m
     return value;
 }
 
+/**
+ * @brief Yêu cầu người dùng nhập lựa chọn Yes/No
+ * 
+ * Phương thức này hiển thị thông báo và yêu cầu người dùng nhập một lựa chọn Yes/No.
+ * Người dùng chỉ cần nhập ký tự đại diện cho lựa chọn.
+ * 
+ * @param promptMessage Thông báo hiển thị cho người dùng
+ * @param yesChar Ký tự đại diện cho lựa chọn "Yes" (mặc định là 'y')
+ * @param noChar Ký tự đại diện cho lựa chọn "No" (mặc định là 'n')
+ * @return true Nếu người dùng chọn "Yes"
+ * @return false Nếu người dùng chọn "No"
+ */
 bool InputPrompter::promptForYesNo(const std::string& promptMessage, char yesChar, char noChar) const {
     std::string input;
     char choice;
@@ -131,6 +185,12 @@ bool InputPrompter::promptForYesNo(const std::string& promptMessage, char yesCha
     }
 }
 
+/**
+ * @brief Yêu cầu người dùng nhập mật khẩu
+ * 
+ * Phương thức này hiển thị thông báo và yêu cầu người dùng nhập mật khẩu.
+ * Nếu masked=true, các ký tự sẽ được che dấu bằng ký tự '*'.
+*/
 std::string InputPrompter::promptForPassword(const std::string& promptMessage, bool masked) const {
     if (masked) {
         return PasswordUtils::getMaskedPassword(promptMessage);

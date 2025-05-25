@@ -1,6 +1,12 @@
 #include "StudentValidator.h"
 #include "../../../utils/StringUtils.h" // For trim
 
+/**
+ * @brief Khởi tạo đối tượng StudentValidator với validator đầu vào chung
+ * 
+ * @param generalValidator Con trỏ đến đối tượng validator chung
+ * @throw std::invalid_argument Nếu generalValidator là nullptr
+ */
 StudentValidator::StudentValidator(std::shared_ptr<IGeneralInputValidator> generalValidator)
     : _generalValidator(std::move(generalValidator)) {
     if (!_generalValidator) {
@@ -14,6 +20,18 @@ StudentValidator::StudentValidator(std::shared_ptr<IGeneralInputValidator> gener
 //     if (!_facultyDao) { /* ... */ }
 // }
 
+/**
+ * @brief Kiểm tra tính hợp lệ của đối tượng sinh viên
+ * 
+ * Phương thức này kiểm tra tất cả các trường của đối tượng sinh viên:
+ * - Thông tin cơ bản: ID, họ tên, ngày sinh, email, CMND/CCCD
+ * - Thông tin liên hệ: địa chỉ, số điện thoại
+ * - Thông tin học tập: mã khoa
+ * - Vai trò và trạng thái tài khoản
+ * 
+ * @param student Đối tượng sinh viên cần kiểm tra
+ * @return ValidationResult Kết quả kiểm tra với danh sách lỗi (nếu có)
+ */
 ValidationResult StudentValidator::validateEntity(const Student& student) const {
     ValidationResult vr;
 
