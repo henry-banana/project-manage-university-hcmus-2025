@@ -71,6 +71,12 @@ public:
     const std::string& getDesignation() const;
     
     /**
+     * @brief Lấy chuyên ngành giảng dạy của giảng viên
+     * @return Chuyên ngành giảng dạy
+     */
+    const std::string& getSpecializationSubjects() const;
+    
+    /**
      * @brief Lấy số năm kinh nghiệm của giảng viên
      * @return Số năm kinh nghiệm
      */
