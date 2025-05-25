@@ -1,6 +1,17 @@
 #include "FacultyService.h"
 #include "../../../utils/Logger.h"
 
+/**
+ * @brief Khởi tạo đối tượng FacultyService
+ * 
+ * @param facultyDao Đối tượng truy cập dữ liệu khoa
+ * @param studentDao Đối tượng truy cập dữ liệu sinh viên
+ * @param teacherDao Đối tượng truy cập dữ liệu giảng viên
+ * @param courseDao Đối tượng truy cập dữ liệu khóa học
+ * @param inputValidator Đối tượng kiểm tra đầu vào
+ * @param sessionContext Đối tượng quản lý phiên đăng nhập
+ * @throw std::invalid_argument Nếu bất kỳ đối số nào là nullptr
+ */
 FacultyService::FacultyService(std::shared_ptr<IFacultyDao> facultyDao,
                                std::shared_ptr<IStudentDao> studentDao,
                                std::shared_ptr<ITeacherDao> teacherDao,
@@ -21,6 +32,15 @@ FacultyService::FacultyService(std::shared_ptr<IFacultyDao> facultyDao,
     if (!_sessionContext) throw std::invalid_argument("SessionContext cannot be null.");
 }
 
+/**
+ * @brief Lấy thông tin khoa theo ID
+ * 
+ * Phương thức này trả về thông tin chi tiết của một khoa dựa trên ID.
+ * Mọi người dùng đều có thể xem thông tin khoa.
+ * 
+ * @param facultyId ID của khoa cần tìm
+ * @return std::expected<Faculty, Error> Đối tượng Faculty nếu thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<Faculty, Error> FacultyService::getFacultyById(const std::string& facultyId) const {
     if (facultyId.empty()) {
         return std::unexpected(Error{ErrorCode::VALIDATION_ERROR, "Faculty ID cannot be empty."});
@@ -29,6 +49,15 @@ std::expected<Faculty, Error> FacultyService::getFacultyById(const std::string& 
     return _facultyDao->getById(facultyId);
 }
 
+/**
+ * @brief Lấy thông tin khoa theo tên
+ * 
+ * Phương thức này trả về thông tin chi tiết của một khoa dựa trên tên.
+ * Mọi người dùng đều có thể xem thông tin khoa.
+ * 
+ * @param name Tên của khoa cần tìm
+ * @return std::expected<Faculty, Error> Đối tượng Faculty nếu thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<Faculty, Error> FacultyService::getFacultyByName(const std::string& name) const {
     if (name.empty()) {
         return std::unexpected(Error{ErrorCode::VALIDATION_ERROR, "Faculty name cannot be empty."});
@@ -36,10 +65,28 @@ std::expected<Faculty, Error> FacultyService::getFacultyByName(const std::string
     return _facultyDao->findByName(name);
 }
 
+/**
+ * @brief Lấy danh sách tất cả các khoa
+ * 
+ * Phương thức này trả về danh sách tất cả các khoa trong hệ thống.
+ * Mọi người dùng đều có thể xem danh sách khoa.
+ * 
+ * @return std::expected<std::vector<Faculty>, Error> Danh sách các khoa nếu thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<std::vector<Faculty>, Error> FacultyService::getAllFaculties() const {
     return _facultyDao->getAll();
 }
 
+/**
+ * @brief Thêm khoa mới
+ * 
+ * Phương thức này tạo một khoa mới trong hệ thống.
+ * Yêu cầu quyền truy cập: chỉ admin mới có quyền thêm khoa mới.
+ * 
+ * @param id ID của khoa mới
+ * @param name Tên của khoa mới
+ * @return std::expected<Faculty, Error> Đối tượng Faculty đã được tạo nếu thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<Faculty, Error> FacultyService::addFaculty(const std::string& id, const std::string& name) {
     if (!_sessionContext->isAuthenticated() || !_sessionContext->getCurrentUserRole().has_value() || _sessionContext->getCurrentUserRole().value() != UserRole::ADMIN) {
         return std::unexpected(Error{ErrorCode::PERMISSION_DENIED, "Only admins can add faculties."});
@@ -60,6 +107,16 @@ std::expected<Faculty, Error> FacultyService::addFaculty(const std::string& id, 
     return addResult;
 }
 
+/**
+ * @brief Cập nhật thông tin khoa
+ * 
+ * Phương thức này cập nhật tên của một khoa đã tồn tại trong hệ thống.
+ * Yêu cầu quyền truy cập: chỉ admin mới có quyền cập nhật thông tin khoa.
+ * 
+ * @param facultyId ID của khoa cần cập nhật
+ * @param newName Tên mới của khoa
+ * @return std::expected<bool, Error> true nếu cập nhật thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<bool, Error> FacultyService::updateFaculty(const std::string& facultyId, const std::string& newName) {
     if (!_sessionContext->isAuthenticated() || !_sessionContext->getCurrentUserRole().has_value() || _sessionContext->getCurrentUserRole().value() != UserRole::ADMIN) {
         return std::unexpected(Error{ErrorCode::PERMISSION_DENIED, "Only admins can update faculties."});
@@ -88,6 +145,17 @@ std::expected<bool, Error> FacultyService::updateFaculty(const std::string& facu
     return updateResult;
 }
 
+/**
+ * @brief Xóa khoa
+ * 
+ * Phương thức này xóa một khoa khỏi hệ thống. Trước khi xóa, phương thức sẽ
+ * kiểm tra xem khoa có đang được sử dụng bởi sinh viên, giảng viên hoặc khóa học 
+ * hay không. Nếu có, việc xóa sẽ bị từ chối để đảm bảo tính toàn vẹn dữ liệu.
+ * Yêu cầu quyền truy cập: chỉ admin mới có quyền xóa khoa.
+ * 
+ * @param facultyId ID của khoa cần xóa
+ * @return std::expected<bool, Error> true nếu xóa thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<bool, Error> FacultyService::removeFaculty(const std::string& facultyId) {
      if (!_sessionContext->isAuthenticated() || !_sessionContext->getCurrentUserRole().has_value() || _sessionContext->getCurrentUserRole().value() != UserRole::ADMIN) {
         return std::unexpected(Error{ErrorCode::PERMISSION_DENIED, "Only admins can remove faculties."});

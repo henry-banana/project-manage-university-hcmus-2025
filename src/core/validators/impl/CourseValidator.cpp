@@ -1,5 +1,11 @@
 #include "CourseValidator.h"
 
+/**
+ * @brief Khởi tạo đối tượng CourseValidator với validator đầu vào chung
+ * 
+ * @param generalValidator Con trỏ đến đối tượng validator chung
+ * @throw std::invalid_argument Nếu generalValidator là nullptr
+ */
 CourseValidator::CourseValidator(std::shared_ptr<IGeneralInputValidator> generalValidator)
     : _generalValidator(std::move(generalValidator)) {
     if (!_generalValidator) {
@@ -7,6 +13,18 @@ CourseValidator::CourseValidator(std::shared_ptr<IGeneralInputValidator> general
     }
 }
 
+/**
+ * @brief Kiểm tra tính hợp lệ của đối tượng khóa học
+ * 
+ * Phương thức này kiểm tra tất cả các trường của đối tượng khóa học:
+ * - ID khóa học
+ * - Tên khóa học
+ * - Số tín chỉ
+ * - ID khoa
+ * 
+ * @param course Đối tượng khóa học cần kiểm tra
+ * @return ValidationResult Kết quả kiểm tra với danh sách lỗi (nếu có)
+ */
 ValidationResult CourseValidator::validateEntity(const Course& course) const {
     ValidationResult vr;
 
