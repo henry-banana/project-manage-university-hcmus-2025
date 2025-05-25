@@ -147,7 +147,7 @@ ValidationResult GeneralInputValidator::validateInteger(long long value, const s
 
 ValidationResult GeneralInputValidator::validateDate(int day, int month, int year, const std::string& fieldNamePrefix) const {
     ValidationResult vr;
-    if (year < 1900 || year > 2100) { // Giới hạn năm hợp lý
+    if (year < 0 || year > 2025) { // Giới hạn năm hợp lý
         vr.addError(ErrorCode::VALIDATION_ERROR, fieldNamePrefix + " year (" + std::to_string(year) + ") is out of valid range (1900-2100).");
     }
     if (month < 1 || month > 12) {
