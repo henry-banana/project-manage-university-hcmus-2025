@@ -1,103 +1,65 @@
 #include "FeeRecord.h"
-#include <iostream>  // For display()
-#include <format>   
+#include <sstream>
+#include "../../utils/StringUtils.h" // Giả sử có StringUtils::trim
 
-FeeRecord::FeeRecord() 
-    : _studentId(""), _totalFee(0), _paidFee(0) {} // Default constructor
-
-FeeRecord::FeeRecord(std::string studentId, int totalFee, int paidFee)
-    : _studentId(studentId), _totalFee(totalFee), _paidFee(paidFee) {
-    // Ensure total fee and paid fee are non-negative
-    if (totalFee < 0) {
-        _totalFee = 0;
-    }
-    if (paidFee < 0) {
-        _paidFee = 0;
-    }
+FeeRecord::FeeRecord(std::string studentId, long totalFee, long paidFee)
+    : _studentId(std::move(studentId)), _totalFee(0), _paidFee(0) {
+    setTotalFee(totalFee); // Dùng setter để có validation
+    setPaidFee(paidFee);   // Dùng setter
 }
 
-FeeRecord::FeeRecord(const FeeRecord& other)
-    : _studentId(other._studentId), _totalFee(other._totalFee), _paidFee(other._paidFee) {
-}
+const std::string& FeeRecord::getStudentId() const { return _studentId; }
+long FeeRecord::getTotalFee() const { return _totalFee; }
+long FeeRecord::getPaidFee() const { return _paidFee; }
+long FeeRecord::getDueFee() const { return _totalFee - _paidFee; }
+bool FeeRecord::isFullyPaid() const { return _paidFee >= _totalFee; }
 
-FeeRecord& FeeRecord::operator=(const FeeRecord& other) {
-    if (this != &other) { // Self-assignment check
-        _studentId = other._studentId;
-        _totalFee = other._totalFee;
-        _paidFee = other._paidFee;
-    }
-    return *this; // Return the current object
-}
-
-// Getters
-const std::string& FeeRecord::studentId() const { return _studentId; }
-int FeeRecord::totalFee() const { return _totalFee; }
-int FeeRecord::paidFee() const { return _paidFee; }
-
-bool FeeRecord::isFullyPaid() const {
-    return _paidFee >= _totalFee;
-}
-
-// Setters
-void FeeRecord::setTotalFee(int totalFee) {
-    _totalFee = (totalFee >= 0) ? totalFee : 0;
-    // Adjust paid fee if it now exceeds the new total fee
+bool FeeRecord::setTotalFee(long totalFee) {
+    if (totalFee < 0) return false;
+    _totalFee = totalFee;
+    // Đảm bảo paidFee không lớn hơn totalFee mới
     if (_paidFee > _totalFee) {
         _paidFee = _totalFee;
     }
+    return true;
 }
 
-void FeeRecord::setStudentId(const std::string& studentId) {
-    _studentId = studentId;
+bool FeeRecord::setPaidFee(long paidFee) {
+    if (paidFee < 0) return false;
+    if (paidFee > _totalFee) { // Không cho phép trả nhiều hơn tổng số nợ
+        _paidFee = _totalFee; // Chỉ trả tối đa bằng tổng số nợ
+        return true; // Hoặc false nếu coi đây là lỗi
+    }
+    _paidFee = paidFee;
+    return true;
 }
 
-void FeeRecord::setPaidFee(int paidFee) {
-    if (paidFee < 0) {
-        _paidFee = 0;
-    } else if (paidFee > _totalFee) {
-        _paidFee = _totalFee; // Clamp to total fee
-    } else {
-        _paidFee = paidFee;
-    }
-} 
+bool FeeRecord::makePayment(long amount) {
+    if (amount <= 0) return false; // Số tiền thanh toán phải dương
+    if (isFullyPaid()) return true; // Đã trả đủ, coi như thành công (không làm gì)
 
-// Actions
-bool FeeRecord::makePayment(int amount) {
-    if (amount <= 0) {
-        // Payment amount must be positive
-        return false;
-    }
-    int currentPending = _totalFee - _paidFee;
-    if (amount > currentPending) {
-        // Cannot pay more than what's pending (or could allow overpayment if needed)
-        // For now, just pay the pending amount if amount > pending
-         _paidFee += currentPending;
-         // Optionally return false or indicate partial payment applied
-         // return false; // Or modify return to indicate actual amount paid
-    } else {
-       _paidFee += amount;
-    }
-
-    // Optional: Clamp paid fee just in case (shouldn't be necessary with logic above)
-    // _paidFee = std::min(_paidFee, _totalFee);
-
-    return true; // Payment (partially or fully) applied
+    long newPaidFee = _paidFee + amount;
+    return setPaidFee(newPaidFee); // Dùng setPaidFee để có validation
 }
 
-// Display
-void FeeRecord::display() const {
-    std::cout << std::format(
-        "--- Fee Record ---\n"
-        "Student ID:   {}\n"
-        "Total Fee:    {}\n"
-        "Paid Fee:     {}\n"
-        "Pending Fee:  {}\n"
-        "Status:       {}\n"
-        "------------------\n",
-        _studentId,
-        _totalFee,
-        _paidFee,
-        _totalFee - _paidFee,
-        (isFullyPaid() ? "Fully Paid" : "Pending")
-    );
+std::string FeeRecord::getStringId() const { return _studentId; }
+
+std::string FeeRecord::display() const {
+    std::ostringstream oss;
+    oss << "--- Fee Record for Student: " << _studentId << " ---\n"
+        << "Total Fee  : " << _totalFee << "\n"
+        << "Paid Fee   : " << _paidFee << "\n"
+        << "Due Fee    : " << getDueFee() << "\n"
+        << "Status     : " << (isFullyPaid() ? "Fully Paid" : "Payment Due") << "\n"
+        << "------------------------------------";
+    return oss.str();
+}
+
+ValidationResult FeeRecord::validateBasic() const {
+    ValidationResult vr;
+    if (StringUtils::trim(_studentId).empty()) vr.addError(ErrorCode::VALIDATION_ERROR, "Student ID in FeeRecord cannot be empty.");
+    if (_totalFee < 0) vr.addError(ErrorCode::VALIDATION_ERROR, "Total fee cannot be negative.");
+    if (_paidFee < 0) vr.addError(ErrorCode::VALIDATION_ERROR, "Paid fee cannot be negative.");
+    if (_paidFee > _totalFee) vr.addError(ErrorCode::VALIDATION_ERROR, "Paid fee cannot exceed total fee.");
+    return vr;
 }

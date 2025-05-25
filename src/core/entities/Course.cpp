@@ -1,60 +1,60 @@
 #include "Course.h"
-#include <iostream>
-#include <format>
+#include <sstream>
+#include "../../utils/StringUtils.h"
 
 Course::Course(std::string id, std::string name, int credits, std::string facultyId)
-    : _id(std::move(id)),
-      _name(std::move(name)),
-      _credits(credits > 0 ? credits : 0), // Basic validation
-      _facultyId(std::move(facultyId))
-{}
+    : _id(std::move(id)), _name(std::move(name)), _credits(credits), _facultyId(std::move(facultyId)) {}
 
-Course::Course() 
-    : _id(""),
-      _name(""),
-      _credits(0),
-      _facultyId("") // Default constructor
-{}
+const std::string& Course::getId() const { return _id; }
+const std::string& Course::getName() const { return _name; }
+int Course::getCredits() const { return _credits; }
+const std::string& Course::getFacultyId() const { return _facultyId; }
 
-Course::Course(const Course& other) // Copy constructor
-    : _id(other._id),
-      _name(other._name),
-      _credits(other._credits),
-      _facultyId(other._facultyId)
-{}
-
-Course& Course::operator=(const Course& other) { // Copy assignment operator
-    if (this != &other) { // Self-assignment check
-        _id = other._id;
-        _name = other._name;
-        _credits = other._credits;
-        _facultyId = other._facultyId;
-    }
-    
-    return *this;
+bool Course::setName(const std::string& name) {
+    std::string trimmed = StringUtils::trim(name);
+    if (trimmed.empty() || trimmed.length() > 150) return false;
+    _name = trimmed;
+    return true;
 }
 
-// Getters
-const std::string& Course::id() const { return _id; }
-const std::string& Course::name() const { return _name; }
-int Course::credits() const { return _credits; }
-const std::string& Course::facultyId() const { return _facultyId; }
+bool Course::setCredits(int credits) {
+    if (credits <= 0 || credits > 10) { // Giả sử tín chỉ từ 1-10
+        return false;
+    }
+    _credits = credits;
+    return true;
+}
 
-// Setters
-void Course::setId(const std::string& id) { _id = id; }
-void Course::setName(const std::string& name) { _name = name; }
-void Course::setCredits(int credits) { _credits = (credits >= 0) ? credits : 0; }
-void Course::setFacultyId(const std::string& facultyId) { _facultyId = facultyId; }
+bool Course::setFacultyId(const std::string& facultyId) {
+    std::string trimmed = StringUtils::trim(facultyId);
+    if (trimmed.empty() || trimmed.length() > 10) return false;
+    _facultyId = trimmed;
+    return true;
+}
 
-// Display
-void Course::display() const {
-    std::cout << std::format(
-        "--- Course Details ---\n"
-        "ID:         {}\n"
-        "Name:       {}\n"
-        "Credits:    {}\n"
-        "Faculty ID: {}\n"
-        "----------------------\n",
-        _id, _name, _credits, _facultyId
-    );
+std::string Course::getStringId() const { return _id; }
+
+std::string Course::display() const {
+    std::ostringstream oss;
+    oss << "--- Course Information ---\n"
+        << "ID         : " << _id << "\n"
+        << "Name       : " << _name << "\n"
+        << "Credits    : " << _credits << "\n"
+        << "Faculty ID : " << _facultyId << "\n"
+        << "------------------------";
+    return oss.str();
+}
+
+ValidationResult Course::validateBasic() const {
+    ValidationResult vr;
+    if (StringUtils::trim(_id).empty()) vr.addError(ErrorCode::VALIDATION_ERROR, "Course ID cannot be empty.");
+    else if (_id.length() > 20) vr.addError(ErrorCode::VALIDATION_ERROR, "Course ID too long (max 20 chars).");
+
+    if (StringUtils::trim(_name).empty()) vr.addError(ErrorCode::VALIDATION_ERROR, "Course name cannot be empty.");
+    else if (_name.length() > 150) vr.addError(ErrorCode::VALIDATION_ERROR, "Course name too long (max 150 chars).");
+
+    if (_credits <= 0 || _credits > 10) vr.addError(ErrorCode::VALIDATION_ERROR, "Credits must be between 1 and 10.");
+
+    if (StringUtils::trim(_facultyId).empty()) vr.addError(ErrorCode::VALIDATION_ERROR, "Faculty ID for course cannot be empty.");
+    return vr;
 }

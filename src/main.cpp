@@ -1,124 +1,239 @@
-#include "core/repo/csv/CsvStudentRepo.h"
-#include "core/repo/csv/CsvTeacherRepo.h"
-#include "core/repo/csv/CsvFacultyRepo.h"
-#include "core/repo/csv/CsvLoginRepo.h"
-#include "core/repo/csv/CsvCourseRepo.h"
-#include "core/repo/csv/CsvFeeRepo.h"
-#include "core/repo/csv/CsvSalaryRepo.h"
-#include "core/repo/csv/CsvResultRepo.h"
-#include "core/repo/csv/CsvEnrollmentRepo.h" // If needed for enrollment repo
-// Include interfaces to allow shared_ptr<Interface>
-#include "core/repo/interface/IStudentRepository.h"
-#include "core/repo/interface/ITeacherRepository.h"
-#include "core/repo/interface/IFacultyRepository.h"
-#include "core/repo/interface/ICourseRepository.h"
-#include "core/repo/interface/IFeeRepository.h"
-#include "core/repo/interface/ISalaryRepository.h"
-#include "core/repo/interface/IResultRepository.h"
-#include "core/repo/interface/ILoginRepository.h"
-
-// Include only service headers, not implementation files
-#include "core/services/AuthService.h"
-#include "core/services/StudentService.h"
-#include "core/services/TeacherService.h"
-#include "core/services/FacultyService.h"
-#include "core/services/CourseService.h"
-#include "core/services/EnrollmentService.h"
-#include "core/services/ResultService.h"
-#include "core/services/FinanceService.h"
-#include "core/services/AdminService.h"
-
-#include "ui/ConsoleUI.h"
-#include "utils/Logger.h"
-#include "utils/PasswordInput.h" // For password input
-#include "utils/ConsoleUtils.h" // For pauseExecution
-
 #include <iostream>
-#include <memory> // For std::make_shared
+#include <string>
+#include <memory>
+#include <stdexcept> // For std::runtime_error
 
-// Define paths for CSV files (adjust as needed)
-const std::string DATA_DIR = "data/"; // Assuming a data subdirectory
-const std::string STUDENT_CSV = DATA_DIR + "students.csv";
-const std::string TEACHER_CSV = DATA_DIR + "teachers.csv";
-const std::string FACULTY_CSV = DATA_DIR + "faculties.csv"; // Depts/Schools
-const std::string COURSE_CSV = DATA_DIR + "courses.csv";
-const std::string FEE_CSV = DATA_DIR + "fees.csv";
-const std::string SALARY_CSV = DATA_DIR + "salaries.csv";
-const std::string RESULT_CSV = DATA_DIR + "results.csv"; // Stores CourseResult items
-const std::string ENROLLMENT_CSV = DATA_DIR + "enrollments.csv"; // student_id, course_id pairs
-const std::string LOGIN_CSV = DATA_DIR + "logins.csv";
+// Common includes
+#include "common/AppConfig.h"
+#include "common/ErrorType.h" // Dù không dùng trực tiếp ở main, nhưng cần cho các thành phần khác
+#include "common/UserRole.h"
+#include "common/LoginStatus.h"
 
-int main() {
-    // Initialize Logger
-    Logger::getInstance().setLogLevel(Logger::Level::INFO); // Set desired log level
-    // Logger::getInstance().setLogFile(DATA_DIR + "application.log"); // Optional: custom log file path
+// Utilities
+#include "utils/ConfigLoader.h"
+#include "utils/Logger.h"
 
-    LOG_INFO("Application starting...");
+// Core components
+#include "core/data_access/DaoFactory.h"
+#include "core/validators/impl/GeneralInputValidator.h" // Triển khai cụ thể
+#include "core/services/SessionContext.h"
 
-    try {
-        // 1. Create Repository Instances (using CSV implementations)
-        // Use interfaces for pointers to allow easy switching later (e.g., to Database repos)
-        auto studentRepo = std::make_shared<CsvStudentRepo>(STUDENT_CSV);
-        auto teacherRepo = std::make_shared<CsvTeacherRepo>(TEACHER_CSV);
-        auto facultyRepo = std::make_shared<CsvFacultyRepo>(FACULTY_CSV);
-        // TODO: Create and include CsvCourseRepo, CsvFeeRepo, CsvSalaryRepo, CsvResultRepo, CsvEnrollmentRepo implementations
-         auto loginRepo = std::make_shared<CsvLoginRepo>(LOGIN_CSV);
-        //  // Placeholder repos until implemented:
+// Service implementations
+#include "core/services/impl/AuthService.h"
+#include "core/services/impl/StudentService.h"
+#include "core/services/impl/TeacherService.h"
+#include "core/services/impl/FacultyService.h"
+#include "core/services/impl/CourseService.h"
+#include "core/services/impl/EnrollmentService.h"
+#include "core/services/impl/ResultService.h"
+#include "core/services/impl/FinanceService.h"
+#include "core/services/impl/AdminService.h"
 
-        auto courseRepo = std::make_shared<CsvCourseRepo>(COURSE_CSV); // Assumes CsvCourseRepo exists
-        auto feeRepo = std::make_shared<CsvFeeRepo>(FEE_CSV);       // Assumes CsvFeeRepo exists
-        auto salaryRepo = std::make_shared<CsvSalaryRepo>(SALARY_CSV); // Assumes CsvSalaryRepo exists
-        auto resultRepo = std::make_shared<CsvResultRepo>(RESULT_CSV); // Assumes CsvResultRepo exists
-
-         // Enrollment might be part of CourseRepo or its own CsvEnrollmentRepo(ENROLLMENT_CSV)
+// UI
+#include "ui/ConsoleUI.h"
 
 
-        // 2. Create Service Instances, Injecting Repositories
-        auto authService = std::make_shared<AuthService>(loginRepo);
-        auto studentService = std::make_shared<StudentService>(studentRepo, facultyRepo, authService);
-        auto teacherService = std::make_shared<TeacherService>(teacherRepo, facultyRepo, authService);
-        auto facultyService = std::make_shared<FacultyService>(facultyRepo, studentRepo, teacherRepo, courseRepo); // Added dependency checks
-        auto courseService = std::make_shared<CourseService>(courseRepo, facultyRepo);
-        // Enrollment Service needs CourseRepo and StudentRepo
-        auto enrollmentService = std::make_shared<EnrollmentService>(studentRepo, courseRepo);
-         // Result Service needs ResultRepo, StudentRepo, CourseRepo, EnrollmentService
-        auto resultService = std::make_shared<ResultService>(resultRepo, studentRepo, courseRepo, enrollmentService);
-        // Finance Service needs FeeRepo, SalaryRepo, StudentRepo, TeacherRepo
-        auto financeService = std::make_shared<FinanceService>(feeRepo, salaryRepo, studentRepo, teacherRepo);
-         // Admin Service needs view access to various repos
-        auto adminService = std::make_shared<AdminService>(studentRepo, teacherRepo, facultyRepo /*, courseRepo */);
-
-
-        // 3. Create UI Instance, Injecting Services
-        ConsoleUI consoleUI(
-            authService,
-            studentService,
-            teacherService,
-            facultyService,
-            courseService,
-            enrollmentService,
-            resultService,
-            financeService,
-            adminService
-        );
-
-        // 4. Run the UI
-        consoleUI.run();
-
-    } catch (const std::exception& e) {
-        LOG_CRITICAL("Unhandled exception caught in main: " + std::string(e.what()));
-        std::cerr << "Critical Error: " << e.what() << std::endl;
-        std::cerr << "Application will terminate." << std::endl;
-        pauseExecution("Press Enter to exit...");
-        return 1; // Indicate error exit
-    } catch (...) {
-        LOG_CRITICAL("Unknown unhandled exception caught in main.");
-        std::cerr << "Unknown Critical Error. Application will terminate." << std::endl;
-        pauseExecution("Press Enter to exit...");
-        return 1; // Indicate error exit
+int main(int argc, char* argv[]) {
+    // Xử lý tham số dòng lệnh cơ bản (ví dụ: đường dẫn file config)
+    std::string configFilePath = "config/app_config.ini"; // Mặc định
+    if (argc > 1) {
+        configFilePath = argv[1];
     }
 
+    // 1. Load AppConfig
+    AppConfig appConfig; // Vẫn khởi tạo default
+    ConfigLoader configLoader(configFilePath);
+    auto configLoadResult = configLoader.loadConfig();
 
-    LOG_INFO("Application finished cleanly.");
-    return 0; // Success
+    if (configLoadResult.has_value()) {
+        appConfig = configLoadResult.value(); // (➕) Dùng .value()
+    } else {
+        // Không load được config, dùng default hoặc báo lỗi và thoát
+        std::cerr << "WARNING: Could not load application configuration from '" << configFilePath 
+                  << "'. Error: " << configLoadResult.error().message << std::endl;
+        
+        appConfig.dataSourceType = DataSourceType::MOCK; // Mặc định an toàn
+        appConfig.logLevel = Logger::Level::DEBUG;       // Log nhiều hơn khi lỗi config
+        appConfig.logFilePath = "logs/app_default_error.log";
+        if (appConfig.dataSourceType == DataSourceType::SQL) {
+            // Cần một đường dẫn mặc định hợp lý hoặc yêu cầu người dùng cung cấp
+            appConfig.sqlConnectionString = "database/university.db"; 
+        }
+        std::cerr << "Using emergency default configuration with "
+                  << (appConfig.dataSourceType == DataSourceType::MOCK ? "Mock DAOs." : 
+                     (appConfig.dataSourceType == DataSourceType::SQL ? "SQL DAOs (default DB path)." : "Unknown DAOs.")) 
+                  << std::endl;
+    }
+
+    // 2. Configure Logger
+    // Logger được tạo là singleton, getInstance() sẽ tự khởi tạo nếu cần
+    try {
+        Logger::getInstance().configure(appConfig.logLevel, appConfig.logFilePath.string());
+    } catch (const std::exception& e) {
+        std::cerr << "FATAL: Failed to configure logger: " << e.what() << std::endl;
+        // Không thể ghi log nếu logger lỗi, nên chỉ in ra cerr
+        return 1; // Thoát nếu logger không thể khởi tạo
+    }
+    
+    // std::cin.get(); // Đảm bảo cin không bị lỗi khi đọc dòng đầu tiên
+    
+    LOG_INFO("============================================================");
+    LOG_INFO("University Management System - Application Starting...");
+    LOG_INFO("Configuration loaded. Data Source: " + 
+             std::string(appConfig.dataSourceType == DataSourceType::SQL ? "SQL" : 
+                        std::string(appConfig.dataSourceType == DataSourceType::MOCK ? "Mock" : "CSV (if implemented)")) +
+             ". Log Level: " + Logger::getInstance().levelToString(appConfig.logLevel)); // Lấy level hiện tại từ logger
+    LOG_INFO("============================================================");
+
+
+    try {
+        // 3. Khởi tạo các thành phần cốt lõi và dependencies
+        LOG_DEBUG("Initializing core components...");
+
+        auto sessionContext = std::make_shared<SessionContext>();
+        LOG_DEBUG("SessionContext initialized.");
+
+        auto generalInputValidator = std::make_shared<GeneralInputValidator>();
+        LOG_DEBUG("GeneralInputValidator initialized.");
+
+        // Tạo các DAO thông qua DaoFactory
+        // DaoFactory sẽ tự quản lý DatabaseAdapter nếu dùng SQL
+        LOG_DEBUG("Initializing DAOs via DaoFactory...");
+        auto studentDao = DaoFactory::createStudentDao(appConfig);
+        auto teacherDao = DaoFactory::createTeacherDao(appConfig);
+        auto facultyDao = DaoFactory::createFacultyDao(appConfig);
+        auto courseDao = DaoFactory::createCourseDao(appConfig);
+        auto loginDao = DaoFactory::createLoginDao(appConfig);
+        auto enrollmentDao = DaoFactory::createEnrollmentDao(appConfig);
+        auto courseResultDao = DaoFactory::createCourseResultDao(appConfig);
+        auto feeRecordDao = DaoFactory::createFeeRecordDao(appConfig);
+        auto salaryRecordDao = DaoFactory::createSalaryRecordDao(appConfig);
+        LOG_INFO("DAOs initialized successfully.");
+
+        // Tạo các Service, inject dependencies
+        LOG_DEBUG("Initializing Services...");
+        auto authService = std::make_shared<AuthService>(
+            loginDao, 
+            studentDao, 
+            teacherDao, // AuthService có dùng teacherDao để check email khi student đăng ký
+            generalInputValidator, 
+            sessionContext
+        );
+
+        auto studentService = std::make_shared<StudentService>(
+            studentDao, 
+            teacherDao,     // (➕) Truyền teacherDao vào đây
+            facultyDao, 
+            generalInputValidator, 
+            sessionContext
+        );
+
+        auto teacherService = std::make_shared<TeacherService>(
+            teacherDao, 
+            studentDao,     // TeacherService dùng studentDao để check email trùng khi admin/teacher cập nhật email teacher
+            facultyDao, 
+            generalInputValidator, 
+            sessionContext
+        );
+
+        auto facultyService = std::make_shared<FacultyService>(
+            facultyDao, 
+            studentDao,     // FacultyService dùng để check ràng buộc khi xóa faculty
+            teacherDao,     // FacultyService dùng để check ràng buộc khi xóa faculty
+            courseDao,      // FacultyService dùng để check ràng buộc khi xóa faculty
+            generalInputValidator, 
+            sessionContext
+        );
+
+        auto courseService = std::make_shared<CourseService>(
+            courseDao, 
+            facultyDao, 
+            enrollmentDao,  // CourseService dùng để check ràng buộc khi xóa course
+            courseResultDao,// CourseService dùng để check ràng buộc khi xóa course
+            generalInputValidator, 
+            sessionContext
+        );
+
+        auto enrollmentService = std::make_shared<EnrollmentService>(
+            enrollmentDao, 
+            studentDao, 
+            courseDao, 
+            generalInputValidator, 
+            sessionContext
+        );
+
+        auto resultService = std::make_shared<ResultService>(
+            courseResultDao, 
+            facultyDao,     // (➕) Truyền facultyDao vào đây (theo constructor của bạn)
+            studentDao, 
+            courseDao, 
+            enrollmentDao, 
+            generalInputValidator, 
+            sessionContext
+        );
+
+        auto financeService = std::make_shared<FinanceService>(
+            feeRecordDao, 
+            salaryRecordDao, 
+            studentDao, 
+            teacherDao,
+            facultyDao,     // (➕) Truyền facultyDao vào đây (theo constructor của bạn)
+            generalInputValidator, 
+            sessionContext
+        );
+
+        auto adminService = std::make_shared<AdminService>(
+            studentDao, 
+            teacherDao, 
+            loginDao, 
+            feeRecordDao, 
+            salaryRecordDao, 
+            enrollmentDao, 
+            courseResultDao, 
+            generalInputValidator, 
+            sessionContext
+        );
+        LOG_INFO("Services initialized successfully.");
+
+        // 4. Khởi tạo ConsoleUI
+        LOG_DEBUG("Initializing ConsoleUI...");
+        ConsoleUI consoleUI(
+            authService, studentService, teacherService, facultyService,
+            courseService, enrollmentService, resultService, financeService, adminService
+        );
+        LOG_INFO("ConsoleUI initialized. Starting UI run loop...");
+
+        // 5. Chạy ứng dụng UI
+        consoleUI.run();
+
+    } catch (const std::runtime_error& e) {
+        LOG_CRITICAL("Runtime error during application initialization or execution: " + std::string(e.what()));
+        std::cerr << "CRITICAL RUNTIME ERROR: " << e.what() << std::endl;
+        Logger::getInstance().critical("Application terminated due to runtime_error: " + std::string(e.what())); // Log lần cuối
+        Logger::releaseInstance(); // Đảm bảo logger được giải phóng
+        return 1;
+    } catch (const std::exception& e) {
+        LOG_CRITICAL("Unhandled C++ standard exception in main: " + std::string(e.what()));
+        std::cerr << "CRITICAL UNHANDLED EXCEPTION: " << e.what() << std::endl;
+        Logger::getInstance().critical("Application terminated due to std::exception: " + std::string(e.what()));
+        Logger::releaseInstance();
+        return 1;
+    } catch (...) {
+        LOG_CRITICAL("Unknown unhandled exception in main!");
+        std::cerr << "CRITICAL UNKNOWN EXCEPTION!" << std::endl;
+        Logger::getInstance().critical("Application terminated due to unknown exception.");
+        Logger::releaseInstance();
+        return 1;
+    }
+
+    LOG_INFO("============================================================");
+    LOG_INFO("University Management System - Application Shutting Down...");
+    LOG_INFO("============================================================");
+    
+    DaoFactory::cleanup(); // Nếu bạn đã triển khai hàm này để đóng DB adapter
+    // Hiện tại, DB adapter (SQLiteAdapter) sẽ tự đóng kết nối trong destructor của nó
+    // khi _dbAdapterInstance trong DaoFactory được giải phóng (khi chương trình kết thúc).
+
+    Logger::releaseInstance(); // Dọn dẹp Logger singleton
+    return 0;
 }

@@ -1,46 +1,39 @@
 #include "Faculty.h"
-#include <iostream> // Thêm thư viện iostream để sử dụng std::cout
-#include <format>
+#include <sstream>
+#include "../../utils/StringUtils.h" 
 
-Faculty::Faculty() : _id(""), _name("") {}
+Faculty::Faculty(std::string id, std::string name)
+    : _id(std::move(id)), _name(std::move(name)) {}
 
-// Rule of Three
-Faculty::Faculty(std::string id, std::string name) 
-: _id(std::move(id)), _name(std::move(name)) {}
+const std::string& Faculty::getId() const { return _id; }
+const std::string& Faculty::getName() const { return _name; }
 
-Faculty::Faculty(const Faculty& other) : _id(other._id), _name(other._name) {}
-
-Faculty& Faculty::operator=(const Faculty& other) {
-    if (this != &other) { // Kiểm tra tự gán
-        _id = other._id;
-        _name = other._name;
+bool Faculty::setName(const std::string& name) {
+    std::string trimmed = StringUtils::trim(name);
+    if (trimmed.empty() || trimmed.length() > 100) {
+        return false;
     }
-    return *this;
+    _name = trimmed;
+    return true;
 }
 
-// Getter & Setter
-const std::string& Faculty::id() const {
-    return _id;
+std::string Faculty::getStringId() const { return _id; }
+
+std::string Faculty::display() const {
+    std::ostringstream oss;
+    oss << "--- Faculty Information ---\n"
+        << "ID   : " << _id << "\n"
+        << "Name : " << _name << "\n"
+        << "-------------------------";
+    return oss.str();
 }
 
-const std::string& Faculty::name() const {
-    return _name;
-}
+ValidationResult Faculty::validateBasic() const {
+    ValidationResult vr;
+    if (StringUtils::trim(_id).empty()) vr.addError(ErrorCode::VALIDATION_ERROR, "Faculty ID cannot be empty.");
+    else if (_id.length() > 10) vr.addError(ErrorCode::VALIDATION_ERROR, "Faculty ID too long (max 10 chars).");
 
-void Faculty::setId(const std::string& id) {
-    _id = id;
-}
-
-void Faculty::setName(const std::string& name) {
-    _name = name;
-}
-
-// Phương thức hiển thị thông tin khoa
-void Faculty::display() const {
-    std::cout << std::format(
-        "--- Faculty Information ---\n"
-        "ID: {}\n"
-        "Name: {}\n",
-        id(), name()
-    );
+    if (StringUtils::trim(_name).empty()) vr.addError(ErrorCode::VALIDATION_ERROR, "Faculty name cannot be empty.");
+    else if (_name.length() > 100) vr.addError(ErrorCode::VALIDATION_ERROR, "Faculty name too long (max 100 chars).");
+    return vr;
 }

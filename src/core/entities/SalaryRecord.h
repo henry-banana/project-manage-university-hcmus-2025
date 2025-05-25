@@ -1,36 +1,30 @@
-#ifndef SALARY_RECORD_H
-#define SALARY_RECORD_H
+#ifndef SALARYRECORD_H
+#define SALARYRECORD_H
 
+#include "IEntity.h"
 #include <string>
 
-class SalaryRecord {
+class SalaryRecord : public IEntity {
 private:
-    std::string _teacherId;
-    int _basicMonthlyPay;
-    // double bonusRate_; // Có thể lưu tỉ lệ bonus ở đây
-
-protected:
+    std::string _teacherId; // ID của SalaryRecord
+    long _basicMonthlyPay;
+    // double _bonusRate; // (Optional)
+    // int _allowances;   // (Optional)
 
 public:
-    SalaryRecord();
-    SalaryRecord(std::string facultyId, int basicMonthlyPay);
-    SalaryRecord(const SalaryRecord& other);
-    SalaryRecord& operator=(const SalaryRecord& other);
-    ~SalaryRecord() = default; 
+    SalaryRecord(std::string teacherId, long basicMonthlyPay);
 
-    // Getter & Setter
-    const std::string& teacherId() const;
-    int basicMonthlyPay() const;
-    
-    void setTeacherId(const std::string& teacherId);
-    void setBasicMonthlyPay(int newPay);
-    // Tính toán lương (có thể đặt ở FinanceService)
+    // Getters
+    const std::string& getTeacherId() const;
+    long getBasicMonthlyPay() const;
 
-    void display() const; // Hiển thị thông tin lương
+    // Setters
+    bool setBasicMonthlyPay(long pay); // >= 0
 
-    int calculateAnnualBasicPay() const;
-    int calculateAnnualBonus(double bonusRate = 0.9) const; // Ví dụ bonus rate
-    int calculateTotalAnnualPay(double bonusRate = 0.9) const;
+    // Implement IEntity
+    std::string getStringId() const override; // Trả về _teacherId
+    std::string display() const override;
+    ValidationResult validateBasic() const override;
 };
 
-#endif // SALARY_RECORD_H
+#endif // SALARYRECORD_H

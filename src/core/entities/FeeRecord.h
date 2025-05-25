@@ -1,34 +1,34 @@
-#ifndef FEE_RECORD_H
-#define FEE_RECORD_H
+#ifndef FEERECORD_H
+#define FEERECORD_H
 
+#include "IEntity.h"
 #include <string>
 
-class FeeRecord {
+class FeeRecord : public IEntity {
 private:
-    std::string _studentId;
-    int _totalFee;
-    int _paidFee; // Số tiền đã thanh toán
-
-protected:
+    std::string _studentId; // Đây sẽ là ID của FeeRecord
+    long _totalFee;
+    long _paidFee;
 
 public:
-    FeeRecord(); // Constructor mặc định
-    FeeRecord(std::string studentId, int totalFee, int paidFee); 
-    FeeRecord(const FeeRecord& other); // Copy constructor
-    FeeRecord& operator=(const FeeRecord& other); // Toán tử gán sao chép
-    ~FeeRecord() = default; // Destructor ảo để đảm bảo dọn dẹp đúng cách trong kế thừa
+    FeeRecord(std::string studentId, long totalFee, long paidFee = 0);
 
-    const std::string& studentId() const;
-    int totalFee() const;
-    int paidFee() const; // Số tiền đã thanh toán;
-    bool isFullyPaid() const; // Kiểm tra xem đã thanh toán đủ chưa
+    // Getters
+    const std::string& getStudentId() const;
+    long getTotalFee() const;
+    long getPaidFee() const;
+    long getDueFee() const;
+    bool isFullyPaid() const;
 
-    void setStudentId(const std::string& studentId);
-    void setTotalFee(int totalFee);
-    void setPaidFee(int paidFee); // Cập nhật số tiền đã thanh toán
+    // Setters & Actions
+    bool setTotalFee(long totalFee); // >= 0
+    bool setPaidFee(long paidFee);   // >= 0 and <= totalFee
+    bool makePayment(long amount); // Trả về true nếu thanh toán hợp lệ
 
-    bool makePayment(int amount); // Thanh toán một khoản tiền
-    void display() const; // Hiển thị thông tin hóa đơn
+    // Implement IEntity
+    std::string getStringId() const override; // Trả về _studentId
+    std::string display() const override;
+    ValidationResult validateBasic() const override;
 };
 
-#endif // FEE_RECORD_H
+#endif // FEERECORD_H

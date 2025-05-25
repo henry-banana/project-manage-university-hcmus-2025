@@ -1,35 +1,33 @@
 #ifndef COURSE_H
 #define COURSE_H
 
+#include "IEntity.h"
 #include <string>
 
-class Course {
+class Course : public IEntity {
 private:
-    std::string _id; // Ví dụ: "CE142"
-    std::string _name; // Ví dụ: "OOPC"
-    int _credits;
-    std::string _facultyId; // ID khoa mà môn học thuộc về
-
-protected:
+    std::string _id;         // Mã môn học (e.g., "CS101")
+    std::string _name;       // Tên môn học (e.g., "Introduction to Programming")
+    int _credits;            // Số tín chỉ
+    std::string _facultyId;  // Khoa quản lý môn học
 
 public:
-    Course(); // Constructor mặc định
     Course(std::string id, std::string name, int credits, std::string facultyId);
-    Course(const Course& other); // Copy constructor
-    Course& operator=(const Course& other); // Toán tử gán sao chép
-    ~Course() = default; // Destructor ảo để đảm bảo dọn dẹp đúng cách trong kế thừa
 
-    const std::string& id() const;
-    const std::string& name() const;
-    int credits() const;
-    const std::string& facultyId() const;
+    // Getters & Setters
+    const std::string& getId() const;
+    const std::string& getName() const;
+    int getCredits() const;
+    const std::string& getFacultyId() const;
 
-    void setId(const std::string& id);
-    void setName(const std::string& name);
-    void setCredits(int credits);
-    void setFacultyId(const std::string& facultyId);
+    bool setName(const std::string& name);
+    bool setCredits(int credits); // Phải > 0
+    bool setFacultyId(const std::string& facultyId); // Cần check tồn tại ở Service
 
-    void display() const; // Hiển thị thông tin môn học
+    // Implement IEntity
+    std::string getStringId() const override;
+    std::string display() const override;
+    ValidationResult validateBasic() const override;
 };
 
 #endif // COURSE_H

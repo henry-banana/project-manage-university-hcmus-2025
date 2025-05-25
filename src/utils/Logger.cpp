@@ -1,124 +1,144 @@
 #include "Logger.h"
-#include <iostream> // For initial errors if file fails=
-#include <iomanip> // For std::put_time
-#include <ctime>
-#include <chrono> // For time functions
+#include <iostream>  
+#include <iomanip>   
+#include <chrono>    
+#include <filesystem> 
+#include <sstream>   
 
-Logger::Logger() : _logLevel(Level::INFO) {
-    // Constructor attempts to open the default file immediately
-    // Using unique_ptr to manage the ofstream resource
-    try {
-        _logFile = std::make_unique<std::ofstream>(_logFilename);
-         if (!_logFile || !_logFile->is_open()) {
-            std::cerr << "Error: Failed to open default log file: " << _logFilename << std::endl;
-             _logFile.reset(); // Ensure unique_ptr is null if open failed
-         } else {
-             info("Logger initialized. Logging to: " + _logFilename); // Log initialization
-         }
-    } catch (const std::exception& e) {
-        std::cerr << "Exception opening default log file '" << _logFilename << "': " << e.what() << std::endl;
-        _logFile.reset();
-    }
-}
+std::shared_ptr<Logger> Logger::_instance = nullptr; 
+std::mutex Logger::_mutex;
+
+Logger::Logger() : _logLevel(Logger::Level::INFO), _logFilename("app.log") {} // (➕) Dùng Logger::Level
 
 Logger::~Logger() {
+    // std::cout << "Logger destructor called." << std::endl; // Dùng cho debug nếu cần
     if (_logFile && _logFile->is_open()) {
-        info("Logger shutting down."); // Log shutdown
+        // Không nên ghi log ở đây nữa vì instance có thể đã bị reset.
+        // Chỉ đơn giản là đóng file.
+        _logFile->flush();
         _logFile->close();
     }
 }
 
 Logger& Logger::getInstance() {
-    // Static instance created on first call (thread-safe in C++11 and later)
-    static Logger instance;
-    return instance;
-}
-
-void Logger::setLogFile(const std::string& filename) {
-    if (_logFile && _logFile->is_open()) {
-        info("Closing previous log file: " + _logFilename);
-        _logFile->close();
+    std::lock_guard<std::mutex> lock(_mutex); 
+    if (_instance == nullptr) {
+        struct EnableMakeSharedLogger : public Logger {};
+        _instance = std::make_shared<EnableMakeSharedLogger>();
     }
+    return *_instance; 
+}
+
+void Logger::releaseInstance() {
+    std::lock_guard<std::mutex> lock(_mutex);
+    if (_instance) { // Kiểm tra _instance còn tồn tại không
+        if (_instance->_logFile && _instance->_logFile->is_open()) {
+            // Ghi trực tiếp, không dùng this->log()
+            *(_instance->_logFile) << "[" << _instance->getCurrentTimestamp() << "] [" << _instance->levelToString(Logger::Level::INFO) << "] Logger instance explicitly released. Log file will be closed by destructor if not already." << std::endl;
+            _instance->_logFile->flush(); 
+            // Không close ở đây, để destructor của Logger làm việc đó khi _instance.reset()
+        }
+        _instance.reset(); 
+    }
+}
+
+void Logger::configure(Logger::Level level, const std::string& filename) { // (➕) Dùng Logger::Level
+    std::lock_guard<std::mutex> lock(_mutex); 
+    _logLevel = level;
     _logFilename = filename;
-     try {
-        _logFile = std::make_unique<std::ofstream>(_logFilename);
-         if (!_logFile || !_logFile->is_open()) {
-            std::cerr << "Error: Failed to open new log file: " << _logFilename << std::endl;
-            _logFile.reset();
-         } else {
-            info("Logger switched log file to: " + _logFilename);
-         }
-     } catch (const std::exception& e) {
-         std::cerr << "Exception opening new log file '" << _logFilename << "': " << e.what() << std::endl;
-         _logFile.reset();
-     }
+
+    if (_logFile && _logFile->is_open()) {
+        _logFile->close(); 
+    }
+
+    try {
+        std::filesystem::path logPath(_logFilename);
+        if (logPath.has_parent_path() && !std::filesystem::exists(logPath.parent_path())) {
+            std::filesystem::create_directories(logPath.parent_path());
+        }
+        _logFile = std::make_unique<std::ofstream>(_logFilename, std::ios_base::app); 
+        if (!_logFile || !_logFile->is_open()) {
+            std::cerr << "Logger Error: Failed to open log file: " << _logFilename << std::endl;
+            _logFile.reset(); 
+        } else {
+             *_logFile << "[" << getCurrentTimestamp() << "] "
+                       << "[" << levelToString(Logger::Level::INFO) << "] " 
+                       << "Logger configured. Level: " << levelToString(_logLevel)
+                       << ". File: " << _logFilename << std::endl;
+        }
+    } catch (const std::filesystem::filesystem_error& e) {
+        std::cerr << "Logger Filesystem Error: " << e.what() << " while configuring log file: " << _logFilename << std::endl;
+        _logFile.reset();
+    } catch (const std::exception& e) {
+        std::cerr << "Logger Exception: " << e.what() << " while configuring log file: " << _logFilename << std::endl;
+        _logFile.reset();
+    }
 }
 
-void Logger::setLogLevel(Level level) {
-     _logLevel = level;
-     // Log the level change itself (using INFO level)
-     info("Log level set to: " + levelToString(level));
+void Logger::setLogLevel(Logger::Level level) { // (➕) Dùng Logger::Level
+    std::lock_guard<std::mutex> lock(_mutex);
+    Logger::Level oldLevel = _logLevel; // (➕) Dùng Logger::Level
+    _logLevel = level;
+    if (_logFile && _logFile->is_open()) { 
+         *_logFile << "[" << getCurrentTimestamp() << "] "
+                   << "[" << levelToString(Logger::Level::INFO) << "] "
+                   << "Log level changed from " << levelToString(oldLevel)
+                   << " to " << levelToString(_logLevel) << std::endl;
+    }
 }
-
 
 std::string Logger::getCurrentTimestamp() const {
     auto now = std::chrono::system_clock::now();
     auto now_c = std::chrono::system_clock::to_time_t(now);
-    std::tm now_tm;
+    std::tm now_tm = {}; 
 
-    // Use platform-specific safe versions for converting time_t to tm
-    #ifdef _WIN32
+    #if defined(_WIN32) || defined(_WIN64)
         localtime_s(&now_tm, &now_c);
     #else
-        localtime_r(&now_c, &now_tm); // POSIX thread-safe version
+        localtime_r(&now_c, &now_tm);
     #endif
 
     std::ostringstream oss;
     oss << std::put_time(&now_tm, "%Y-%m-%d %H:%M:%S");
-    // Add milliseconds (optional)
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
     oss << '.' << std::setfill('0') << std::setw(3) << ms.count();
     return oss.str();
 }
 
-std::string Logger::levelToString(Level level) const {
-     switch (level) {
-         case Level::DEBUG:    return "DEBUG";
-         case Level::INFO:     return "INFO "; // Pad for alignment
-         case Level::WARN:     return "WARN ";
-         case Level::ERROR:    return "ERROR";
-         case Level::CRITICAL: return "CRITICAL";
-         default:             return "UNKNOWN";
-     }
- }
+// (➕) Định nghĩa hàm public này
+std::string Logger::levelToString(Logger::Level level) const { // (➕) Dùng Logger::Level
+    switch (level) {
+        case Logger::Level::DEBUG:    return "DEBUG   ";
+        case Logger::Level::INFO:     return "INFO    ";
+        case Logger::Level::WARN:     return "WARNING ";
+        case Logger::Level::ERROR:    return "ERROR   ";
+        case Logger::Level::CRITICAL: return "CRITICAL";
+        default:                      return "UNKNOWN ";
+    }
+}
 
+void Logger::log(Logger::Level level, const std::string& message) { // (➕) Dùng Logger::Level
+    if (level < _logLevel) { 
+        return;
+    }
+    std::lock_guard<std::mutex> lock(_mutex); 
 
-void Logger::log(Level level, const std::string& message) {
+    if (_logFile && _logFile->is_open()) {
+        *_logFile << "[" << getCurrentTimestamp() << "] "
+                  << "[" << levelToString(level) << "] "
+                  << message << std::endl;
+        if (level >= Logger::Level::ERROR) { // (➕) Dùng Logger::Level
+            _logFile->flush();
+        }
+    } else {
+        std::cerr << "[NO_LOG_FILE] [" << getCurrentTimestamp() << "] "
+                  << "[" << levelToString(level) << "] "
+                  << message << std::endl;
+    }
+}
 
-     if (level < _logLevel) {
-         return; // Skip logging if below current level
-     }
-
-     if (_logFile && _logFile->is_open()) {
-         // Format: [TIMESTAMP] [LEVEL] message
-         *_logFile << "[" << getCurrentTimestamp() << "] "
-                   << "[" << levelToString(level) << "] "
-                   << message << std::endl;
-         // Optional: Flush immediately for critical logs?
-         // if (level >= Level::ERROR) {
-         //     _logFile->flush();
-         // }
-     } else {
-         // Fallback to stderr if file isn't open
-         std::cerr << "[" << getCurrentTimestamp() << "] "
-                   << "[" << levelToString(level) << "] "
-                   << "[NO LOG FILE] " << message << std::endl;
-     }
- }
-
- // Convenience methods calling log()
- void Logger::debug(const std::string& message) { log(Level::DEBUG, message); }
- void Logger::info(const std::string& message) { log(Level::INFO, message); }
- void Logger::warn(const std::string& message) { log(Level::WARN, message); }
- void Logger::error(const std::string& message) { log(Level::ERROR, message); }
- void Logger::critical(const std::string& message) { log(Level::CRITICAL, message); }
+void Logger::debug(const std::string& message) { log(Logger::Level::DEBUG, message); }
+void Logger::info(const std::string& message) { log(Logger::Level::INFO, message); }
+void Logger::warn(const std::string& message) { log(Logger::Level::WARN, message); }
+void Logger::error(const std::string& message) { log(Logger::Level::ERROR, message); }
+void Logger::critical(const std::string& message) { log(Logger::Level::CRITICAL, message); }

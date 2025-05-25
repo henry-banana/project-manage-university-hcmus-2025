@@ -4,10 +4,11 @@
 #include <string>
 #include <fstream>
 #include <memory>
+#include <mutex> // (➕) Đã có từ trước
 
 // Singleton Logger class
 class Logger {    
-public:
+public: // (➕) Chuyển enum Level ra public để bên ngoài có thể dùng Logger::Level
     enum class Level {
         DEBUG,
         INFO,
@@ -16,37 +17,34 @@ public:
         CRITICAL
     };
 private:
+    Logger(); 
+    ~Logger();
 
-
-    // Private constructor
-    Logger();
-    ~Logger(); // Đóng file khi hủy
-
+    static std::shared_ptr<Logger> _instance; 
+    static std::mutex _mutex; 
+    
     std::unique_ptr<std::ofstream> _logFile;
-    std::string _logFilename = "logs/university_app.log"; // Default log file
-    Level _logLevel = Level::INFO; // Default logging level
+    std::string _logFilename;
+    Level _logLevel; // Sử dụng Logger::Level ở đây
 
-    // Helper để lấy timestamp
     std::string getCurrentTimestamp() const;
-    std::string levelToString(Level level) const;
-
-protected:
+    // std::string levelToString(Level level) const; // (➖) Chuyển sang public
 
 public:
-
-    // Xóa copy constructor và assignment operator
     Logger(const Logger&) = delete;
     Logger& operator=(const Logger&) = delete;
 
-    // Lấy instance duy nhất của Logger
     static Logger& getInstance();
+    static void releaseInstance(); 
 
-    // Đặt file log (tùy chọn)
-    void setLogFile(const std::string& filename);
-    void setLogLevel(Level level);
 
-    // Log messages
-    void log(Level level, const std::string& message);
+    void configure(Logger::Level level, const std::string& filename); // (➕) Dùng Logger::Level
+    void setLogLevel(Logger::Level level); // (➕) Dùng Logger::Level
+
+    // (➕) Chuyển levelToString sang public
+    std::string levelToString(Logger::Level level) const; 
+
+    void log(Logger::Level level, const std::string& message); // (➕) Dùng Logger::Level
     void debug(const std::string& message);
     void info(const std::string& message);
     void warn(const std::string& message);
@@ -61,4 +59,4 @@ public:
 #define LOG_ERROR(message) Logger::getInstance().error(message)
 #define LOG_CRITICAL(message) Logger::getInstance().critical(message)
 
-#endif // LOGGER_H
+#endif
