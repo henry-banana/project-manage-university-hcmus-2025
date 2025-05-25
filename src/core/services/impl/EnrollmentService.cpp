@@ -1,6 +1,16 @@
 #include "EnrollmentService.h"
 #include "../../../utils/Logger.h"
 
+/**
+ * @brief Khởi tạo đối tượng EnrollmentService
+ * 
+ * @param enrollmentDao Đối tượng truy cập dữ liệu đăng ký khóa học
+ * @param studentDao Đối tượng truy cập dữ liệu sinh viên
+ * @param courseDao Đối tượng truy cập dữ liệu khóa học
+ * @param inputValidator Đối tượng kiểm tra đầu vào
+ * @param sessionContext Đối tượng quản lý phiên đăng nhập
+ * @throw std::invalid_argument Nếu bất kỳ đối số nào là nullptr
+ */
 EnrollmentService::EnrollmentService(
     std::shared_ptr<IEnrollmentDao> enrollmentDao,
     std::shared_ptr<IStudentDao> studentDao,
@@ -19,6 +29,18 @@ EnrollmentService::EnrollmentService(
     if (!_sessionContext) throw std::invalid_argument("SessionContext cannot be null.");
 }
 
+/**
+ * @brief Đăng ký sinh viên vào khóa học
+ * 
+ * Phương thức này đăng ký một sinh viên vào một khóa học cụ thể.
+ * Yêu cầu quyền truy cập:
+ * - Sinh viên chỉ có thể tự đăng ký cho chính mình
+ * - Admin có thể đăng ký cho bất kỳ sinh viên nào
+ * 
+ * @param studentId ID của sinh viên cần đăng ký khóa học
+ * @param courseId ID của khóa học cần đăng ký
+ * @return std::expected<bool, Error> true nếu đăng ký thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<bool, Error> EnrollmentService::enrollStudentInCourse(const std::string& studentId, const std::string& courseId) {
     if (!_sessionContext->isAuthenticated()) {
         return std::unexpected(Error{ErrorCode::AUTHENTICATION_FAILED, "User not authenticated."});
@@ -70,6 +92,18 @@ std::expected<bool, Error> EnrollmentService::enrollStudentInCourse(const std::s
     return enrollResult;
 }
 
+/**
+ * @brief Hủy đăng ký khóa học cho sinh viên
+ * 
+ * Phương thức này hủy đăng ký một khóa học cụ thể cho một sinh viên.
+ * Yêu cầu quyền truy cập:
+ * - Sinh viên chỉ có thể tự hủy đăng ký cho chính mình
+ * - Admin có thể hủy đăng ký cho bất kỳ sinh viên nào
+ * 
+ * @param studentId ID của sinh viên cần hủy đăng ký khóa học
+ * @param courseId ID của khóa học cần hủy đăng ký
+ * @return std::expected<bool, Error> true nếu hủy đăng ký thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<bool, Error> EnrollmentService::dropCourseForStudent(const std::string& studentId, const std::string& courseId) {
      if (!_sessionContext->isAuthenticated()) {
         return std::unexpected(Error{ErrorCode::AUTHENTICATION_FAILED, "User not authenticated."});
@@ -98,6 +132,18 @@ std::expected<bool, Error> EnrollmentService::dropCourseForStudent(const std::st
     return dropResult;
 }
 
+/**
+ * @brief Lấy danh sách khóa học mà sinh viên đã đăng ký
+ * 
+ * Phương thức này trả về danh sách tất cả các khóa học mà một sinh viên đã đăng ký.
+ * Yêu cầu quyền truy cập:
+ * - Sinh viên chỉ có thể xem danh sách khóa học của chính mình
+ * - Giảng viên có thể xem danh sách khóa học của sinh viên (trong môn học của họ)
+ * - Admin có thể xem danh sách khóa học của bất kỳ sinh viên nào
+ * 
+ * @param studentId ID của sinh viên cần lấy danh sách khóa học đã đăng ký
+ * @return std::expected<std::vector<Course>, Error> Danh sách khóa học nếu thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<std::vector<Course>, Error> EnrollmentService::getEnrolledCoursesByStudent(const std::string& studentId) const {
     if (!_sessionContext->isAuthenticated()) {
         return std::unexpected(Error{ErrorCode::AUTHENTICATION_FAILED, "User not authenticated."});

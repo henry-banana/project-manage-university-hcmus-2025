@@ -1,3 +1,10 @@
+/**
+ * @file AuthService.cpp
+ * @brief Triển khai chi tiết của các phương thức trong lớp AuthService
+ * 
+ * File này chứa mã nguồn triển khai cho các chức năng xác thực người dùng
+ * bao gồm đăng nhập, đăng xuất, đăng ký, và quản lý thông tin phiên làm việc.
+ */
 #include "AuthService.h"
 #include "../../../utils/StringUtils.h" // (➕) Cần cho trim
 #include "../../../utils/PasswordInput.h" // Add this include for PasswordUtils functions
@@ -7,7 +14,17 @@
 #include <expected> // Add at the top of the file
 #include "../../entities/AdminUser.h" // For UserRole enum
 
-
+/**
+ * @brief Constructor khởi tạo dịch vụ xác thực với các dependency cần thiết
+ * 
+ * @param loginDao DAO truy vấn thông tin đăng nhập
+ * @param studentDao DAO truy vấn thông tin sinh viên
+ * @param teacherDao DAO truy vấn thông tin giảng viên
+ * @param inputValidator Bộ xác thực đầu vào
+ * @param sessionContext Context lưu trữ thông tin phiên
+ * 
+ * @throws std::invalid_argument Nếu bất kỳ tham số nào là nullptr
+ */
 AuthService::AuthService(std::shared_ptr<ILoginDao> loginDao,
                          std::shared_ptr<IStudentDao> studentDao,
                          std::shared_ptr<ITeacherDao> teacherDao,
@@ -25,6 +42,20 @@ AuthService::AuthService(std::shared_ptr<ILoginDao> loginDao,
     if (!_sessionContext) throw std::invalid_argument("SessionContext cannot be null for AuthService.");
 }
 
+/**
+ * @brief Xử lý đăng nhập bằng ID hoặc email cùng với mật khẩu
+ * 
+ * Phương thức này thực hiện các bước:
+ * 1. Kiểm tra thông tin đầu vào không rỗng
+ * 2. Tìm kiếm thông tin đăng nhập bằng ID
+ * 3. Nếu không tìm thấy bằng ID, thử tìm kiếm bằng email (cho cả sinh viên và giảng viên)
+ * 4. Xác thực mật khẩu nếu tìm thấy thông tin đăng nhập
+ * 5. Nếu thành công, lấy chi tiết người dùng và lưu thông tin phiên
+ * 
+ * @param userIdOrEmail ID người dùng hoặc địa chỉ email
+ * @param password Mật khẩu cần xác thực
+ * @return Đối tượng User nếu thành công hoặc Error nếu thất bại
+ */
 std::expected<std::shared_ptr<User>, Error> AuthService::login(const std::string& userIdOrEmail, const std::string& password) {
     if (userIdOrEmail.empty() || password.empty()) {
         return std::unexpected(Error{ErrorCode::VALIDATION_ERROR, "User ID/Email and password cannot be empty."});

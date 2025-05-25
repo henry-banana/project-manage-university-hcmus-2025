@@ -1,24 +1,32 @@
+/**
+ * @file main.cpp
+ * @brief Điểm khởi đầu của ứng dụng Hệ thống Quản lý Trường Đại học
+ * 
+ * File này chứa hàm main() là điểm khởi đầu của ứng dụng. Nó thực hiện:
+ * 1. Đọc cấu hình từ file cấu hình
+ * 2. Thiết lập hệ thống ghi log
+ * 3. Khởi tạo các thành phần của ứng dụng (DAOs, Services)
+ * 4. Khởi chạy giao diện người dùng
+ * 5. Xử lý các ngoại lệ toàn cục
+ */
 #include <iostream>
 #include <string>
 #include <memory>
-#include <stdexcept> // For std::runtime_error
+#include <stdexcept>
+#include <filesystem>
 
-// Common includes
 #include "common/AppConfig.h"
-#include "common/ErrorType.h" // Dù không dùng trực tiếp ở main, nhưng cần cho các thành phần khác
+#include "common/ErrorType.h"
 #include "common/UserRole.h"
 #include "common/LoginStatus.h"
 
-// Utilities
 #include "utils/ConfigLoader.h"
 #include "utils/Logger.h"
 
-// Core components
 #include "core/data_access/DaoFactory.h"
-#include "core/validators/impl/GeneralInputValidator.h" // Triển khai cụ thể
+#include "core/validators/impl/GeneralInputValidator.h"
 #include "core/services/SessionContext.h"
 
-// Service implementations
 #include "core/services/impl/AuthService.h"
 #include "core/services/impl/StudentService.h"
 #include "core/services/impl/TeacherService.h"
@@ -29,75 +37,92 @@
 #include "core/services/impl/FinanceService.h"
 #include "core/services/impl/AdminService.h"
 
-// UI
 #include "ui/ConsoleUI.h"
 
-
+/**
+ * @brief Hàm chính khởi chạy ứng dụng
+ * 
+ * @param argc Số lượng tham số dòng lệnh
+ * @param argv Mảng các tham số dòng lệnh
+ * @return 0 nếu ứng dụng kết thúc bình thường, khác 0 nếu có lỗi
+ */
 int main(int argc, char* argv[]) {
-    // Xử lý tham số dòng lệnh cơ bản (ví dụ: đường dẫn file config)
-    std::string configFilePath = "config/app_config.ini"; // Mặc định
+    std::string configFilePath = "config/app_config.ini";
     if (argc > 1) {
         configFilePath = argv[1];
-    }
+    }    
+    AppConfig appConfig; 
 
-    // 1. Load AppConfig
-    AppConfig appConfig; // Vẫn khởi tạo default
     ConfigLoader configLoader(configFilePath);
     auto configLoadResult = configLoader.loadConfig();
 
     if (configLoadResult.has_value()) {
-        appConfig = configLoadResult.value(); // (➕) Dùng .value()
+        appConfig = configLoadResult.value();
     } else {
-        // Không load được config, dùng default hoặc báo lỗi và thoát
         std::cerr << "WARNING: Could not load application configuration from '" << configFilePath 
                   << "'. Error: " << configLoadResult.error().message << std::endl;
-        
-        appConfig.dataSourceType = DataSourceType::MOCK; // Mặc định an toàn
-        appConfig.logLevel = Logger::Level::DEBUG;       // Log nhiều hơn khi lỗi config
-        appConfig.logFilePath = "logs/app_default_error.log";
+        appConfig.dataSourceType = DataSourceType::MOCK; 
+        appConfig.logLevel = Logger::Level::DEBUG;      
+        appConfig.logFilePath = "logs/app_default_error.log"; 
         if (appConfig.dataSourceType == DataSourceType::SQL) {
-            // Cần một đường dẫn mặc định hợp lý hoặc yêu cầu người dùng cung cấp
-            appConfig.sqlConnectionString = "database/university.db"; 
+            appConfig.sqlConnectionString = "database/university_default.db"; 
         }
-        std::cerr << "Using emergency default configuration with "
-                  << (appConfig.dataSourceType == DataSourceType::MOCK ? "Mock DAOs." : 
-                     (appConfig.dataSourceType == DataSourceType::SQL ? "SQL DAOs (default DB path)." : "Unknown DAOs.")) 
-                  << std::endl;
+        std::cerr << "Using emergency default configuration. Check log for details if created." << std::endl;
     }
 
-    // 2. Configure Logger
-    // Logger được tạo là singleton, getInstance() sẽ tự khởi tạo nếu cần
     try {
-        Logger::getInstance().configure(appConfig.logLevel, appConfig.logFilePath.string());
+        // Cấu hình hệ thống log
+        std::filesystem::path configuredLogPath(appConfig.logFilePath);
+        std::filesystem::path logDirToCreate; 
+
+        if (configuredLogPath.has_parent_path() && !configuredLogPath.parent_path().empty() && configuredLogPath.parent_path().string() != ".") {
+            logDirToCreate = configuredLogPath.parent_path();
+        } else {
+            logDirToCreate = std::filesystem::current_path() / "logs";
+        }
+        std::string baseName = configuredLogPath.stem().string();
+        if (baseName.empty() && !configuredLogPath.filename().empty() && configuredLogPath.extension().empty()){
+            baseName = configuredLogPath.filename().string();
+        } else if (baseName.empty()){
+            baseName = "application"; 
+        }
+        std::string extension = configuredLogPath.extension().string();
+        if (extension.empty()) {
+            extension = ".log"; 
+        }
+
+        if (!std::filesystem::exists(logDirToCreate)) {
+            std::cout << "[Main Info] Attempting to create log directory: " << logDirToCreate.string() << std::endl;
+            if (!std::filesystem::create_directories(logDirToCreate)) {
+                 std::cerr << "WARNING: Could not create log directory: " << logDirToCreate.string() << std::endl;
+                 logDirToCreate = std::filesystem::current_path(); 
+            }
+        }
+        
+        Logger::getInstance().configure(appConfig.logLevel, logDirToCreate, baseName, extension);
+
     } catch (const std::exception& e) {
-        std::cerr << "FATAL: Failed to configure logger: " << e.what() << std::endl;
-        // Không thể ghi log nếu logger lỗi, nên chỉ in ra cerr
-        return 1; // Thoát nếu logger không thể khởi tạo
+        std::cerr << "FATAL: Failed during logger configuration phase: " << e.what() << std::endl;
+        return 1; 
     }
-    
-    // std::cin.get(); // Đảm bảo cin không bị lỗi khi đọc dòng đầu tiên
     
     LOG_INFO("============================================================");
     LOG_INFO("University Management System - Application Starting...");
     LOG_INFO("Configuration loaded. Data Source: " + 
              std::string(appConfig.dataSourceType == DataSourceType::SQL ? "SQL" : 
-                        std::string(appConfig.dataSourceType == DataSourceType::MOCK ? "Mock" : "CSV (if implemented)")) +
-             ". Log Level: " + Logger::getInstance().levelToString(appConfig.logLevel)); // Lấy level hiện tại từ logger
+                        (appConfig.dataSourceType == DataSourceType::MOCK ? "Mock" : "CSV (if implemented)")) +
+             ". Log Level: " + Logger::getInstance().levelToString(appConfig.logLevel));
     LOG_INFO("============================================================");
 
-
     try {
-        // 3. Khởi tạo các thành phần cốt lõi và dependencies
+        // Khởi tạo các thành phần cốt lõi
         LOG_DEBUG("Initializing core components...");
-
-        auto sessionContext = std::make_shared<SessionContext>();
+        auto sessionContext = std::make_shared<SessionContext>();        
         LOG_DEBUG("SessionContext initialized.");
-
-        auto generalInputValidator = std::make_shared<GeneralInputValidator>();
+        auto generalInputValidator = std::make_shared<GeneralInputValidator>();        
         LOG_DEBUG("GeneralInputValidator initialized.");
-
-        // Tạo các DAO thông qua DaoFactory
-        // DaoFactory sẽ tự quản lý DatabaseAdapter nếu dùng SQL
+        
+        // Khởi tạo các DAO thông qua Factory
         LOG_DEBUG("Initializing DAOs via DaoFactory...");
         auto studentDao = DaoFactory::createStudentDao(appConfig);
         auto teacherDao = DaoFactory::createTeacherDao(appConfig);
@@ -107,133 +132,58 @@ int main(int argc, char* argv[]) {
         auto enrollmentDao = DaoFactory::createEnrollmentDao(appConfig);
         auto courseResultDao = DaoFactory::createCourseResultDao(appConfig);
         auto feeRecordDao = DaoFactory::createFeeRecordDao(appConfig);
-        auto salaryRecordDao = DaoFactory::createSalaryRecordDao(appConfig);
+        auto salaryRecordDao = DaoFactory::createSalaryRecordDao(appConfig);        
         LOG_INFO("DAOs initialized successfully.");
 
-        // Tạo các Service, inject dependencies
+        // Khởi tạo các Service
         LOG_DEBUG("Initializing Services...");
-        auto authService = std::make_shared<AuthService>(
-            loginDao, 
-            studentDao, 
-            teacherDao, // AuthService có dùng teacherDao để check email khi student đăng ký
-            generalInputValidator, 
-            sessionContext
-        );
-
-        auto studentService = std::make_shared<StudentService>(
-            studentDao, 
-            teacherDao,     // (➕) Truyền teacherDao vào đây
-            facultyDao, 
-            generalInputValidator, 
-            sessionContext
-        );
-
-        auto teacherService = std::make_shared<TeacherService>(
-            teacherDao, 
-            studentDao,     // TeacherService dùng studentDao để check email trùng khi admin/teacher cập nhật email teacher
-            facultyDao, 
-            generalInputValidator, 
-            sessionContext
-        );
-
-        auto facultyService = std::make_shared<FacultyService>(
-            facultyDao, 
-            studentDao,     // FacultyService dùng để check ràng buộc khi xóa faculty
-            teacherDao,     // FacultyService dùng để check ràng buộc khi xóa faculty
-            courseDao,      // FacultyService dùng để check ràng buộc khi xóa faculty
-            generalInputValidator, 
-            sessionContext
-        );
-
-        auto courseService = std::make_shared<CourseService>(
-            courseDao, 
-            facultyDao, 
-            enrollmentDao,  // CourseService dùng để check ràng buộc khi xóa course
-            courseResultDao,// CourseService dùng để check ràng buộc khi xóa course
-            generalInputValidator, 
-            sessionContext
-        );
-
-        auto enrollmentService = std::make_shared<EnrollmentService>(
-            enrollmentDao, 
-            studentDao, 
-            courseDao, 
-            generalInputValidator, 
-            sessionContext
-        );
-
-        auto resultService = std::make_shared<ResultService>(
-            courseResultDao, 
-            facultyDao,     // (➕) Truyền facultyDao vào đây (theo constructor của bạn)
-            studentDao, 
-            courseDao, 
-            enrollmentDao, 
-            generalInputValidator, 
-            sessionContext
-        );
-
-        auto financeService = std::make_shared<FinanceService>(
-            feeRecordDao, 
-            salaryRecordDao, 
-            studentDao, 
-            teacherDao,
-            facultyDao,     // (➕) Truyền facultyDao vào đây (theo constructor của bạn)
-            generalInputValidator, 
-            sessionContext
-        );
-
-        auto adminService = std::make_shared<AdminService>(
-            studentDao, 
-            teacherDao, 
-            loginDao, 
-            feeRecordDao, 
-            salaryRecordDao, 
-            enrollmentDao, 
-            courseResultDao, 
-            generalInputValidator, 
-            sessionContext
-        );
+        auto authService = std::make_shared<AuthService>(loginDao, studentDao, teacherDao, generalInputValidator, sessionContext);
+        auto studentService = std::make_shared<StudentService>(studentDao, teacherDao, facultyDao, generalInputValidator, sessionContext);
+        auto teacherService = std::make_shared<TeacherService>(teacherDao, studentDao, facultyDao, generalInputValidator, sessionContext);
+        auto facultyService = std::make_shared<FacultyService>(facultyDao, studentDao, teacherDao, courseDao, generalInputValidator, sessionContext);
+        auto courseService = std::make_shared<CourseService>(courseDao, facultyDao, enrollmentDao, courseResultDao, generalInputValidator, sessionContext);
+        auto enrollmentService = std::make_shared<EnrollmentService>(enrollmentDao, studentDao, courseDao, generalInputValidator, sessionContext);
+        auto resultService = std::make_shared<ResultService>(courseResultDao, facultyDao, studentDao, courseDao, enrollmentDao, generalInputValidator, sessionContext);
+        auto financeService = std::make_shared<FinanceService>(feeRecordDao, salaryRecordDao, studentDao, teacherDao, facultyDao, generalInputValidator, sessionContext);
+        auto adminService = std::make_shared<AdminService>(studentDao, teacherDao, loginDao, feeRecordDao, salaryRecordDao, enrollmentDao, courseResultDao, generalInputValidator, sessionContext);        
         LOG_INFO("Services initialized successfully.");
 
-        // 4. Khởi tạo ConsoleUI
+        // Khởi tạo giao diện người dùng
         LOG_DEBUG("Initializing ConsoleUI...");
         ConsoleUI consoleUI(
             authService, studentService, teacherService, facultyService,
             courseService, enrollmentService, resultService, financeService, adminService
-        );
+        );        
         LOG_INFO("ConsoleUI initialized. Starting UI run loop...");
-
-        // 5. Chạy ứng dụng UI
-        consoleUI.run();
+        
+        // Chạy vòng lặp chính của ứng dụng
+        consoleUI.run();    
 
     } catch (const std::runtime_error& e) {
         LOG_CRITICAL("Runtime error during application initialization or execution: " + std::string(e.what()));
         std::cerr << "CRITICAL RUNTIME ERROR: " << e.what() << std::endl;
-        Logger::getInstance().critical("Application terminated due to runtime_error: " + std::string(e.what())); // Log lần cuối
-        Logger::releaseInstance(); // Đảm bảo logger được giải phóng
-        return 1;
+        Logger::getInstance().critical("Application terminated due to runtime_error: " + std::string(e.what())); 
+        Logger::releaseInstance(); 
+        return 1;    
     } catch (const std::exception& e) {
         LOG_CRITICAL("Unhandled C++ standard exception in main: " + std::string(e.what()));
         std::cerr << "CRITICAL UNHANDLED EXCEPTION: " << e.what() << std::endl;
         Logger::getInstance().critical("Application terminated due to std::exception: " + std::string(e.what()));
         Logger::releaseInstance();
-        return 1;
+        return 1;    
     } catch (...) {
         LOG_CRITICAL("Unknown unhandled exception in main!");
         std::cerr << "CRITICAL UNKNOWN EXCEPTION!" << std::endl;
         Logger::getInstance().critical("Application terminated due to unknown exception.");
         Logger::releaseInstance();
         return 1;
-    }
-
+    }    
+    
     LOG_INFO("============================================================");
     LOG_INFO("University Management System - Application Shutting Down...");
     LOG_INFO("============================================================");
     
-    DaoFactory::cleanup(); // Nếu bạn đã triển khai hàm này để đóng DB adapter
-    // Hiện tại, DB adapter (SQLiteAdapter) sẽ tự đóng kết nối trong destructor của nó
-    // khi _dbAdapterInstance trong DaoFactory được giải phóng (khi chương trình kết thúc).
-
-    Logger::releaseInstance(); // Dọn dẹp Logger singleton
+    // DaoFactory::cleanup(); // Không cần nếu dùng shared_ptr đúng cách
+    // Logger::releaseInstance(); 
     return 0;
 }
