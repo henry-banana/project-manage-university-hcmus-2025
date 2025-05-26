@@ -60,7 +60,7 @@ void Logger::releaseInstance() {
     if (_instance) { // Kiểm tra _instance còn tồn tại không
         if (_instance->_logFile && _instance->_logFile->is_open()) {
             // Ghi trực tiếp, không dùng this->log()
-            *(_instance->_logFile) << "[" << _instance->getCurrentTimestamp() << "] [" << _instance->levelToString(Logger::Level::INFO) << "] Logger instance explicitly released. Log file will be closed by destructor if not already." << std::endl;
+            *(_instance->_logFile) << "[" << _instance->getCurrentTimestamp() << "] [" << _instance->levelToString(Logger::Level::INFO) << "] Logger instance explicitly released. Log file will be closed by destructor if not already.\n";
             _instance->_logFile->flush(); 
             // Không close ở đây, để destructor của Logger làm việc đó khi _instance.reset()
         }
@@ -94,9 +94,9 @@ void Logger::configure(Level level, const std::filesystem::path& logDirectory,
         if (!std::filesystem::exists(_logDirectory)) {
             if (std::filesystem::create_directories(_logDirectory)) {
                 // Không log ở đây vì file log chưa mở
-                std::cout << "[Logger Initializing] Created log directory: " << _logDirectory.string() << std::endl;
+                std::cout << "[Logger Initializing] Created log directory: " << _logDirectory.string() << "\n";
             } else {
-                std::cerr << "Logger Error: Failed to create log directory: " << _logDirectory.string() << std::endl;
+                std::cerr << "Logger Error: Failed to create log directory: " << _logDirectory.string() << "\n";
                 _logFile.reset();
                 return; // Không thể tiếp tục nếu không tạo được thư mục log
             }
@@ -109,24 +109,24 @@ void Logger::configure(Level level, const std::filesystem::path& logDirectory,
         _logFile = std::make_unique<std::ofstream>(_currentActualLogFilePath, std::ios_base::out); // Mở file mới (không append)
         
         if (!_logFile || !_logFile->is_open()) {
-            std::cerr << "Logger Error: Failed to open new log file: " << _currentActualLogFilePath << std::endl;
+            std::cerr << "Logger Error: Failed to open new log file: " << _currentActualLogFilePath << "\n";
             _logFile.reset(); 
         } else {
              // Ghi thông tin vào file log mới
              *_logFile << "[" << getCurrentTimestamp() << "] "
                        << "[" << levelToString(Logger::Level::INFO) << "] " 
                        << "Logger configured. New log session started. Level: " << levelToString(_logLevel)
-                       << ". File: " << _currentActualLogFilePath << std::endl;
+                       << ". File: " << _currentActualLogFilePath << "\n";
              _logFile->flush();
 
              // Quản lý các file log cũ
              manageLogFiles(); 
         }
     } catch (const std::filesystem::filesystem_error& e) {
-        std::cerr << "Logger Filesystem Error: " << e.what() << " while configuring log file in directory: " << _logDirectory.string() << std::endl;
+        std::cerr << "Logger Filesystem Error: " << e.what() << " while configuring log file in directory: " << _logDirectory.string() << "\n";
         _logFile.reset();
     } catch (const std::exception& e) {
-        std::cerr << "Logger Exception: " << e.what() << " while configuring log file in directory: " << _logDirectory.string() << std::endl;
+        std::cerr << "Logger Exception: " << e.what() << " while configuring log file in directory: " << _logDirectory.string() << "\n";
         _logFile.reset();
     }
 }
@@ -145,7 +145,7 @@ void Logger::setLogLevel(Level level) {
          *_logFile << "[" << getCurrentTimestamp() << "] "
                    << "[" << levelToString(Level::INFO) << "] "
                    << "Log level changed from " << levelToString(oldLevel)
-                   << " to " << levelToString(_logLevel) << std::endl;
+                   << " to " << levelToString(_logLevel) << "\n";
     }
 }
 
@@ -215,7 +215,7 @@ void Logger::log(Level level, const std::string& message) {
     if (_logFile && _logFile->is_open()) {
         *_logFile << "[" << getCurrentTimestamp() << "] "
                   << "[" << levelToString(level) << "] "
-                  << message << std::endl;
+                  << message << "\n";
         if (level >= Level::ERROR) { 
             _logFile->flush();
         }
@@ -223,7 +223,7 @@ void Logger::log(Level level, const std::string& message) {
         // Nếu file log chưa mở, ghi vào std::cerr
         std::cerr << "[" << getCurrentTimestamp() << "] "
                   << "[" << levelToString(level) << "] "
-                  << message << std::endl;
+                  << message << "\n";
     }
 }
 
@@ -254,7 +254,7 @@ void Logger::manageLogFiles() const {
         }
     } catch (const std::filesystem::filesystem_error& e) {
         // Dùng std::cerr vì logger có thể đang trong quá trình configure
-        std::cerr << "Logger Warning: Error iterating log directory: " << e.what() << std::endl;
+        std::cerr << "Logger Warning: Error iterating log directory: " << e.what() << "\n";
         return;
     }
 
@@ -273,17 +273,17 @@ void Logger::manageLogFiles() const {
                  // Ghi vào file log hiện tại (nếu đã mở) hoặc cerr
                 std::string msg = "Logger: Removed old log file: " + logFiles[i].string();
                 if (_logFile && _logFile->is_open()) {
-                    *_logFile << "[" << getCurrentTimestamp() << "] [" << levelToString(Level::INFO) << "] " << msg << std::endl;
+                    *_logFile << "[" << getCurrentTimestamp() << "] [" << levelToString(Level::INFO) << "] " << msg << "\n";
                 } else {
-                    std::cout << "[Logger Info] " << msg << std::endl;
+                    std::cout << "[Logger Info] " << msg << "\n";
                 }
             }
         } catch (const std::filesystem::filesystem_error& e) {
             std::string errMsg = "Logger Warning: Failed to remove old log file '" + logFiles[i].string() + "': " + e.what();
              if (_logFile && _logFile->is_open()) {
-                 *_logFile << "[" << getCurrentTimestamp() << "] [" << levelToString(Level::WARN) << "] " << errMsg << std::endl;
+                 *_logFile << "[" << getCurrentTimestamp() << "] [" << levelToString(Level::WARN) << "] " << errMsg << "\n";
              } else {
-                std::cerr << errMsg << std::endl;
+                std::cerr << errMsg << "\n";
              }
         }
     }

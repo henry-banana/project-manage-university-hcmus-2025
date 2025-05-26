@@ -16,7 +16,7 @@ std::string SqlParserUtils::getOptional<std::string>(const DbQueryResultRow& row
                 // Ghi log lỗi nếu cả hai lần cast đều thất bại
                 // LOG_WARN("SqlParserUtils: Bad any_cast for string column '" + columnName + "'. Neither std::string nor const char* worked. Error: " + e.what());
                 // std::cerr << "SqlParserUtils: Bad any_cast for string column '" << columnName 
-                //           << "'. Error: " << e.what() << std::endl;
+                //           << "'. Error: " << e.what() << "\n";
                 return defaultValue;
             }
         }

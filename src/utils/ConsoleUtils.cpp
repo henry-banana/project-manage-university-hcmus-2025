@@ -53,10 +53,10 @@ void drawHeader(const std::string& title, char borderChar, size_t width) {
     size_t titlePadding = (width - 2 - title.length()) / 2;
     size_t remainderPadding = (width - 2 - title.length()) % 2; // Nếu không chia hết
 
-    std::cout << "\n" << borderLine << std::endl;
+    std::cout << "\n" << borderLine << "\n";
     std::cout << borderChar << std::string(titlePadding, ' ') << title 
-              << std::string(titlePadding + remainderPadding, ' ') << borderChar << std::endl;
-    std::cout << borderLine << std::endl;
+              << std::string(titlePadding + remainderPadding, ' ') << borderChar << "\n";
+    std::cout << borderLine << "\n";
 }
 
 /**
@@ -74,9 +74,9 @@ void drawBox(const std::vector<std::string>& content, char borderChar, size_t wi
     for(size_t i = 0; i < width - 2; ++i) horizontalBorder += borderChar;
     horizontalBorder += "+";
 
-    std::cout << horizontalBorder << std::endl;
+    std::cout << horizontalBorder << "\n";
     for (const std::string& line : content) {
-        std::cout << "| " << std::left << std::setw(static_cast<int>(width) - 3) << line << "|" << std::endl;
+        std::cout << "| " << std::left << std::setw(static_cast<int>(width) - 3) << line << "|\n";
     }
-    std::cout << horizontalBorder << std::endl;
+    std::cout << horizontalBorder << "\n";
 }

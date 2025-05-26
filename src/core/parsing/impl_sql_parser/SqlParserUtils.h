@@ -48,7 +48,7 @@ namespace SqlParserUtils {
                 // Trong thực tế, nên dùng Logger ở đây thay vì std::cerr
                 // LOG_WARN("SqlParserUtils: Bad any_cast for column '" + columnName + "' to expected type. Error: " + e.what());
                 // std::cerr << "SqlParserUtils: Bad any_cast for column '" << columnName 
-                //           << "' to type (size " << sizeof(T) << "). Error: " << e.what() << std::endl;
+                //           << "' to type (size " << sizeof(T) << "). Error: " << e.what() << "\n";
                 return defaultValue;
             }
         }

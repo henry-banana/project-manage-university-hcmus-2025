@@ -135,7 +135,7 @@ namespace PasswordUtils {
                     std::cout << '*';
                 }
             }
-            std::cout << std::endl; // Move to next line after Enter
+            std::cout << "\n"; // Move to next line after Enter
             return password;
         }
     #else
@@ -180,7 +180,7 @@ namespace PasswordUtils {
     
             tcsetattr(STDIN_FILENO, TCSANOW, &oldt); // Restore original settings
     
-            std::cout << std::endl;
+            std::cout << "\n";
             return password;
         }
     #endif // _WIN32
