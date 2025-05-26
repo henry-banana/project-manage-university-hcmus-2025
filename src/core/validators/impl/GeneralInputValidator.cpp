@@ -2,6 +2,7 @@
 #include "../../../utils/StringUtils.h" // Cho trim
 #include <limits> // Cho numeric_limits
 #include <algorithm> // Cho std::any_of for password
+#include <regex> // Cho regex kiểm tra email
 
 /**
  * @brief Kiểm tra tính hợp lệ của địa chỉ email
@@ -22,20 +23,28 @@ ValidationResult GeneralInputValidator::validateEmail(const std::string& email) 
         vr.addError(ErrorCode::VALIDATION_ERROR, "Email address cannot be empty.");
         return vr;
     }
+    
     // Regex này khá cơ bản, có thể cần một regex phức tạp hơn cho production
     // Tham khảo: RFC 5322 nhưng nó rất phức tạp.
     // Regex đơn giản: something@something.something
-    // const std::regex emailRegex(R"(^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$)"); // C++11
-    // Đơn giản hơn nữa để tránh lỗi biên dịch regex trên một số compiler cũ/config thiếu:
+    const std::regex email_regex(R"((\w+)(\.|_)?(\w*)@(\w+)(\.(\w+))+)"); // C++11 regex
+    if (!std::regex_match(trimmedEmail, email_regex)) {
+        vr.addError(ErrorCode::VALIDATION_ERROR, "Invalid email address format.");
+    }
+    
+    // Kiểm tra thêm về @ và dấu chấm
     size_t atPos = trimmedEmail.find('@');
     size_t dotPos = trimmedEmail.rfind('.'); // Tìm dấu chấm cuối cùng
 
-    if (atPos == std::string::npos || dotPos == std::string::npos || atPos == 0 || dotPos < atPos || dotPos == trimmedEmail.length() - 1) {
+    if (atPos == std::string::npos || dotPos == std::string::npos || atPos == 0 || 
+        dotPos < atPos || dotPos == trimmedEmail.length() - 1 || trimmedEmail.length() < 5) {
         vr.addError(ErrorCode::VALIDATION_ERROR, "Invalid email address format.");
     }
+    
     if (trimmedEmail.length() > 100) { // Giới hạn độ dài
-         vr.addError(ErrorCode::VALIDATION_ERROR, "Email address is too long (max 100 characters).");
+        vr.addError(ErrorCode::VALIDATION_ERROR, "Email address is too long (max 100 characters).");
     }
+    
     return vr;
 }
 
