@@ -60,14 +60,14 @@ int main(int argc, char* argv[]) {
         appConfig = configLoadResult.value();
     } else {
         std::cerr << "WARNING: Could not load application configuration from '" << configFilePath 
-                  << "'. Error: " << configLoadResult.error().message << std::endl;
-        appConfig.dataSourceType = DataSourceType::MOCK; 
+                  << "'. Error: " << configLoadResult.error().message << "\n";
+        appConfig.dataSourceType = DataSourceType::SQL; 
         appConfig.logLevel = Logger::Level::DEBUG;      
         appConfig.logFilePath = "logs/app_default_error.log"; 
         if (appConfig.dataSourceType == DataSourceType::SQL) {
             appConfig.sqlConnectionString = "database/university_default.db"; 
         }
-        std::cerr << "Using emergency default configuration. Check log for details if created." << std::endl;
+        std::cerr << "Using emergency default configuration. Check log for details if created.\n";
     }
 
     try {
@@ -92,9 +92,9 @@ int main(int argc, char* argv[]) {
         }
 
         if (!std::filesystem::exists(logDirToCreate)) {
-            std::cout << "[Main Info] Attempting to create log directory: " << logDirToCreate.string() << std::endl;
+            std::cout << "[Main Info] Attempting to create log directory: " << logDirToCreate.string() << "\n";
             if (!std::filesystem::create_directories(logDirToCreate)) {
-                 std::cerr << "WARNING: Could not create log directory: " << logDirToCreate.string() << std::endl;
+                 std::cerr << "WARNING: Could not create log directory: " << logDirToCreate.string() << "\n";
                  logDirToCreate = std::filesystem::current_path(); 
             }
         }
@@ -102,7 +102,7 @@ int main(int argc, char* argv[]) {
         Logger::getInstance().configure(appConfig.logLevel, logDirToCreate, baseName, extension);
 
     } catch (const std::exception& e) {
-        std::cerr << "FATAL: Failed during logger configuration phase: " << e.what() << std::endl;
+        std::cerr << "FATAL: Failed during logger configuration phase: " << e.what() << "\n";
         return 1; 
     }
     
@@ -161,19 +161,19 @@ int main(int argc, char* argv[]) {
 
     } catch (const std::runtime_error& e) {
         LOG_CRITICAL("Runtime error during application initialization or execution: " + std::string(e.what()));
-        std::cerr << "CRITICAL RUNTIME ERROR: " << e.what() << std::endl;
+        std::cerr << "CRITICAL RUNTIME ERROR: " << e.what() << "\n";
         Logger::getInstance().critical("Application terminated due to runtime_error: " + std::string(e.what())); 
         Logger::releaseInstance(); 
         return 1;    
     } catch (const std::exception& e) {
         LOG_CRITICAL("Unhandled C++ standard exception in main: " + std::string(e.what()));
-        std::cerr << "CRITICAL UNHANDLED EXCEPTION: " << e.what() << std::endl;
+        std::cerr << "CRITICAL UNHANDLED EXCEPTION: " << e.what() << "\n";
         Logger::getInstance().critical("Application terminated due to std::exception: " + std::string(e.what()));
         Logger::releaseInstance();
         return 1;    
     } catch (...) {
         LOG_CRITICAL("Unknown unhandled exception in main!");
-        std::cerr << "CRITICAL UNKNOWN EXCEPTION!" << std::endl;
+        std::cerr << "CRITICAL UNKNOWN EXCEPTION!\n";
         Logger::getInstance().critical("Application terminated due to unknown exception.");
         Logger::releaseInstance();
         return 1;
