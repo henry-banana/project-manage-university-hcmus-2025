@@ -1926,7 +1926,7 @@ StudentRegistrationData ConsoleUI::promptForStudentRegistrationData() {
     std::cout << "\nEnter Birthday:" << std::endl;
     data.birthDay = _prompter->promptForInt("  Day (1-31):", 1, 31);
     data.birthMonth = _prompter->promptForInt("  Month (1-12):", 1, 12);
-    data.birthYear = _prompter->promptForInt("  Year (e.g., 1990-2006):", 1950, 2010); 
+    data.birthYear = _prompter->promptForInt("  Year (e.g., 1925-2025):", 1925, 2025); 
     data.address = _prompter->promptForString("Enter Address (optional):", true);
     data.citizenId = _prompter->promptForString("Enter Citizen ID (9 or 12 digits):");
     data.phoneNumber = _prompter->promptForString("Enter Phone Number (optional, VN format e.g., 09xxxxxxxx):", true);
