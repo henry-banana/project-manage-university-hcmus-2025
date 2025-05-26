@@ -262,8 +262,11 @@ std::expected<std::vector<Student>, Error> SqlStudentDao::findByStatus(LoginStat
      std::string sql = "SELECT U.id as userId, U.firstName, U.lastName, U.birthDay, U.birthMonth, U.birthYear, "
                       "U.address, U.citizenId, U.email, U.phoneNumber, U.role, U.status, S.facultyId "
                       "FROM Users U JOIN Students S ON U.id = S.userId "
-                      "WHERE U.status = ? AND U.role = ?;"; // Chỉ tìm student
-    std::vector<DbQueryParam> params = {static_cast<int>(status), static_cast<int>(UserRole::STUDENT)};
+                      "WHERE U.status = ? AND (U.role = ? OR U.role = ?);";
+    int statusInt = static_cast<int>(status);
+    int studentRoleInt = static_cast<int>(UserRole::STUDENT);
+    int pendingStudentRoleInt = static_cast<int>(UserRole::PENDING_STUDENT);
+    std::vector<DbQueryParam> params = {statusInt, studentRoleInt, pendingStudentRoleInt};
     
     auto queryResult = _dbAdapter->executeQuery(sql, params);
     if (!queryResult.has_value()) {

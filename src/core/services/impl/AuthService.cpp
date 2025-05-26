@@ -107,10 +107,16 @@ std::expected<std::shared_ptr<User>, Error> AuthService::login(const std::string
             auto studentRes = _studentDao->getById(creds.userId);
             if (studentRes.has_value()) userDetails = std::make_shared<Student>(studentRes.value());
             else return std::unexpected(studentRes.error()); 
+        } 
+        else if (creds.role == UserRole::PENDING_STUDENT) {
+            auto pendingStudentRes = _studentDao->getById(creds.userId);
+            if (pendingStudentRes.has_value()) userDetails = std::make_shared<Student>(pendingStudentRes.value());
+            else return std::unexpected(pendingStudentRes.error());
         } else if (creds.role == UserRole::TEACHER) {
             auto teacherRes = _teacherDao->getById(creds.userId);
             if (teacherRes.has_value()) userDetails = std::make_shared<Teacher>(teacherRes.value());
             else return std::unexpected(teacherRes.error());
+
         } else if (creds.role == UserRole::ADMIN) {
             // (SỬA Ở ĐÂY)
             // Dòng cũ: userDetails = std::make_shared<User>(creds.userId, "Admin", "User", UserRole::ADMIN, LoginStatus::ACTIVE);
@@ -132,7 +138,7 @@ std::expected<std::shared_ptr<User>, Error> AuthService::login(const std::string
                 auto adminAsUser = std::static_pointer_cast<User>(userDetails); // Để gọi setter của User
                 adminAsUser->setEmail(userIdOrEmail); // Giả sử admin login bằng username là userId hoặc email
             }
-
+        
         } else {
             return std::unexpected(Error{ErrorCode::AUTHENTICATION_FAILED, "Unsupported user role for login details."});
         }

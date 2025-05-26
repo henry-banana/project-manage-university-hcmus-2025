@@ -10,7 +10,6 @@ set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 
-# find_package(SQLite3 REQUIRED)
 
 # Thêm các thư mục include (vẫn giữ nguyên phần này để trình biên dịch biết tìm header ở đâu)
 include_directories(
