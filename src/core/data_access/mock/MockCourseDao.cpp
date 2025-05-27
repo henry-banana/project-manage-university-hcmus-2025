@@ -13,7 +13,6 @@ namespace {
 
     void initializeMockCourseDataIfNeeded() {
         if (!mock_course_data_initialized) {
-            // SỬA Ở ĐÂY:
             mock_courses_data.emplace("CS101", Course("CS101", "Introduction to Programming", 3, "CS"));
             mock_courses_data.emplace("IT202", Course("IT202", "Data Structures and Algorithms", 4, "IT"));
             // ... các emplace khác ...
