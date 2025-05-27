@@ -112,7 +112,7 @@ std::expected<std::shared_ptr<User>, Error> AuthService::login(const std::string
             if (teacherRes.has_value()) userDetails = std::make_shared<Teacher>(teacherRes.value());
             else return std::unexpected(teacherRes.error());
         } else if (creds.role == UserRole::ADMIN) {
-            // (SỬA Ở ĐÂY)
+            
             // Dòng cũ: userDetails = std::make_shared<User>(creds.userId, "Admin", "User", UserRole::ADMIN, LoginStatus::ACTIVE);
             // Giả sử Admin có thể không có họ riêng, hoặc bạn sẽ lấy từ DB nếu có bảng Admin riêng
             std::string adminFirstName = "Admin"; // Hoặc lấy từ DB nếu có
