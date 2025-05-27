@@ -19,7 +19,6 @@ namespace {
 
     void initializeMockCourseResultDataIfNeeded() {
         if (!mock_course_result_data_initialized) {
-            // SỬA Ở ĐÂY:
             mock_course_results_data.emplace(makeCourseResultKey("S001", "CS101"), CourseResult("S001", "CS101", 85));
             mock_course_results_data.emplace(makeCourseResultKey("S001", "IT202"), CourseResult("S001", "IT202", 70));
             mock_course_results_data.emplace(makeCourseResultKey("S002", "CS101"), CourseResult("S002", "CS101", 92));
@@ -74,7 +73,6 @@ std::expected<bool, Error> MockCourseResultDao::addOrUpdate(const CourseResult& 
     }
     auto key = makeCourseResultKey(result.getStudentId(), result.getCourseId());
 
-    // SỬA Ở ĐÂY:
     auto it = mock_course_results_data.find(key);
     if (it != mock_course_results_data.end()) {
         // Key đã tồn tại, thực hiện update (ghi đè)
