@@ -1,12 +1,16 @@
 cmake_minimum_required(VERSION 3.22) 
 
-project(UniversityManagementSystem VERSION 1.0 LANGUAGES CXX)
+project(UniversityManagementSystem VERSION 1.0 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(SQLite3 REQUIRED)
+set(CMAKE_C_STANDARD 23)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
+
+# find_package(SQLite3 REQUIRED)
 
 # Thêm các thư mục include (vẫn giữ nguyên phần này để trình biên dịch biết tìm header ở đâu)
 include_directories(
@@ -79,14 +83,17 @@ set(SOURCES
 # list(FILTER SOURCES EXCLUDE REGEX ".+\\.h$")
 
 # Thêm file thực thi
-add_executable(university_manager ${SOURCES})
+add_executable(university_manager
+    ${SOURCES}
+    src/core/database_adapter/sql/sqlite3.c
+)
 
 set_target_properties(university_manager PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}  
 )
 
 # Liên kết với SQLite3
-target_link_libraries(university_manager PRIVATE SQLite::SQLite3)
+# target_link_libraries(university_manager PRIVATE SQLite::SQLite3)
 
 # Cờ biên dịch cho std::filesystem
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
@@ -108,7 +115,7 @@ if (UNIX)
     endif()
 endif()
 
+set_source_files_properties(src/core/database_adapter/sql/sqlite3.c PROPERTIES LANGUAGE C)
+
 message(STATUS "Project Name: ${PROJECT_NAME}")
 message(STATUS "CXX Standard: ${CMAKE_CXX_STANDARD}")
-message(STATUS "SQLite3 Library: ${SQLite3_LIBRARY}")
-message(STATUS "SQLite3 Include Dirs: ${SQLite3_INCLUDE_DIRS}")

@@ -78,7 +78,7 @@ ConsoleUI::ConsoleUI(
  * @param message Nội dung thông báo lỗi
  */
 void ConsoleUI::showErrorMessage(const std::string& message) {
-    std::cerr << "\n### ERROR ###\n" << message << "\n#############" << std::endl;
+    std::cerr << "\n### ERROR ###\n" << message << "\n#############\n";
 }
 
 /**
@@ -87,7 +87,7 @@ void ConsoleUI::showErrorMessage(const std::string& message) {
  * @param error Đối tượng lỗi cần hiển thị
  */
 void ConsoleUI::showErrorMessage(const Error& error) {
-    std::cerr << "\n### ERROR [" << error.code << "] ###\n" << error.message << "\n#################" << std::endl;
+    std::cerr << "\n### ERROR [" << error.code << "] ###\n" << error.message << "\n#################\n";
 }
 
 /**
@@ -96,7 +96,7 @@ void ConsoleUI::showErrorMessage(const Error& error) {
  * @param message Nội dung thông báo
  */
 void ConsoleUI::showSuccessMessage(const std::string& message) {
-    std::cout << "\n*** SUCCESS ***\n" << message << "\n***************" << std::endl;
+    std::cout << "\n*** SUCCESS ***\n" << message << "\n***************\n";
 }
 
 /**
@@ -126,7 +126,7 @@ void ConsoleUI::processMenu(const std::string& title, const std::vector<MenuItem
     if (items.empty()) { // (➕) Xử lý menu rỗng ngay từ đầu
         // clearScreen(); // Đã clear ở processCurrentState
         _menuRenderer->renderMenu(title, items); // Vẫn render để hiển thị "No options"
-        std::cout << "No options available in this menu." << std::endl;
+        std::cout << "No options available in this menu.\n";
         if (isSubMenu) {
             // Nếu là submenu rỗng, hành động mặc định là quay lại state cha
             // (Cần logic để xác định state cha hoặc action[0] là back)
@@ -684,23 +684,43 @@ void ConsoleUI::doLogin() {
  */
 void ConsoleUI::doStudentRegistration() {
     drawHeader("STUDENT REGISTRATION");
-    StudentRegistrationData regData = promptForStudentRegistrationData();
-    std::string password = _prompter->promptForPassword("Enter Password for new account:");
-    std::string confirmPassword = _prompter->promptForPassword("Confirm Password:");
+    bool registrationSuccess = false;
+    int attempts = 0;
+    const int maxAttempts = 3; // Cho phép nhập lại tối đa 3 lần (toàn bộ form)
 
-    if (password != confirmPassword) {
-        showErrorMessage("Passwords do not match.");
-        clearAndPause();
-        return;
+    while (!registrationSuccess && attempts < maxAttempts) {
+        StudentRegistrationData regData = promptForStudentRegistrationData(); // Chỉ lấy input thô
+        
+        std::string password, confirmPassword;
+        do { // Vẫn giữ vòng lặp cho password vì nó đơn giản và không cần validate phức tạp ở service
+            password = _prompter->promptForPassword("Enter Password for new account:");
+            // Service sẽ validate độ phức tạp của password
+            confirmPassword = _prompter->promptForPassword("Confirm Password:");
+            if (password != confirmPassword) {
+                showErrorMessage("Passwords do not match. Please try again.");
+            }
+        } while (password != confirmPassword);
+        
+        // Gọi service, service sẽ làm tất cả validation (bao gồm cả password complexity)
+        auto regResult = _authService->registerStudent(regData, password); 
+        if (regResult.has_value() && regResult.value()) {
+            showSuccessMessage("Registration successful! Your application is pending approval by an Administrator.");
+            registrationSuccess = true; // Thoát vòng lặp
+        } else {
+            showErrorMessage(regResult.error()); // Hiển thị lỗi từ service
+            attempts++;
+            if (!registrationSuccess && attempts < maxAttempts) {
+                if (!_prompter->promptForYesNo("Registration failed. Do you want to try again with all new information?")) {
+                    break; 
+                }
+                clearScreen(); 
+                // Không cần drawHeader ở đây vì promptForStudentRegistrationData sẽ làm
+            } else if (!registrationSuccess) {
+                showErrorMessage("Registration failed after multiple attempts.");
+            }
+        }
     }
-    
-    auto regResult = _authService->registerStudent(regData, password);
-    if (regResult.has_value() && regResult.value()) {
-        showSuccessMessage("Registration successful! Your application is pending approval by an Administrator.");
-    } else {
-        showErrorMessage(regResult.error());
-    }
-    clearAndPause();
+    clearAndPause(); 
 }
 
 /**
@@ -763,7 +783,7 @@ void ConsoleUI::doAdminApproveRegistration() {
         return;
     }
     
-    std::cout << "Students Pending Approval:" << std::endl;
+    std::cout << "Students Pending Approval:\n";
     displayStudentsList(pendingStudents.value());
     
     std::string studentId = _prompter->promptForString("\nEnter ID of student to approve (or type 'cancel'):");
@@ -786,7 +806,7 @@ void ConsoleUI::doAdminApproveRegistration() {
  */
 void ConsoleUI::doAdminViewStudentsByStatus() {
     drawHeader("ADMIN - VIEW STUDENTS BY STATUS");
-    std::cout << "Select status to view:" << std::endl;
+    std::cout << "Select status to view:\n";
     std::vector<MenuItemDisplay> statusItems = {
         {"1", "Active (" + LoginStatusUtils::toString(LoginStatus::ACTIVE) + ")"},
         {"2", "Pending Approval (" + LoginStatusUtils::toString(LoginStatus::PENDING_APPROVAL) + ")"},
@@ -807,7 +827,7 @@ void ConsoleUI::doAdminViewStudentsByStatus() {
 
     auto students = _adminService->getStudentsByStatus(statusToView);
     if(students.has_value()){
-        std::cout << "\nStudents with status: " << LoginStatusUtils::toString(statusToView) << std::endl;
+        std::cout << "\nStudents with status: " << LoginStatusUtils::toString(statusToView) << "\n";
         displayStudentsList(students.value());
     } else {
         showErrorMessage(students.error());
@@ -817,14 +837,31 @@ void ConsoleUI::doAdminViewStudentsByStatus() {
 
 
 void ConsoleUI::doAdminAddStudent() {
-    NewStudentDataByAdmin data = promptForNewStudentDataByAdmin(); 
-    
-    auto addResult = _adminService->addStudentByAdmin(data);
-    if (addResult.has_value()) {
-        showSuccessMessage("Student " + addResult.value().getId() + " added successfully by admin.");
-        displayStudentDetails(addResult.value());
-    } else {
-        showErrorMessage(addResult.error());
+    drawHeader("ADMIN - ADD NEW STUDENT");
+    bool success = false;
+    int attempts = 0;
+    const int maxAttempts = 2; 
+
+    while(!success && attempts < maxAttempts){
+        NewStudentDataByAdmin data = promptForNewStudentDataByAdmin(); // Chỉ lấy input
+        // Service sẽ validate và thêm
+        auto addResult = _adminService->addStudentByAdmin(data); 
+        if (addResult.has_value()) {
+            showSuccessMessage("Student " + addResult.value().getId() + " added successfully by admin.");
+            displayStudentDetails(addResult.value());
+            success = true;
+        } else {
+            showErrorMessage(addResult.error());
+            attempts++;
+            if(!success && attempts < maxAttempts){
+                if(!_prompter->promptForYesNo("Failed to add student. Try again?")){
+                    break;
+                }
+                clearScreen();
+            } else if (!success) {
+                showErrorMessage("Failed to add student after multiple attempts.");
+            }
+        }
     }
     clearAndPause();
 }
@@ -838,49 +875,59 @@ void ConsoleUI::doAdminAddStudent() {
 void ConsoleUI::doAdminUpdateStudent() {
     drawHeader("ADMIN - UPDATE STUDENT DETAILS");
     std::string studentId = _prompter->promptForString("Enter ID of student to update:");
-    auto studentExp = _studentService->getStudentDetails(studentId); 
-    if(!studentExp.has_value()){
-        showErrorMessage(studentExp.error());
+    // Service sẽ kiểm tra studentId có tồn tại không
+    // và cũng sẽ validate các field được nhập mới.
+
+    // Lấy thông tin hiện tại để hiển thị cho admin (optional, nhưng hữu ích)
+    auto studentExpCurrent = _studentService->getStudentDetails(studentId);
+    if (!studentExpCurrent.has_value()) {
+        showErrorMessage(studentExpCurrent.error());
         clearAndPause();
         return;
     }
-    std::cout << "\nCurrent details for student " << studentId << ":" << std::endl;
-    displayStudentDetails(studentExp.value());
+    std::cout << "\nCurrent details for student " << studentId << ":\n";
+    displayStudentDetails(studentExpCurrent.value());
 
     StudentUpdateData updateData;
     updateData.studentIdToUpdate = studentId;
-    std::cout << "\nEnter new details (press Enter to keep current value):" << std::endl;
+    std::cout << "\nEnter new details (press Enter to keep current value for optional fields):\n";
     
     std::string temp;
-    temp = _prompter->promptForString("New First Name [" + studentExp.value().getFirstName() + "]:", true);
+    // FirstName (bắt buộc phải có giá trị mới nếu muốn thay đổi)
+    temp = _prompter->promptForString("New First Name (current: " + studentExpCurrent.value().getFirstName() + "):", true);
     if(!temp.empty()) updateData.firstName = temp;
 
-    temp = _prompter->promptForString("New Last Name [" + studentExp.value().getLastName() + "]:", true);
+    // LastName
+    temp = _prompter->promptForString("New Last Name (current: " + studentExpCurrent.value().getLastName() + "):", true);
     if(!temp.empty()) updateData.lastName = temp;
 
-    temp = _prompter->promptForString("New Email [" + studentExp.value().getEmail() + "]:", true);
+    // Email (bắt buộc)
+    temp = _prompter->promptForString("New Email (current: " + studentExpCurrent.value().getEmail() + "):", true);
     if(!temp.empty()) updateData.email = temp;
     
-    temp = _prompter->promptForString("New Faculty ID [" + studentExp.value().getFacultyId() + "]:", true);
+    // Faculty ID (bắt buộc)
+    temp = _prompter->promptForString("New Faculty ID (current: " + studentExpCurrent.value().getFacultyId() + "):", true);
     if(!temp.empty()) updateData.facultyId = temp;
     
-    if(_prompter->promptForYesNo("Update birthday [" + studentExp.value().getBirthday().toString_ddmmyyyy() + "]?")){
+    if(_prompter->promptForYesNo("Update birthday (current: " + studentExpCurrent.value().getBirthday().toString_ddmmyyyy() + ")?")){
         Birthday bday;
         bday.set(_prompter->promptForInt("  New Day:",1,31), _prompter->promptForInt("  New Month:",1,12), _prompter->promptForInt("  New Year:",1950,2010));
         updateData.birthday = bday;
     }
-     temp = _prompter->promptForString("New Address [" + studentExp.value().getAddress() + "]:", true);
+    temp = _prompter->promptForString("New Address (current: " + studentExpCurrent.value().getAddress() + "):", true);
     if(!temp.empty()) updateData.address = temp;
-    temp = _prompter->promptForString("New Citizen ID [" + studentExp.value().getCitizenId() + "]:", true);
+
+    temp = _prompter->promptForString("New Citizen ID (current: " + studentExpCurrent.value().getCitizenId() + "):", true);
     if(!temp.empty()) updateData.citizenId = temp;
-    temp = _prompter->promptForString("New Phone Number [" + studentExp.value().getPhoneNumber() + "]:", true);
+
+    temp = _prompter->promptForString("New Phone Number (current: " + studentExpCurrent.value().getPhoneNumber() + "):", true);
     if(!temp.empty()) updateData.phoneNumber = temp;
 
     auto result = _studentService->updateStudentDetails(updateData); 
     if(result.has_value() && result.value()){
         showSuccessMessage("Student details updated successfully.");
     } else if (result.has_value() && !result.value()){ 
-        showSuccessMessage("No changes applied to student details.");
+        showSuccessMessage("No changes were applied to student details.");
     }
     else {
         showErrorMessage(result.error());
@@ -906,7 +953,7 @@ void ConsoleUI::doAdminRemoveStudent() {
             showErrorMessage(result.error());
         }
     } else {
-        std::cout << "Student removal cancelled." << std::endl;
+        std::cout << "Student removal cancelled.\n";
     }
     clearAndPause();
 }
@@ -973,12 +1020,12 @@ void ConsoleUI::doAdminUpdateTeacher() {
         clearAndPause();
         return;
     }
-    std::cout << "\nCurrent details for teacher " << teacherId << ":" << std::endl;
+    std::cout << "\nCurrent details for teacher " << teacherId << ":\n";
     displayTeacherDetails(teacherExp.value());
 
     TeacherUpdateData updateData;
     updateData.teacherIdToUpdate = teacherId;
-    std::cout << "\nEnter new details (press Enter to keep current value):" << std::endl;
+    std::cout << "\nEnter new details (press Enter to keep current value):\n";
     std::string temp;
     
     temp = _prompter->promptForString("New First Name [" + teacherExp.value().getFirstName() + "]:", true);
@@ -1032,7 +1079,7 @@ void ConsoleUI::doAdminRemoveTeacher() {
             showErrorMessage(result.error());
         }
     } else {
-        std::cout << "Teacher removal cancelled." << std::endl;
+        std::cout << "Teacher removal cancelled.\n";
     }
     clearAndPause();
 }
@@ -1097,7 +1144,7 @@ void ConsoleUI::doAdminUpdateFaculty() {
         clearAndPause();
         return;
     }
-    std::cout << "Current name for ID " << facultyId << ": " << facultyExp.value().getName() << std::endl;
+    std::cout << "Current name for ID " << facultyId << ": " << facultyExp.value().getName() << "\n";
     std::string newName = _prompter->promptForString("Enter new name for faculty:");
 
     auto result = _facultyService->updateFaculty(facultyId, newName);
@@ -1127,7 +1174,7 @@ void ConsoleUI::doAdminRemoveFaculty() {
             showErrorMessage(result.error());
         }
     } else {
-        std::cout << "Faculty removal cancelled." << std::endl;
+        std::cout << "Faculty removal cancelled.\n";
     }
     clearAndPause();
 }
@@ -1221,10 +1268,10 @@ void ConsoleUI::doAdminUpdateCourse() {
         clearAndPause();
         return;
     }
-    std::cout << "\nCurrent details for course " << courseId << ":" << std::endl;
+    std::cout << "\nCurrent details for course " << courseId << ":\n";
     displayCourseDetails(courseExp.value());
 
-    std::cout << "\nEnter new details (press Enter to keep current value):" << std::endl;
+    std::cout << "\nEnter new details (press Enter to keep current value):\n";
     std::string newName = _prompter->promptForString("New Name ["+courseExp.value().getName()+"]:", true);
     if(newName.empty()) newName = courseExp.value().getName();
 
@@ -1267,7 +1314,7 @@ void ConsoleUI::doAdminRemoveCourse() {
             showErrorMessage(result.error());
         }
     } else {
-        std::cout << "Course removal cancelled." << std::endl;
+        std::cout << "Course removal cancelled.\n";
     }
     clearAndPause();
 }
@@ -1343,7 +1390,7 @@ void ConsoleUI::doAdminDisableUserAccount(){
             showErrorMessage(result.error());
         }
     } else {
-        std::cout << "Account disabling cancelled." << std::endl;
+        std::cout << "Account disabling cancelled.\n";
     }
     clearAndPause();
 }
@@ -1365,7 +1412,7 @@ void ConsoleUI::doAdminEnableUserAccount(){
             showErrorMessage(result.error());
         }
     } else {
-        std::cout << "Account enabling cancelled." << std::endl;
+        std::cout << "Account enabling cancelled.\n";
     }
     clearAndPause();
 }
@@ -1406,7 +1453,7 @@ void ConsoleUI::doStudentViewResults() {
     drawHeader("MY ACADEMIC RESULTS");
     auto reportResult = _resultService->generateStudentResultReport(studentId);
     if(reportResult.has_value()){
-        std::cout << reportResult.value() << std::endl;
+        std::cout << reportResult.value() << "\n";
     } else {
         showErrorMessage(reportResult.error());
     }
@@ -1434,7 +1481,7 @@ void ConsoleUI::doStudentEnrollCourse() {
         showErrorMessage("No courses available to enroll at the moment.");
         clearAndPause(); return;
     }
-    std::cout << "Available courses:" << std::endl;
+    std::cout << "Available courses:\n";
     displayCoursesList(coursesExp.value());
     std::string courseId = _prompter->promptForString("Enter Course ID to enroll:");
 
@@ -1468,7 +1515,7 @@ void ConsoleUI::doStudentDropCourse() {
         showErrorMessage("You are not enrolled in any courses to drop.");
         clearAndPause(); return;
     }
-    std::cout << "Your enrolled courses:" << std::endl;
+    std::cout << "Your enrolled courses:\n";
     displayCoursesList(enrolledCoursesExp.value());
     std::string courseId = _prompter->promptForString("Enter Course ID to drop:");
 
@@ -1480,7 +1527,7 @@ void ConsoleUI::doStudentDropCourse() {
             showErrorMessage(dropResult.error());
         }
     } else {
-        std::cout << "Course drop cancelled." << std::endl;
+        std::cout << "Course drop cancelled.\n";
     }
     clearAndPause();
 }
@@ -1535,14 +1582,14 @@ void ConsoleUI::doStudentMakeFeePayment() {
             showSuccessMessage("Payment of " + std::to_string(amount) + " successful.");
             auto receiptExp = _financeService->generateFeeReceipt(studentId, amount);
             if(receiptExp.has_value()) {
-                std::cout << "\n--- PAYMENT RECEIPT ---" << std::endl;
-                std::cout << receiptExp.value() << std::endl;
+                std::cout << "\n--- PAYMENT RECEIPT ---\n";
+                std::cout << receiptExp.value() << "\n";
             }
         } else {
             showErrorMessage(paymentResult.error());
         }
     } else {
-        std::cout << "Payment cancelled." << std::endl;
+        std::cout << "Payment cancelled.\n";
     }
     clearAndPause();
 }
@@ -1584,7 +1631,7 @@ void ConsoleUI::doTeacherEnterMarks() {
         showErrorMessage("Course not found: " + courseExp.error().message);
         clearAndPause(); return;
     }
-    std::cout << "Selected course: " << courseExp.value().getName() << " (" << courseId << ")" << std::endl;
+    std::cout << "Selected course: " << courseExp.value().getName() << " (" << courseId << ")\n";
 
     std::string studentId = _prompter->promptForString("Enter Student ID:");
     int marks = _prompter->promptForInt("Enter Marks (-1 for N/A, 0-100):", -1, 100);
@@ -1614,7 +1661,7 @@ void ConsoleUI::doTeacherViewSalary() {
         displaySalaryRecordDetails(result.value());
         if(_prompter->promptForYesNo("Generate salary certificate?")){
             auto certExp = _financeService->generateSalaryCertificate(teacherId);
-            if(certExp.has_value()) std::cout << "\n--- SALARY CERTIFICATE ---\n" << certExp.value() << std::endl;
+            if(certExp.has_value()) std::cout << "\n--- SALARY CERTIFICATE ---\n" << certExp.value() << "\n";
             else showErrorMessage(certExp.error());
         }
     } else {
@@ -1647,7 +1694,7 @@ void ConsoleUI::doTeacherViewEnrolledStudents() {
 
     auto studentsExp = _enrollmentService->getEnrolledStudentsByCourse(courseId);
     if(studentsExp.has_value()){
-        std::cout << "\nStudents enrolled in " << courseId << ":" << std::endl;
+        std::cout << "\nStudents enrolled in " << courseId << ":\n";
         displayStudentsList(studentsExp.value());
     } else {
         showErrorMessage(studentsExp.error());
@@ -1695,7 +1742,7 @@ void ConsoleUI::displayStudentDetails(const Student& student) {
  */
 void ConsoleUI::displayStudentsList(const std::vector<Student>& students) {
     if (students.empty()) {
-        std::cout << "No students to display." << std::endl;
+        std::cout << "No students to display.\n";
         return;
     }
     std::vector<std::string> headers = {"ID", "Full Name", "Email", "Faculty ID", "Status"};
@@ -1753,7 +1800,7 @@ void ConsoleUI::displayTeacherDetails(const Teacher& teacher) {
  * @param teachers Tham chiếu đến vector chứa các đối tượng giảng viên cần hiển thị
  */
 void ConsoleUI::displayTeachersList(const std::vector<Teacher>& teachers){
-     if (teachers.empty()) { std::cout << "No teachers to display." << std::endl; return; }
+     if (teachers.empty()) { std::cout << "No teachers to display.\n"; return; }
     std::vector<std::string> headers = {"ID", "Full Name", "Email", "Faculty ID", "Designation", "Status"};
     std::vector<std::vector<std::string>> rows;
      std::vector<int> widths = {10, 25, 30, 12, 20, 18};
@@ -1786,7 +1833,7 @@ void ConsoleUI::displayFacultyDetails(const Faculty& faculty){
  * @param faculties Tham chiếu đến vector chứa các đối tượng khoa cần hiển thị
  */
 void ConsoleUI::displayFacultiesList(const std::vector<Faculty>& faculties){
-    if (faculties.empty()) { std::cout << "No faculties to display." << std::endl; return; }
+    if (faculties.empty()) { std::cout << "No faculties to display.\n"; return; }
     std::vector<std::string> headers = {"ID", "Name"};
     std::vector<std::vector<std::string>> rows;
     std::vector<int> widths = {10, 40};
@@ -1826,7 +1873,7 @@ void ConsoleUI::displayCourseDetails(const Course& course){
  * @param courses Tham chiếu đến vector chứa các đối tượng khóa học cần hiển thị
  */
 void ConsoleUI::displayCoursesList(const std::vector<Course>& courses){
-    if (courses.empty()) { std::cout << "No courses to display." << std::endl; return; }
+    if (courses.empty()) { std::cout << "No courses to display.\n"; return; }
     std::vector<std::string> headers = {"ID", "Name", "Credits", "Faculty ID"};
     std::vector<std::vector<std::string>> rows;
     std::vector<int> widths = {10, 35, 10, 12};
@@ -1848,7 +1895,7 @@ void ConsoleUI::displayCoursesList(const std::vector<Course>& courses){
 void ConsoleUI::displayCourseResultEntry(const CourseResult& result, const std::string& courseName) {
     std::cout << "Course: " << std::left << std::setw(30) << (!courseName.empty() ? courseName : result.getCourseId())
               << " Marks: " << std::right << std::setw(3) << (result.getMarks() == -1 ? "N/A" : std::to_string(result.getMarks()))
-              << " Grade: " << result.getGrade() << std::endl;
+              << " Grade: " << result.getGrade() << "\n";
 }
 
 /**
@@ -1861,7 +1908,7 @@ void ConsoleUI::displayCourseResultEntry(const CourseResult& result, const std::
  */
 void ConsoleUI::displayCourseResultsList(const std::vector<CourseResult>& results) {
      if (results.empty()) {
-        std::cout << "No results to display." << std::endl;
+        std::cout << "No results to display.\n";
         return;
     }
     std::vector<std::string> headers = {"Course ID", "Course Name", "Credits", "Marks", "Grade"};
@@ -1913,7 +1960,7 @@ StudentRegistrationData ConsoleUI::promptForStudentRegistrationData() {
     
     auto facultiesExp = _facultyService->getAllFaculties(); 
     if (facultiesExp.has_value() && !facultiesExp.value().empty()) {
-        std::cout << "\nAvailable Faculties:" << std::endl;
+        std::cout << "\nAvailable Faculties:\n";
         displayFacultiesList(facultiesExp.value());
         data.facultyId = _prompter->promptForString("Enter Faculty ID from the list above:");
     } else {
@@ -1923,10 +1970,10 @@ StudentRegistrationData ConsoleUI::promptForStudentRegistrationData() {
         data.facultyId = _prompter->promptForString("Enter Faculty ID (will be validated):");
     }
 
-    std::cout << "\nEnter Birthday:" << std::endl;
+    std::cout << "\nEnter Birthday:\n";
     data.birthDay = _prompter->promptForInt("  Day (1-31):", 1, 31);
     data.birthMonth = _prompter->promptForInt("  Month (1-12):", 1, 12);
-    data.birthYear = _prompter->promptForInt("  Year (e.g., 1990-2006):", 1950, 2010); 
+    data.birthYear = _prompter->promptForInt("  Year (e.g., 1925-2025):", 1925, 2025); 
     data.address = _prompter->promptForString("Enter Address (optional):", true);
     data.citizenId = _prompter->promptForString("Enter Citizen ID (9 or 12 digits):");
     data.phoneNumber = _prompter->promptForString("Enter Phone Number (optional, VN format e.g., 09xxxxxxxx):", true);
@@ -1951,7 +1998,7 @@ NewTeacherDataByAdmin ConsoleUI::promptForNewTeacherDataByAdmin() {
     
     auto facultiesExp = _facultyService->getAllFaculties();
     if (facultiesExp.has_value() && !facultiesExp.value().empty()) {
-        std::cout << "\nAvailable Faculties:" << std::endl;
+        std::cout << "\nAvailable Faculties:\n";
         displayFacultiesList(facultiesExp.value());
         data.facultyId = _prompter->promptForString("Enter Faculty ID from the list above:");
     } else {
@@ -1961,7 +2008,7 @@ NewTeacherDataByAdmin ConsoleUI::promptForNewTeacherDataByAdmin() {
         data.facultyId = _prompter->promptForString("Enter Faculty ID (will be validated):");
     }
 
-    std::cout << "\nEnter Birthday:" << std::endl;
+    std::cout << "\nEnter Birthday:\n";
     data.birthDay = _prompter->promptForInt("  Day (1-31):", 1, 31);
     data.birthMonth = _prompter->promptForInt("  Month (1-12):", 1, 12);
     data.birthYear = _prompter->promptForInt("  Year (e.g., 1970-1995):", 1950, 2000); 

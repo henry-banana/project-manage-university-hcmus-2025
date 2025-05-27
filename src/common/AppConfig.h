@@ -23,7 +23,7 @@
  * đường dẫn đến các file CSV, chuỗi kết nối SQL, cấp độ ghi log, và đường dẫn file log.
  */
 struct AppConfig {
-    DataSourceType dataSourceType = DataSourceType::MOCK; ///< Loại nguồn dữ liệu (MOCK, CSV, SQL)
+    DataSourceType dataSourceType = DataSourceType::SQL; ///< Loại nguồn dữ liệu (MOCK, CSV, SQL)
     std::map<EntityType, std::filesystem::path> csvFilePaths; ///< Ánh xạ từ loại thực thể đến đường dẫn file CSV
     std::string sqlConnectionString; ///< Chuỗi kết nối SQL
 

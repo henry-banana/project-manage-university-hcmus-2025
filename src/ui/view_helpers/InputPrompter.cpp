@@ -18,7 +18,7 @@ std::string InputPrompter::promptForString(const std::string& promptMessage, boo
         std::cout << promptMessage << " ";
         std::getline(std::cin, input);
         if (std::cin.eof()) { // Xử lý EOF (Ctrl+D/Ctrl+Z)
-             std::cout << "Input stream ended. Exiting or using default." << std::endl;
+             std::cout << "Input stream ended. Exiting or using default.\n";
              // Có thể throw exception hoặc trả về giá trị đặc biệt
              // Hiện tại, nếu không cho phép rỗng thì sẽ lặp lại
              if (allowEmpty) return ""; // Hoặc một giá trị báo hiệu EOF
@@ -26,12 +26,12 @@ std::string InputPrompter::promptForString(const std::string& promptMessage, boo
         if (std::cin.fail()) { // Xử lý lỗi stream khác
             std::cin.clear(); // Xóa cờ lỗi
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Bỏ qua input lỗi
-            std::cout << "Invalid input. Please try again." << std::endl;
+            std::cout << "Invalid input. Please try again.\n";
             continue;
         }
         input = StringUtils::trim(input);
         if (!allowEmpty && input.empty()) {
-            std::cout << "Input cannot be empty. Please try again." << std::endl;
+            std::cout << "Input cannot be empty. Please try again.\n";
         } else {
             break;
         }
@@ -57,7 +57,7 @@ long InputPrompter::promptForLong(const std::string& promptMessage, long minVal,
         std::cout << promptMessage << " (" << minVal << "-" << maxVal << "): ";
         std::getline(std::cin, line);
          if (std::cin.eof()) {
-            std::cout << "Input stream ended. Using default or exiting." << std::endl;
+            std::cout << "Input stream ended. Using default or exiting.\n";
             // throw std::runtime_error("Input stream ended during long prompt.");
             return minVal; // Hoặc một giá trị báo hiệu
         }
@@ -67,12 +67,12 @@ long InputPrompter::promptForLong(const std::string& promptMessage, long minVal,
             if (processedChars == line.length() && value >= minVal && value <= maxVal) { // Toàn bộ chuỗi được parse và nằm trong khoảng
                 break;
             } else {
-                std::cout << "Invalid input. Please enter a number between " << minVal << " and " << maxVal << "." << std::endl;
+                std::cout << "Invalid input. Please enter a number between " << minVal << " and " << maxVal << ".\n";
             }
         } catch (const std::invalid_argument&) {
-            std::cout << "Invalid format. Please enter a valid number." << std::endl;
+            std::cout << "Invalid format. Please enter a valid number.\n";
         } catch (const std::out_of_range&) {
-            std::cout << "Number out of range. Please enter a smaller number." << std::endl;
+            std::cout << "Number out of range. Please enter a smaller number.\n";
         }
         if (std::cin.fail()) {
              std::cin.clear();
@@ -119,7 +119,7 @@ double InputPrompter::promptForDouble(const std::string& promptMessage, double m
         std::cout << ": ";
         std::getline(std::cin, line);
         if (std::cin.eof()) {
-            std::cout << "Input stream ended. Using default or exiting." << std::endl;
+            std::cout << "Input stream ended. Using default or exiting.\n";
             return minVal; // Hoặc giá trị báo hiệu
         }
         try {
@@ -132,12 +132,12 @@ double InputPrompter::promptForDouble(const std::string& promptMessage, double m
                 if (minVal != std::numeric_limits<double>::lowest() || maxVal != std::numeric_limits<double>::max()) {
                      std::cout << " between " << minVal << " and " << maxVal;
                 }
-                std::cout << "." << std::endl;
+                std::cout << ".\n";
             }
         } catch (const std::invalid_argument&) {
-            std::cout << "Invalid format. Please enter a valid number." << std::endl;
+            std::cout << "Invalid format. Please enter a valid number.\n";
         } catch (const std::out_of_range&) {
-            std::cout << "Number out of range. Please enter a number within the valid range." << std::endl;
+            std::cout << "Number out of range. Please enter a number within the valid range.\n";
         }
          if (std::cin.fail()) {
              std::cin.clear();
@@ -169,7 +169,7 @@ bool InputPrompter::promptForYesNo(const std::string& promptMessage, char yesCha
         std::cout << promptMessage << " (" << yesChar << "/" << noChar << "): ";
         std::getline(std::cin, input);
          if (std::cin.eof()) {
-            std::cout << "Input stream ended. Assuming 'no'." << std::endl;
+            std::cout << "Input stream ended. Assuming 'no'.\n";
             return false;
         }
         if (input.length() == 1) {
@@ -177,7 +177,7 @@ bool InputPrompter::promptForYesNo(const std::string& promptMessage, char yesCha
             if (choice == yesChar) return true;
             if (choice == noChar) return false;
         }
-        std::cout << "Invalid input. Please enter '" << yesChar << "' or '" << noChar << "'." << std::endl;
+        std::cout << "Invalid input. Please enter '" << yesChar << "' or '" << noChar << "'.\n";
          if (std::cin.fail()) {
              std::cin.clear();
              std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');

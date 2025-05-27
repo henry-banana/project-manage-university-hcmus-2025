@@ -262,7 +262,7 @@ std::expected<std::string, Error> ResultService::generateStudentResultReport(con
            << std::setw(35) << "Course Name"
            << std::setw(10) << "Credits"
            << std::setw(8) << "Marks"
-           << std::setw(8) << "Grade" << "\n";
+           << std::setw(8) << "Grade\n";
     report << "-------------------------------------------------------------------------\n";
 
     if (results.empty()) {
