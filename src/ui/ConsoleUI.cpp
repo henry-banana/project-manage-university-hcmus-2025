@@ -707,7 +707,7 @@ void ConsoleUI::doStudentRegistration() {
             showSuccessMessage("Registration successful! Your application is pending approval by an Administrator.");
             registrationSuccess = true; // Thoát vòng lặp
         } else {
-            showErrorMessage(regResult.error()); // Hiển thị lỗi từ service
+            showErrorMessage(regResult.error());
             attempts++;
             if (!registrationSuccess && attempts < maxAttempts) {
                 if (!_prompter->promptForYesNo("Registration failed. Do you want to try again with all new information?")) {
