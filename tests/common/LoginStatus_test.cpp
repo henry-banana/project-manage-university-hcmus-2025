@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "../src/common/LoginStatus.h"
+#include <stdexcept> // Required for ASSERT_THROW
 
 TEST(LoginStatusTest, EnumValues) {
     ASSERT_EQ(static_cast<int>(LoginStatus::ACTIVE), 0);
@@ -20,7 +21,5 @@ TEST(LoginStatusUtilsTest, FromString) {
 }
 
 TEST(LoginStatusUtilsTest, FromStringInvalid) {
-    // Assuming fromString returns a default value or throws an exception for invalid strings
-    // Adjust the assertion based on the actual behavior of fromString
-    ASSERT_EQ(LoginStatusUtils::fromString("INVALID"), LoginStatus::ACTIVE); // Or whatever default value is
+    ASSERT_THROW(LoginStatusUtils::fromString("INVALID"), std::invalid_argument);
 }
