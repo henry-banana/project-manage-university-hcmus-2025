@@ -2,6 +2,7 @@
 #define LOGIN_STATUS_H
 
 #include <string> // Cho hàm toString helper
+#include <stdexcept> // Cho std::invalid_argument
 
 /**
  * @enum LoginStatus

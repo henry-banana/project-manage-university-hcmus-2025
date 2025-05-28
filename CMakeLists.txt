@@ -9,8 +9,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+# Thêm thư mục Google Test vào dự án
+# Đảm bảo bạn đã tải mã nguồn Google Test và giải nén nó thành thư mục "googletest-main"
+# trong thư mục gốc của dự án.
+add_subdirectory(googletest-main)
 
-# find_package(SQLite3 REQUIRED)
+# Bật tính năng kiểm thử (testing) cho dự án
+enable_testing()
 
 # Thêm các thư mục include (vẫn giữ nguyên phần này để trình biên dịch biết tìm header ở đâu)
 include_directories(
@@ -35,6 +40,9 @@ include_directories(
     src/core/validators/impl
     src/ui
     src/utils
+    # Thêm thư mục test vào include paths để các file test có thể tìm thấy các header của dự án
+    tests
+    googletest-main/googletest/include # Thêm đường dẫn đến thư mục include của Google Test
 )
 
 # --- Thu thập các file nguồn bằng GLOB_RECURSE ---
@@ -82,6 +90,22 @@ set(SOURCES
 # Nếu bạn dùng pattern rộng hơn, bạn có thể cần lọc:
 # list(FILTER SOURCES EXCLUDE REGEX ".+\\.h$")
 
+# Tạo một danh sách các file nguồn của ứng dụng CHỈ DÙNG CHO TEST (không bao gồm main.cpp)
+set(APP_SOURCES_FOR_TESTS
+    ${COMMON_SOURCES}
+    ${ENTITIES_SOURCES}
+    ${DAO_MOCK_SOURCES}
+    ${DAO_SQL_SOURCES}
+    ${DAO_FACTORY_SOURCES}
+    ${DB_ADAPTER_SQL_SOURCES}
+    ${PARSING_SQL_SOURCES}
+    ${SERVICES_IMPL_SOURCES}
+    ${VALIDATORS_IMPL_SOURCES}
+    ${UI_SOURCES}
+    ${UTILS_SOURCES}
+    src/core/database_adapter/sql/sqlite3.c # Thêm sqlite3.c vào đây vì nó là một phần của logic ứng dụng
+)
+
 # Thêm file thực thi
 add_executable(university_manager
     ${SOURCES}
@@ -116,6 +140,29 @@ if (UNIX)
 endif()
 
 set_source_files_properties(src/core/database_adapter/sql/sqlite3.c PROPERTIES LANGUAGE C)
+
+# --- Cấu hình cho Unit Tests ---
+
+# Thu thập tất cả các file nguồn test từ thư mục tests/
+# Đảm bảo bạn đặt các file test của mình (ví dụ: my_class_test.cpp) vào thư mục tests/
+file(GLOB_RECURSE TEST_SOURCES tests/*.cpp)
+
+# Tạo executable cho các unit test
+# Executable này sẽ bao gồm các file test VÀ tất cả các file nguồn của ứng dụng (trừ main.cpp)
+add_executable(university_manager_tests
+    ${TEST_SOURCES}
+    ${APP_SOURCES_FOR_TESTS} # Bao gồm tất cả các file nguồn của ứng dụng (trừ main.cpp)
+)
+
+# Các test file cần liên kết với thư viện gtest và gtest_main
+target_link_libraries(university_manager_tests
+    PRIVATE
+    GTest::gtest_main
+)
+
+# Thêm test vào CTest
+# CTest sẽ chạy executable này khi bạn chạy "make test" hoặc "ctest"
+add_test(NAME UniversityManagementSystemUnitTests COMMAND university_manager_tests)
 
 message(STATUS "Project Name: ${PROJECT_NAME}")
 message(STATUS "CXX Standard: ${CMAKE_CXX_STANDARD}")
