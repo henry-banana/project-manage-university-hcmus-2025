@@ -43,6 +43,7 @@ include_directories(
     # Thêm thư mục test vào include paths để các file test có thể tìm thấy các header của dự án
     tests
     googletest-main/googletest/include # Thêm đường dẫn đến thư mục include của Google Test
+    googletest-main/googlemock/include # Thêm đường dẫn đến thư mục include của Google Mock
 )
 
 # --- Thu thập các file nguồn bằng GLOB_RECURSE ---
@@ -158,11 +159,12 @@ add_executable(university_manager_tests
 target_link_libraries(university_manager_tests
     PRIVATE
     GTest::gtest_main
+    GTest::gmock_main
 )
 
 # Thêm test vào CTest
 # CTest sẽ chạy executable này khi bạn chạy "make test" hoặc "ctest"
 add_test(NAME UniversityManagementSystemUnitTests COMMAND university_manager_tests)
-
+#
 message(STATUS "Project Name: ${PROJECT_NAME}")
 message(STATUS "CXX Standard: ${CMAKE_CXX_STANDARD}")
