@@ -97,3 +97,8 @@ std::expected<Faculty, Error> MockFacultyDao::findByName(const std::string& name
     }
     return std::unexpected(Error{ErrorCode::NOT_FOUND, "Mock Faculty with name '" + name + "' not found"});
 }
+
+void MockFacultyDao::resetMockData() {
+    mock_faculties_data.clear();
+    mock_faculty_data_initialized = false;
+}
