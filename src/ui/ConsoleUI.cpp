@@ -301,6 +301,7 @@ void ConsoleUI::processCurrentState() {
  * @param state Tham chiếu đến đối tượng trạng thái
  */
 void ConsoleUI::handleState(UnauthenticatedState&) {
+    clearScreen();
     drawHeader("UNIVERSITY MANAGEMENT SYSTEM");
     std::vector<MenuItemDisplay> items = {
         {"1", "Login"},
@@ -817,6 +818,7 @@ void ConsoleUI::doAdminApproveRegistration() {
  * và hiển thị danh sách sinh viên có trạng thái tương ứng.
  */
 void ConsoleUI::doAdminViewStudentsByStatus() {
+    clearScreen();
     drawHeader("ADMIN - VIEW STUDENTS BY STATUS");
     std::cout << "Select status to view:\n";
     std::vector<MenuItemDisplay> statusItems = {
@@ -833,7 +835,7 @@ void ConsoleUI::doAdminViewStudentsByStatus() {
         case 1: statusToView = LoginStatus::ACTIVE; break;
         case 2: statusToView = LoginStatus::PENDING_APPROVAL; break;
         case 3: statusToView = LoginStatus::DISABLED; break;
-        case 0: clearAndPause("Returning..."); return;
+        case 0: clearAndPause("Enter to return."); return;
         default: showErrorMessage("Invalid status choice."); clearAndPause(); return;
     }
 
@@ -849,6 +851,7 @@ void ConsoleUI::doAdminViewStudentsByStatus() {
 
 
 void ConsoleUI::doAdminAddStudent() {
+    clearScreen();
     drawHeader("ADMIN - ADD NEW STUDENT");
     bool success = false;
     int attempts = 0;
@@ -888,7 +891,14 @@ void ConsoleUI::doAdminAddStudent() {
  * và cho phép nhập các thông tin mới để cập nhật.
  */
 void ConsoleUI::doAdminUpdateStudent() {
+    clearScreen();
     drawHeader("ADMIN - UPDATE STUDENT DETAILS");
+
+    std::cout << "Current Students:\n";
+    auto displayTemp = _studentService->getAllStudents(); 
+    if (displayTemp.has_value()) displayStudentsList(displayTemp.value());
+    else showErrorMessage(displayTemp.error());
+
     std::string studentId = _prompter->promptForString("Enter ID of student to update:");
     // Service sẽ kiểm tra studentId có tồn tại không
     // và cũng sẽ validate các field được nhập mới.
@@ -958,7 +968,14 @@ void ConsoleUI::doAdminUpdateStudent() {
  * và không thể khôi phục.
  */
 void ConsoleUI::doAdminRemoveStudent() {
+    clearScreen();
     drawHeader("ADMIN - REMOVE STUDENT ACCOUNT");
+
+    std::cout << "Current Students:\n";
+    auto displayTemp = _studentService->getAllStudents(); 
+    if (displayTemp.has_value()) displayStudentsList(displayTemp.value());
+    else showErrorMessage(displayTemp.error());
+
     std::string studentId = _prompter->promptForString("Enter ID of student to remove:");
     if(_prompter->promptForYesNo("Are you sure you want to PERMANENTLY remove student " + studentId + "?\nThis will delete ALL related data (login, enrollments, results, fees). This action is IRREVERSIBLE.")){
         auto result = _adminService->removeStudentAccount(studentId);
@@ -980,6 +997,7 @@ void ConsoleUI::doAdminRemoveStudent() {
  * thông tin cơ bản của mỗi sinh viên.
  */
 void ConsoleUI::doAdminViewAllStudents() {
+    clearScreen();
     drawHeader("ADMIN - ALL STUDENTS");
     auto result = _studentService->getAllStudents(); 
     if(result.has_value()) displayStudentsList(result.value());
@@ -994,6 +1012,7 @@ void ConsoleUI::doAdminViewAllStudents() {
  * thông tin chi tiết của sinh viên nếu tìm thấy.
  */
 void ConsoleUI::doAdminFindStudentById() {
+    clearScreen();
     drawHeader("ADMIN - FIND STUDENT BY ID");
     std::string id = _prompter->promptForString("Enter Student ID to find:");
     auto result = _studentService->getStudentDetails(id); 
@@ -1008,6 +1027,7 @@ void ConsoleUI::doAdminFindStudentById() {
  * Yêu cầu Admin nhập thông tin giảng viên mới và thực hiện thêm giảng viên.
  */
 void ConsoleUI::doAdminAddTeacher() {
+    clearScreen();
     drawHeader("ADMIN - ADD NEW TEACHER"); // (➕) Thêm header
     NewTeacherDataByAdmin data = promptForNewTeacherDataByAdmin(); 
     if (data.facultyId.empty() && (_facultyService->getAllFaculties().has_value() && _facultyService->getAllFaculties().value().empty())) {
@@ -1032,6 +1052,7 @@ void ConsoleUI::doAdminAddTeacher() {
  * và cho phép nhập các thông tin mới để cập nhật.
  */
 void ConsoleUI::doAdminUpdateTeacher() {
+    clearScreen();
     drawHeader("ADMIN - UPDATE TEACHER DETAILS");
     std::string teacherId = _prompter->promptForString("Enter ID of teacher to update:");
     auto teacherExp = _teacherService->getTeacherDetails(teacherId);
@@ -1089,6 +1110,7 @@ void ConsoleUI::doAdminUpdateTeacher() {
  * và không thể khôi phục.
  */
 void ConsoleUI::doAdminRemoveTeacher() {
+    clearScreen();
     drawHeader("ADMIN - REMOVE TEACHER ACCOUNT");
     std::string teacherId = _prompter->promptForString("Enter ID of teacher to remove:");
     if(_prompter->promptForYesNo("Are you sure you want to PERMANENTLY remove teacher " + teacherId + "?\nThis will delete ALL related data (login, salary). This action is IRREVERSIBLE.")){
@@ -1105,6 +1127,7 @@ void ConsoleUI::doAdminRemoveTeacher() {
 }
 
 void ConsoleUI::doAdminViewAllTeachers() {
+    clearScreen();
     drawHeader("ADMIN - ALL TEACHERS");
     auto result = _teacherService->getAllTeachers(); 
     if(result.has_value()) displayTeachersList(result.value());
@@ -1119,6 +1142,7 @@ void ConsoleUI::doAdminViewAllTeachers() {
  * thông tin chi tiết của giảng viên nếu tìm thấy.
  */
 void ConsoleUI::doAdminFindTeacherById() {
+    clearScreen();
     drawHeader("ADMIN - FIND TEACHER BY ID");
     std::string id = _prompter->promptForString("Enter Teacher ID to find:");
     auto result = _teacherService->getTeacherDetails(id); 
@@ -1135,6 +1159,7 @@ void ConsoleUI::doAdminFindTeacherById() {
  * nếu thành công.
  */
 void ConsoleUI::doAdminAddFaculty() {
+    clearScreen();
     drawHeader("ADMIN - ADD NEW FACULTY");
     std::string id = _prompter->promptForString("Enter Faculty ID (e.g., IT, EE):");
     std::string name = _prompter->promptForString("Enter Faculty Name:");
@@ -1156,6 +1181,7 @@ void ConsoleUI::doAdminAddFaculty() {
  * và cho phép nhập tên mới để cập nhật.
  */
 void ConsoleUI::doAdminUpdateFaculty() {
+    clearScreen();
     drawHeader("ADMIN - UPDATE FACULTY NAME");
     std::string facultyId = _prompter->promptForString("Enter ID of faculty to update:");
     auto facultyExp = _facultyService->getFacultyById(facultyId);
@@ -1184,6 +1210,7 @@ void ConsoleUI::doAdminUpdateFaculty() {
  * giảng viên và khóa học liên quan.
  */
 void ConsoleUI::doAdminRemoveFaculty() {
+    clearScreen();
     drawHeader("ADMIN - REMOVE FACULTY");
     std::string facultyId = _prompter->promptForString("Enter ID of faculty to remove:");
      if(_prompter->promptForYesNo("Are you sure you want to remove faculty " + facultyId + "?\nAssociated students, teachers, and courses will have their faculty ID set to NULL (or prevent removal if DB restricts).")){
@@ -1206,6 +1233,7 @@ void ConsoleUI::doAdminRemoveFaculty() {
  * thông tin cơ bản của mỗi khoa.
  */
 void ConsoleUI::doAdminViewAllFaculties() {
+    clearScreen();
     drawHeader("ADMIN - ALL FACULTIES");
     auto result = _facultyService->getAllFaculties();
     if(result.has_value()){
@@ -1224,6 +1252,7 @@ void ConsoleUI::doAdminViewAllFaculties() {
  * đầu tiên bằng ID, sau đó bằng tên nếu không tìm thấy.
  */
 void ConsoleUI::doAdminFindFaculty() {
+    clearScreen();
     drawHeader("ADMIN - FIND FACULTY");
     std::string idOrName = _prompter->promptForString("Enter Faculty ID or Name to find:");
     auto resultById = _facultyService->getFacultyById(idOrName);
@@ -1248,6 +1277,7 @@ void ConsoleUI::doAdminFindFaculty() {
  * nếu thành công.
  */
 void ConsoleUI::doAdminAddCourse() {
+    clearScreen();
     drawHeader("ADMIN - ADD NEW COURSE");
     std::string id = _prompter->promptForString("Enter Course ID (e.g., CS101):");
     std::string name = _prompter->promptForString("Enter Course Name:");
@@ -1280,6 +1310,7 @@ void ConsoleUI::doAdminAddCourse() {
  * và cho phép nhập các thông tin mới để cập nhật.
  */
 void ConsoleUI::doAdminUpdateCourse() {
+    clearScreen();
     drawHeader("ADMIN - UPDATE COURSE DETAILS");
     std::string courseId = _prompter->promptForString("Enter ID of course to update:");
     auto courseExp = _courseService->getCourseById(courseId);
@@ -1324,6 +1355,7 @@ void ConsoleUI::doAdminUpdateCourse() {
  * Yêu cầu Admin nhập ID khóa học cần xóa, xác nhận lại, và thực hiện xóa nếu đồng ý.
  */
 void ConsoleUI::doAdminRemoveCourse() {
+    clearScreen();
     drawHeader("ADMIN - REMOVE COURSE");
     std::string courseId = _prompter->promptForString("Enter ID of course to remove:");
     if(_prompter->promptForYesNo("Are you sure you want to remove course " + courseId + "?\nThis may affect enrollments and results (data will be unlinked or deleted based on DB schema).")){
@@ -1345,6 +1377,7 @@ void ConsoleUI::doAdminRemoveCourse() {
  * Hiển thị danh sách tất cả các khóa học trong hệ thống.
  */
 void ConsoleUI::doAdminViewAllCourses() {
+    clearScreen();
     drawHeader("ADMIN - ALL COURSES");
     auto result = _courseService->getAllCourses();
     if(result.has_value()){
@@ -1361,6 +1394,7 @@ void ConsoleUI::doAdminViewAllCourses() {
  * Yêu cầu Admin nhập ID khóa học và hiển thị thông tin chi tiết nếu tìm thấy.
  */
 void ConsoleUI::doAdminFindCourseById() {
+    clearScreen();
     drawHeader("ADMIN - FIND COURSE BY ID");
     std::string id = _prompter->promptForString("Enter Course ID to find:");
     auto result = _courseService->getCourseById(id); 
@@ -1375,6 +1409,7 @@ void ConsoleUI::doAdminFindCourseById() {
  * Yêu cầu Admin nhập ID người dùng và mật khẩu mới, sau đó thực hiện đặt lại mật khẩu.
  */
 void ConsoleUI::doAdminResetUserPassword(){
+    clearScreen();
     drawHeader("ADMIN - RESET USER PASSWORD");
     std::string userId = _prompter->promptForString("Enter User ID (Student or Teacher) to reset password:");
     std::string newPassword = _prompter->promptForPassword("Enter new password for user " + userId + ":");
@@ -1400,6 +1435,7 @@ void ConsoleUI::doAdminResetUserPassword(){
  * và thực hiện vô hiệu hóa nếu đồng ý.
  */
 void ConsoleUI::doAdminDisableUserAccount(){
+    clearScreen();
     drawHeader("ADMIN - DISABLE USER ACCOUNT");
     std::string userId = _prompter->promptForString("Enter User ID to disable:");
     if(_prompter->promptForYesNo("Are you sure you want to disable account " + userId + "?")){
@@ -1422,6 +1458,7 @@ void ConsoleUI::doAdminDisableUserAccount(){
  * và thực hiện kích hoạt nếu đồng ý.
  */
 void ConsoleUI::doAdminEnableUserAccount(){
+    clearScreen();
     drawHeader("ADMIN - ENABLE USER ACCOUNT");
     std::string userId = _prompter->promptForString("Enter User ID to enable/re-activate:");
      if(_prompter->promptForYesNo("Are you sure you want to enable account " + userId + "?")){
@@ -1641,6 +1678,7 @@ void ConsoleUI::doTeacherViewDetails() {
  * kết quả học tập của sinh viên đó.
  */
 void ConsoleUI::doTeacherEnterMarks() { 
+    clearScreen();
     drawHeader("TEACHER - ENTER/UPDATE MARKS");
     // Giáo viên cần chọn môn học của mình trước
     // TODO: Cần logic để lấy danh sách môn học mà giáo viên này dạy
@@ -1702,6 +1740,7 @@ void ConsoleUI::doTeacherViewSalary() {
  * để xem danh sách sinh viên đã đăng ký.
  */
 void ConsoleUI::doTeacherViewEnrolledStudents() { 
+    clearScreen();
     drawHeader("TEACHER - VIEW ENROLLED STUDENTS BY COURSE");
     // TODO: Lấy danh sách các môn GV dạy
     // Tạm thời, cho GV nhập Course ID
