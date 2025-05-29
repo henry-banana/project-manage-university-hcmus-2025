@@ -45,25 +45,25 @@ public:
      * @brief Kiểm tra người dùng đã được xác thực hay chưa
      * @return true nếu đã xác thực, false nếu chưa
      */
-    bool isAuthenticated() const;
+    virtual bool isAuthenticated() const;
     
     /**
      * @brief Lấy ID của người dùng hiện tại
      * @return ID người dùng nếu đã đăng nhập, hoặc std::nullopt nếu chưa
      */
-    std::optional<std::string> getCurrentUserId() const;
+    virtual std::optional<std::string> getCurrentUserId() const;
     
     /**
      * @brief Lấy vai trò của người dùng hiện tại
      * @return Vai trò người dùng nếu đã đăng nhập, hoặc std::nullopt nếu chưa
      */
-    std::optional<UserRole> getCurrentUserRole() const;
+    virtual std::optional<UserRole> getCurrentUserRole() const;
     
     /**
      * @brief Lấy thông tin đầy đủ của người dùng hiện tại
      * @return Con trỏ đến đối tượng User nếu đã đăng nhập, hoặc std::nullopt nếu chưa
      */
-    std::optional<std::shared_ptr<User>> getCurrentUser() const;
+    virtual std::optional<std::shared_ptr<User>> getCurrentUser() const;
 };
 
 #endif // SESSIONCONTEXT_H
