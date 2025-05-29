@@ -1,9 +1,7 @@
 #include "User.h"
-#include <sstream> // Cho getFullName, toString
-#include <regex>   // Cho validation email, phone (nếu làm ở đây)
-#include "../../utils/StringUtils.h" // Nếu có StringUtils::trim
+#include <sstream> 
+#include "../../utils/StringUtils.h" 
 
-// Helper để chuyển UserRole sang string (nếu chưa có ở UserRole.h)
 std::string toStringUserRole(UserRole role) {
     switch (role) {
         case UserRole::ADMIN: return "Admin";
@@ -18,10 +16,8 @@ std::string toStringUserRole(UserRole role) {
 
 User::User(std::string id, std::string firstName, std::string lastName, UserRole role, LoginStatus status)
     : _id(std::move(id)), _firstName(std::move(firstName)), _lastName(std::move(lastName)),
-      _role(role), _status(status), _birthday() // Khởi tạo Birthday mặc định
+      _role(role), _status(status), _birthday() 
 {
-    // Các trường khác như address, citizenId, email, phoneNumber sẽ được set sau
-    // hoặc thêm vào constructor nếu chúng là bắt buộc khi tạo User.
 }
 
 std::string User::getStringId() const {
@@ -50,11 +46,9 @@ const std::string& User::getPhoneNumber() const { return _phoneNumber; }
 UserRole User::getRole() const { return _role; }
 LoginStatus User::getStatus() const { return _status; }
 
-// Setters
 bool User::setFirstName(const std::string& firstName) {
-    // Ví dụ validation đơn giản: không rỗng, không quá dài
-    std::string trimmed = StringUtils::trim(firstName); // Giả sử có StringUtils
-    if (trimmed.length() > 50) { // Bỏ check empty, để GeneralValidator làm
+    std::string trimmed = StringUtils::trim(firstName);
+    if (trimmed.length() > 50) { // Max length check
         return false;
     }
     _firstName = trimmed;
@@ -63,7 +57,7 @@ bool User::setFirstName(const std::string& firstName) {
 
 bool User::setLastName(const std::string& lastName) {
     std::string trimmed = StringUtils::trim(lastName);
-    if (trimmed.length() > 50) { // Bỏ check empty
+    if (trimmed.length() > 50) { // Max length check
         return false;
     }
     _lastName = trimmed;
@@ -71,11 +65,9 @@ bool User::setLastName(const std::string& lastName) {
 }
 
 bool User::setBirthday(const Birthday& birthday) {
-    if (birthday.isSet() && !birthday.validate().isValid) { // Chỉ validate nếu birthday được set
-        return false;
-    }
-    _birthday = birthday;
-    return true;
+    // Birthday object handles its own basic validation internally via set()
+    _birthday = birthday; 
+    return _birthday.isSet() ? _birthday.validate().isValid : true; // Allow unsetting, or if set, ensure it's valid
 }
 bool User::setBirthday(int day, int month, int year) {
     return _birthday.set(day, month, year);
@@ -83,7 +75,7 @@ bool User::setBirthday(int day, int month, int year) {
 
 bool User::setAddress(const std::string& address) {
     std::string trimmed = StringUtils::trim(address);
-    if (trimmed.length() > 200) { // Giới hạn độ dài
+    if (trimmed.length() > 200) { 
         return false;
     }
     _address = trimmed;
@@ -92,33 +84,27 @@ bool User::setAddress(const std::string& address) {
 
 bool User::setCitizenId(const std::string& citizenId) {
     std::string trimmed = StringUtils::trim(citizenId);
-    // Entity chỉ nên làm validate rất cơ bản, ví dụ độ dài max
-    if (trimmed.length() > 20) { 
+    if (trimmed.length() > 20) {  // Max length check
         return false;
     }
-    // Không cần check isdigit ở đây, để GeneralValidator làm.
     _citizenId = trimmed;
     return true;
 }
 
 bool User::setEmail(const std::string& email) {
     std::string trimmed = StringUtils::trim(email);
-    // Entity chỉ nên làm validate rất cơ bản
-    if (trimmed.length() > 100) {
+    if (trimmed.length() > 100) { // Max length check
          return false;
     }
-    // Không cần regex ở đây, để GeneralValidator làm.
     _email = trimmed;
     return true;
 }
 
 bool User::setPhoneNumber(const std::string& phoneNumber) {
     std::string trimmed = StringUtils::trim(phoneNumber);
-    // Entity chỉ nên làm validate rất cơ bản
-    if (trimmed.length() > 15) { 
+    if (trimmed.length() > 15) { // Max length check
          return false;
     }
-    // Không cần regex ở đây, để GeneralValidator làm.
     _phoneNumber = trimmed;
     return true;
 }

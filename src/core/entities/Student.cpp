@@ -1,13 +1,14 @@
 #include "Student.h"
-#include <sstream> // Cho toString
+#include <sstream> 
 #include "../../utils/StringUtils.h"
+#include "../../common/LoginStatus.h"
 
 Student::Student(const std::string& id,
                  const std::string& firstName,
                  const std::string& lastName,
                  const std::string& facultyId,
                  LoginStatus status)
-    : User(id, firstName, lastName, UserRole::STUDENT, status), // Role mặc định là STUDENT
+    : User(id, firstName, lastName, UserRole::STUDENT, status), 
       _facultyId(facultyId) {}
 
 const std::string& Student::getFacultyId() const {
@@ -15,10 +16,8 @@ const std::string& Student::getFacultyId() const {
 }
 
 bool Student::setFacultyId(const std::string& facultyId) {
-    // Validation cơ bản (ví dụ: không rỗng). Việc kiểm tra facultyId có tồn tại không
-    // nên được thực hiện ở tầng Service khi có Zugriff vào FacultyDao.
     std::string trimmed = StringUtils::trim(facultyId);
-    if (trimmed.empty() || trimmed.length() > 10) { // Giả sử mã khoa không quá 10 ký tự
+    if (trimmed.length() > 10) { 
         return false;
     }
     _facultyId = trimmed;
@@ -59,43 +58,47 @@ ValidationResult Student::validateBasic() const {
     else if (_lastName.length() > 50) vr.addError(ErrorCode::VALIDATION_ERROR, "Last name too long (max 50 chars).");
 
     // Birthday
-    if (_birthday.isSet()) { // Chỉ validate nếu ngày sinh được set
-        ValidationResult bdayVr = _birthday.validate();
+    if (!_birthday.isSet()) { 
+        vr.addError(ErrorCode::VALIDATION_ERROR, "Birthday is required for students.");
+    } else {
+        ValidationResult bdayVr = _birthday.validate(); // Birthday tự validate ngày tháng
         if (!bdayVr.isValid) {
             for (const auto& err : bdayVr.errors) vr.addError(err);
         }
-    } else {
-        // Giả sử ngày sinh là bắt buộc cho Student
-        vr.addError(ErrorCode::VALIDATION_ERROR, "Birthday is required for students.");
     }
 
-
     // Faculty ID
-    if (StringUtils::trim(_facultyId).empty()) vr.addError(ErrorCode::VALIDATION_ERROR, "Faculty ID cannot be empty.");
+    if (StringUtils::trim(_facultyId).empty()) vr.addError(ErrorCode::VALIDATION_ERROR, "Faculty ID cannot be empty for student.");
     else if (_facultyId.length() > 10) vr.addError(ErrorCode::VALIDATION_ERROR, "Faculty ID too long (max 10 chars).");
 
     // Email (bắt buộc cho Student)
     if (StringUtils::trim(_email).empty()) {
         vr.addError(ErrorCode::VALIDATION_ERROR, "Email is required for students.");
-    } else {
-        // Tạm validate đơn giản, GeneralInputValidator sẽ làm kỹ hơn
-        if (_email.find('@') == std::string::npos || _email.find('.') == std::string::npos) {
-            vr.addError(ErrorCode::VALIDATION_ERROR, "Invalid email format.");
-        }
+    } else if (_email.length() > 100) {
+        vr.addError(ErrorCode::VALIDATION_ERROR, "Email is too long (max 100 chars).");
     }
+    // Không check format email ở đây, để GeneralValidator làm
 
     // Citizen ID (bắt buộc cho Student)
     if (StringUtils::trim(_citizenId).empty()) {
         vr.addError(ErrorCode::VALIDATION_ERROR, "Citizen ID is required for students.");
-    } else {
-        // Validate citizen ID (ví dụ, 9 hoặc 12 số)
-        std::string cid = StringUtils::trim(_citizenId);
-        bool allDigits = true;
-        for (char c : cid) if (!isdigit(c)) allDigits = false;
-        if (!allDigits || (cid.length() != 9 && cid.length() != 12)) {
-             vr.addError(ErrorCode::VALIDATION_ERROR, "Invalid Citizen ID format (must be 9 or 12 digits).");
-        }
+    } else if (_citizenId.length() > 20) {
+         vr.addError(ErrorCode::VALIDATION_ERROR, "Citizen ID is too long (max 20 chars).");
     }
-    // Role và Status được set bởi hệ thống, không cần user validate ở đây
+    // Không check format Citizen ID ở đây
+
+    // Phone Number (optional)
+    if (!_phoneNumber.empty() && _phoneNumber.length() > 15) {
+        vr.addError(ErrorCode::VALIDATION_ERROR, "Phone number is too long (max 15 chars).");
+    }
+    // Address (optional)
+    if (!_address.empty() && _address.length() > 200) {
+        vr.addError(ErrorCode::VALIDATION_ERROR, "Address is too long (max 200 chars).");
+    }
+
+
+    if (_role != UserRole::STUDENT && _role != UserRole::PENDING_STUDENT) {
+        vr.addError(ErrorCode::VALIDATION_ERROR, "Invalid role for a student object.");
+    }
     return vr;
 }

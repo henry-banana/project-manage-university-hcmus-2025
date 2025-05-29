@@ -855,8 +855,11 @@ void ConsoleUI::doAdminAddStudent() {
     const int maxAttempts = 2; 
 
     while(!success && attempts < maxAttempts){
-        NewStudentDataByAdmin data = promptForNewStudentDataByAdmin(); // Chỉ lấy input
-        // Service sẽ validate và thêm
+        NewStudentDataByAdmin data = promptForNewStudentDataByAdmin();
+        if (data.studentInfo.facultyId.empty() && (_facultyService->getAllFaculties().has_value() && _facultyService->getAllFaculties().value().empty())) {
+            break; // Thoát vòng lặp nếu không có khoa
+        }
+        
         auto addResult = _adminService->addStudentByAdmin(data); 
         if (addResult.has_value()) {
             showSuccessMessage("Student " + addResult.value().getId() + " added successfully by admin.");
@@ -1005,7 +1008,12 @@ void ConsoleUI::doAdminFindStudentById() {
  * Yêu cầu Admin nhập thông tin giảng viên mới và thực hiện thêm giảng viên.
  */
 void ConsoleUI::doAdminAddTeacher() {
+    drawHeader("ADMIN - ADD NEW TEACHER"); // (➕) Thêm header
     NewTeacherDataByAdmin data = promptForNewTeacherDataByAdmin(); 
+    if (data.facultyId.empty() && (_facultyService->getAllFaculties().has_value() && _facultyService->getAllFaculties().value().empty())) {
+        clearAndPause(); // Cần pause để người dùng đọc thông báo lỗi từ prompt
+        return;
+    }
     
     auto addResult = _adminService->addTeacherByAdmin(data);
     if (addResult.has_value()) {
