@@ -12,6 +12,7 @@
 #include "../../data_access/interface/ILoginDao.h"
 #include "../../data_access/interface/IStudentDao.h"
 #include "../../data_access/interface/ITeacherDao.h" // (➕) Thêm nếu cần check email teacher
+#include "../../data_access/interface/IFacultyDao.h" // (➕) Thêm nếu cần check email teacher
 #include "../../../utils/PasswordInput.h"
 #include "../../../utils/Logger.h"
 #include "../../validators/interface/IValidator.h" // IGeneralInputValidator
@@ -31,6 +32,7 @@ class AuthService : public IAuthService {
 private:
     std::shared_ptr<ILoginDao> _loginDao; /**< DAO để truy vấn thông tin đăng nhập */
     std::shared_ptr<IStudentDao> _studentDao; /**< DAO để truy vấn thông tin sinh viên */
+    std::shared_ptr<IFacultyDao> _facultyDao; /**< DAO để truy vấn thông tin khoa (nếu cần) */
     std::shared_ptr<ITeacherDao> _teacherDao; /**< DAO để truy vấn thông tin giảng viên */
     std::shared_ptr<IGeneralInputValidator> _inputValidator; /**< Bộ xác thực đầu vào */
     std::shared_ptr<SessionContext> _sessionContext; /**< Context lưu trữ thông tin phiên làm việc */
@@ -46,6 +48,7 @@ public:
      */
     AuthService(std::shared_ptr<ILoginDao> loginDao,
                 std::shared_ptr<IStudentDao> studentDao,
+                std::shared_ptr<IFacultyDao> _facultyDao,
                 std::shared_ptr<ITeacherDao> teacherDao,
                 std::shared_ptr<IGeneralInputValidator> inputValidator,
                 std::shared_ptr<SessionContext> sessionContext);

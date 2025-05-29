@@ -11,6 +11,7 @@
 #include "../interface/IAdminService.h"
 #include "../../data_access/interface/IStudentDao.h"
 #include "../../data_access/interface/ITeacherDao.h"
+#include "../../data_access/interface/IFacultyDao.h"
 #include "../../data_access/interface/ILoginDao.h"
 #include "../../data_access/interface/IFeeRecordDao.h"      // Để xóa khi remove student
 #include "../../data_access/interface/ISalaryRecordDao.h"   // Để xóa khi remove teacher
@@ -31,6 +32,7 @@ class AdminService : public IAdminService {
 private:
     std::shared_ptr<IStudentDao> _studentDao;         ///< Đối tượng dao để truy cập dữ liệu sinh viên
     std::shared_ptr<ITeacherDao> _teacherDao;         ///< Đối tượng dao để truy cập dữ liệu giáo viên
+    std::shared_ptr<IFacultyDao> _facultyDao;         ///< Đối tượng dao để truy cập dữ liệu khoa (nếu cần)
     std::shared_ptr<ILoginDao> _loginDao;             ///< Đối tượng dao để truy cập dữ liệu đăng nhập
     std::shared_ptr<IFeeRecordDao> _feeDao;           ///< Đối tượng dao để truy cập dữ liệu học phí
     std::shared_ptr<ISalaryRecordDao> _salaryDao;     ///< Đối tượng dao để truy cập dữ liệu lương
@@ -56,6 +58,7 @@ public:
      */
     AdminService(std::shared_ptr<IStudentDao> studentDao,
                  std::shared_ptr<ITeacherDao> teacherDao,
+                 std::shared_ptr<IFacultyDao> facultyDao,
                  std::shared_ptr<ILoginDao> loginDao,
                  std::shared_ptr<IFeeRecordDao> feeDao,
                  std::shared_ptr<ISalaryRecordDao> salaryDao,

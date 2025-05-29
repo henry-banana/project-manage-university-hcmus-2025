@@ -1,5 +1,5 @@
 #include "SqlParserUtils.h" 
-// #include "../../../utils/Logger.h" // Bỏ comment nếu bạn muốn dùng Logger ở đây
+#include "../../../utils/Logger.h" 
 
 template <>
 std::string SqlParserUtils::getOptional<std::string>(const DbQueryResultRow& row, const std::string& columnName, std::string defaultValue) {
@@ -9,14 +9,16 @@ std::string SqlParserUtils::getOptional<std::string>(const DbQueryResultRow& row
             // Thử cast trực tiếp sang std::string trước
             return std::any_cast<std::string>(it->second);
         } catch (const std::bad_any_cast&) {
-                // Nếu thất bại, thử cast sang const char* (trường hợp giá trị là string literal)
+                // Nếu thất bại, thử cast sang const char* (trường hợp giá trị là string literal từ DB)
                 try { 
-                return std::string(std::any_cast<const char*>(it->second));
+                const char* cstr_val = std::any_cast<const char*>(it->second);
+                if (cstr_val) { // Kiểm tra con trỏ không null
+                    return std::string(cstr_val);
+                }
+                // Nếu const char* là null, trả về defaultValue
+                return defaultValue;
             } catch (const std::bad_any_cast& e) {
-                // Ghi log lỗi nếu cả hai lần cast đều thất bại
-                // LOG_WARN("SqlParserUtils: Bad any_cast for string column '" + columnName + "'. Neither std::string nor const char* worked. Error: " + e.what());
-                // std::cerr << "SqlParserUtils: Bad any_cast for string column '" << columnName 
-                //           << "'. Error: " << e.what() << "\n";
+                LOG_WARN("SqlParserUtils: Bad any_cast for string column '" + columnName + "'. Neither std::string nor const char* worked. Error: " + e.what());
                 return defaultValue;
             }
         }

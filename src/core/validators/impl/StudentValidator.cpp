@@ -32,81 +32,68 @@ StudentValidator::StudentValidator(std::shared_ptr<IGeneralInputValidator> gener
  * @param student Đối tượng sinh viên cần kiểm tra
  * @return ValidationResult Kết quả kiểm tra với danh sách lỗi (nếu có)
  */
+/**
+ * @brief Kiểm tra tính hợp lệ của đối tượng sinh viên
+ * 
+ * Phương thức này kiểm tra tất cả các trường của đối tượng sinh viên:
+ * - Thông tin cơ bản: ID, họ tên, ngày sinh, email, CMND/CCCD
+ * - Thông tin liên hệ: địa chỉ, số điện thoại
+ * - Thông tin học tập: mã khoa
+ * - Vai trò và trạng thái tài khoản
+ * 
+ * @param student Đối tượng sinh viên cần kiểm tra
+ * @return ValidationResult Kết quả kiểm tra với danh sách lỗi (nếu có)
+ */
 ValidationResult StudentValidator::validateEntity(const Student& student) const {
     ValidationResult vr;
+    auto appendErrors = [&](const ValidationResult& r) {
+        for(const auto& err : r.errors) vr.addError(err);
+    };
 
-    // 1. Validate các trường kế thừa từ User thông qua GeneralInputValidator (hoặc UserValidator nếu có)
-    ValidationResult idVr = _generalValidator->validateIdFormat(student.getId(), "Student ID", 3, 20); // Ví dụ: S01, T001
-    for(const auto& err : idVr.errors) vr.addError(err);
+    appendErrors(_generalValidator->validateIdFormat(student.getId(), "Student ID", 3, 20));
+    appendErrors(_generalValidator->validateRequiredString(student.getFirstName(), "First Name", 50));
+    appendErrors(_generalValidator->validateRequiredString(student.getLastName(), "Last Name", 50));
 
-    ValidationResult firstNameVr = _generalValidator->validateRequiredString(student.getFirstName(), "First Name", 50);
-    for(const auto& err : firstNameVr.errors) vr.addError(err);
-
-    ValidationResult lastNameVr = _generalValidator->validateRequiredString(student.getLastName(), "Last Name", 50);
-    for(const auto& err : lastNameVr.errors) vr.addError(err);
-    
-    // Birthday
     if (!student.getBirthday().isSet()) {
         vr.addError(ErrorCode::VALIDATION_ERROR, "Birthday is required for students.");
     } else {
-        ValidationResult bdayVr = _generalValidator->validateDate(
-            student.getBirthday().getDay(), 
-            student.getBirthday().getMonth(), 
+        appendErrors(_generalValidator->validateDate(
+            student.getBirthday().getDay(),
+            student.getBirthday().getMonth(),
             student.getBirthday().getYear(),
             "Birthday"
-        );
-        for(const auto& err : bdayVr.errors) vr.addError(err);
-        // Kiểm tra tuổi hợp lý (ví dụ: > 16)
+        ));
+        // (Optional) Age check:
         // time_t t = time(0); 
         // tm* now = localtime(&t);
         // int currentYear = now->tm_year + 1900;
         // if (student.getBirthday().isSet() && (currentYear - student.getBirthday().getYear() < 16)){
-        //    vr.addError(ErrorCode::VALIDATION_ERROR, "Student must be at least 16 years old.");
+        //    appendErrors(_generalValidator->validateInteger(currentYear - student.getBirthday().getYear(), "Age", 16, 100));
         // }
     }
 
-    ValidationResult emailVr = _generalValidator->validateEmail(student.getEmail());
-     if (StringUtils::trim(student.getEmail()).empty()){ // Email bắt buộc
+    if (StringUtils::trim(student.getEmail()).empty()){
         vr.addError(ErrorCode::VALIDATION_ERROR, "Email is required for students.");
     } else {
-        for(const auto& err : emailVr.errors) vr.addError(err);
+        appendErrors(_generalValidator->validateEmail(student.getEmail()));
     }
 
-
-    ValidationResult citizenIdVr = _generalValidator->validateCitizenId(student.getCitizenId(), "VN");
-    if (StringUtils::trim(student.getCitizenId()).empty()){ // CitizenID bắt buộc
+    if (StringUtils::trim(student.getCitizenId()).empty()){
         vr.addError(ErrorCode::VALIDATION_ERROR, "Citizen ID is required for students.");
     } else {
-        for(const auto& err : citizenIdVr.errors) vr.addError(err);
-    }
-    
-    // Các trường tùy chọn
-    ValidationResult addressVr = _generalValidator->validateOptionalString(student.getAddress(), "Address", 200);
-    for(const auto& err : addressVr.errors) vr.addError(err);
-    
-    ValidationResult phoneVr = _generalValidator->validatePhoneNumber(student.getPhoneNumber(), "VN");
-    if (!StringUtils::trim(student.getPhoneNumber()).empty()){ // Chỉ validate nếu có nhập
-         for(const auto& err : phoneVr.errors) vr.addError(err);
+        appendErrors(_generalValidator->validateCitizenId(student.getCitizenId()));
     }
 
+    appendErrors(_generalValidator->validateOptionalString(student.getAddress(), "Address", 200));
+    if (!StringUtils::trim(student.getPhoneNumber()).empty()){ // Phone number is optional for student
+         appendErrors(_generalValidator->validatePhoneNumber(student.getPhoneNumber()));
+    }
+    appendErrors(_generalValidator->validateRequiredString(student.getFacultyId(), "Faculty ID", 10));
 
-    // 2. Validate các trường riêng của Student
-    ValidationResult facultyIdVr = _generalValidator->validateRequiredString(student.getFacultyId(), "Faculty ID", 10);
-    for(const auto& err : facultyIdVr.errors) vr.addError(err);
-
-    // Kiểm tra sự tồn tại của FacultyId (Nếu IFacultyDao được inject)
-    // if (_facultyDao) {
-    //     auto facultyExists = _facultyDao->exists(student.getFacultyId());
-    //     if (!facultyExists.has_value() || !facultyExists.value()) {
-    //         vr.addError(ErrorCode::VALIDATION_ERROR, "Faculty ID '" + student.getFacultyId() + "' does not exist.");
-    //     }
-    // }
-
-    // 3. Validate Role và Status (thường không cần vì chúng được hệ thống set, nhưng có thể kiểm tra logic)
+    // Role and Status are usually set by the system logic, but can be validated here if needed
     if (student.getRole() != UserRole::STUDENT && student.getRole() != UserRole::PENDING_STUDENT) {
         vr.addError(ErrorCode::VALIDATION_ERROR, "Invalid role for a student object.");
     }
-    // Các trạng thái LoginStatus đã được định nghĩa, không cần validate giá trị enum ở đây trừ khi có logic đặc biệt.
-
+    // LoginStatus is an enum, its value itself doesn't need validation unless there are specific allowed statuses.
     return vr;
 }

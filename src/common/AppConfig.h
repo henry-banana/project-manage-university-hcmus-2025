@@ -29,23 +29,6 @@ struct AppConfig {
 
     Logger::Level logLevel = Logger::Level::INFO; ///< Cấp độ ghi log (mặc định là INFO)
     std::filesystem::path logFilePath = "logs/app.log"; ///< Đường dẫn đến file log
-
-    // // Dùng cho SQL
-    // std::string dbHost;
-    // int dbPort = 0;
-    // std::string dbUser;
-    // std::string dbPassword;
-    // std::string dbName;
-
-    // // Getter tiện lợi cho đường dẫn CSV
-    // std::string getCsvPath(const std::string& entityName) const {
-    //     auto it = csvPaths.find(entityName);
-    //     if (it != csvPaths.end()) {
-    //         return it->second;
-    //     }
-    //     // Hoặc throw exception, hoặc trả về chuỗi rỗng và để DAO xử lý
-    //     return "";
-    // }
 };
 
 

@@ -13,6 +13,7 @@
 #include <map>
 #include <any>
 #include <iostream> // Cho ví dụ debug, có thể xóa nếu không dùng trực tiếp
+#include "../../../utils/Logger.h" // Giả sử bạn có một Logger để ghi log
 
 /**
  * @typedef DbQueryResultRow
@@ -45,10 +46,7 @@ namespace SqlParserUtils {
             try {
                 return std::any_cast<T>(it->second);
             } catch (const std::bad_any_cast& e) {
-                // Trong thực tế, nên dùng Logger ở đây thay vì std::cerr
-                // LOG_WARN("SqlParserUtils: Bad any_cast for column '" + columnName + "' to expected type. Error: " + e.what());
-                // std::cerr << "SqlParserUtils: Bad any_cast for column '" << columnName 
-                //           << "' to type (size " << sizeof(T) << "). Error: " << e.what() << "\n";
+                LOG_WARN("SqlParserUtils: Bad any_cast for column '" + columnName + "' to expected type. Error: " + e.what());
                 return defaultValue;
             }
         }

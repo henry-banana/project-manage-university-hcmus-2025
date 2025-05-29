@@ -54,7 +54,7 @@ LoginStatus User::getStatus() const { return _status; }
 bool User::setFirstName(const std::string& firstName) {
     // Ví dụ validation đơn giản: không rỗng, không quá dài
     std::string trimmed = StringUtils::trim(firstName); // Giả sử có StringUtils
-    if (trimmed.empty() || trimmed.length() > 50) {
+    if (trimmed.length() > 50) { // Bỏ check empty, để GeneralValidator làm
         return false;
     }
     _firstName = trimmed;
@@ -63,7 +63,7 @@ bool User::setFirstName(const std::string& firstName) {
 
 bool User::setLastName(const std::string& lastName) {
     std::string trimmed = StringUtils::trim(lastName);
-    if (trimmed.empty() || trimmed.length() > 50) {
+    if (trimmed.length() > 50) { // Bỏ check empty
         return false;
     }
     _lastName = trimmed;
@@ -91,43 +91,34 @@ bool User::setAddress(const std::string& address) {
 }
 
 bool User::setCitizenId(const std::string& citizenId) {
-    // Ví dụ: CCCD Việt Nam thường có 12 số
     std::string trimmed = StringUtils::trim(citizenId);
-    if (trimmed.length() != 9 && trimmed.length() != 12) { // Cho phép cả CMND cũ và CCCD
-         for(char c : trimmed) if (!isdigit(c)) return false; // Phải là số
-        //return false;
+    // Entity chỉ nên làm validate rất cơ bản, ví dụ độ dài max
+    if (trimmed.length() > 20) { 
+        return false;
     }
+    // Không cần check isdigit ở đây, để GeneralValidator làm.
     _citizenId = trimmed;
     return true;
 }
 
 bool User::setEmail(const std::string& email) {
     std::string trimmed = StringUtils::trim(email);
-    // Regex đơn giản cho email, bạn có thể dùng regex phức tạp hơn
-    const std::regex email_regex(R"((\w+)(\.|_)?(\w*)@(\w+)(\.(\w+))+)"); // C++11 regex
-    if (trimmed.empty() || !std::regex_match(trimmed, email_regex)) {
-        return false;
+    // Entity chỉ nên làm validate rất cơ bản
+    if (trimmed.length() > 100) {
+         return false;
     }
-    // Tạm thời chấp nhận nếu có @ và .
-    if (trimmed.find('@') == std::string::npos || trimmed.find('.') == std::string::npos || trimmed.length() < 5) {
-        if (!trimmed.empty()) return false; // Cho phép email rỗng nếu không bắt buộc
-    }
+    // Không cần regex ở đây, để GeneralValidator làm.
     _email = trimmed;
     return true;
 }
 
 bool User::setPhoneNumber(const std::string& phoneNumber) {
     std::string trimmed = StringUtils::trim(phoneNumber);
-    // Regex cho SĐT Việt Nam (ví dụ đơn giản: 10-11 số, bắt đầu bằng 0)
-    const std::regex phone_regex(R"(0\d{9,10})");
-    if (trimmed.empty() || !std::regex_match(trimmed, phone_regex)) {
-        return false;
+    // Entity chỉ nên làm validate rất cơ bản
+    if (trimmed.length() > 15) { 
+         return false;
     }
-    // Tạm thời: phải là số, dài 10-11 ký tự
-    if (!trimmed.empty()) {
-        if (trimmed.length() < 10 || trimmed.length() > 11) return false;
-        for(char c : trimmed) if (!isdigit(c)) return false;
-    }
+    // Không cần regex ở đây, để GeneralValidator làm.
     _phoneNumber = trimmed;
     return true;
 }

@@ -27,11 +27,13 @@
  */
 AuthService::AuthService(std::shared_ptr<ILoginDao> loginDao,
                          std::shared_ptr<IStudentDao> studentDao,
+                         std::shared_ptr<IFacultyDao> _facultyDao,
                          std::shared_ptr<ITeacherDao> teacherDao,
                          std::shared_ptr<IGeneralInputValidator> inputValidator,
                          std::shared_ptr<SessionContext> sessionContext)
     : _loginDao(std::move(loginDao)),
       _studentDao(std::move(studentDao)),
+      _facultyDao(std::move(_facultyDao)), // (➕)
       _teacherDao(std::move(teacherDao)), // (➕)
       _inputValidator(std::move(inputValidator)),
       _sessionContext(std::move(sessionContext)) {
@@ -219,6 +221,14 @@ std::expected<bool, Error> AuthService::registerStudent(const StudentRegistratio
 
     if(!vrTotal.isValid) return std::unexpected(vrTotal.errors[0]);
 
+    auto facultyExists = _facultyDao->exists(data.facultyId);
+    if (!facultyExists.has_value()) {
+        return std::unexpected(facultyExists.error()); 
+    }
+    if (!facultyExists.value()) {
+        return std::unexpected(Error{ErrorCode::NOT_FOUND, "Faculty ID '" + data.facultyId + "' does not exist. Cannot register student."});
+    }
+
     // Kiểm tra email đã tồn tại trong Student hoặc Teacher
     auto studentByEmail = _studentDao->findByEmail(data.email);
     if (studentByEmail.has_value()) {
@@ -237,25 +247,48 @@ std::expected<bool, Error> AuthService::registerStudent(const StudentRegistratio
     
     // Logic tạo Student ID (cần cải thiện cho production)
     std::string studentId;
-    std::string cIdSuffix = data.citizenId.length() > 3 ? data.citizenId.substr(data.citizenId.length() - 3) : data.citizenId;
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> distrib(100, 999); // Tăng phạm vi để giảm trùng
-    int retryCount = 0;
+    // Lấy năm hiện tại
+    auto nowChrono = std::chrono::system_clock::now(); // Đổi tên biến để tránh trùng
+    auto now_c = std::chrono::system_clock::to_time_t(nowChrono);
+    std::tm now_tm = {};
+    #if defined(_WIN32) || defined(_WIN64)
+        localtime_s(&now_tm, &now_c);
+    #else
+        localtime_r(&now_c, &now_tm);
+    #endif
+    std::string yearPrefix = std::to_string((now_tm.tm_year + 1900) % 100);
+
+    auto facultyDetails = _facultyDao->getById(data.facultyId);
+    if (!facultyDetails.has_value()) { /* Đã check ở trên, nhưng để an toàn */
+        return std::unexpected(Error{ErrorCode::NOT_FOUND, "Faculty details not found for ID: " + data.facultyId});
+    }
+
+    std::string idPrefix = yearPrefix + data.facultyId; 
     bool idOk = false;
-    do {
-        studentId = "S" + cIdSuffix + std::to_string(distrib(gen));
-        auto studentExists = _studentDao->exists(studentId); 
-        if (!studentExists.has_value()) return std::unexpected(studentExists.error());
-        if (!studentExists.value()) {
-            idOk = true;
-            break; 
+    int maxRetriesForIdGeneration = 1000; // Tăng số lần thử để tìm số thứ tự
+    for (int sequence = 1; sequence <= 9999; ++sequence) {
+        std::ostringstream oss;
+        oss << idPrefix << std::setfill('0') << std::setw(4) << sequence;
+        studentId = oss.str();
+        // Kiểm tra xem studentId đã tồn tại trong bảng Users hay chưa
+        auto userExists = _loginDao->findCredentialsByUserId(studentId); 
+        if (!userExists.has_value()) {
+            if (userExists.error().code == ErrorCode::NOT_FOUND) {
+                idOk = true; 
+                break;
+            } else {
+                LOG_ERROR("Error checking student ID existence: " + userExists.error().message);
+                return std::unexpected(userExists.error()); // Lỗi DB
+            }
         }
-        retryCount++;
-    } while (retryCount < 20); // Tăng số lần thử
+        if (sequence >= maxRetriesForIdGeneration && !idOk) { // Giới hạn số lần thử
+             LOG_WARN("Student ID generation: Max retries reached for prefix " + idPrefix);
+             break; // Dừng nếu thử quá nhiều
+        }
+    }
 
     if (!idOk) {
-         return std::unexpected(Error{ErrorCode::OPERATION_FAILED, "Could not generate unique student ID after multiple retries."});
+        return std::unexpected(Error{ErrorCode::OPERATION_FAILED, "Could not generate unique student ID for prefix " + idPrefix + ". Sequence may be exhausted or DB error occurred."});
     }
     
     Student newStudent(studentId, data.firstName, data.lastName, data.facultyId, LoginStatus::PENDING_APPROVAL);

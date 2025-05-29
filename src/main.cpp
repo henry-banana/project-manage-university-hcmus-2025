@@ -137,15 +137,28 @@ int main(int argc, char* argv[]) {
 
         // Khởi tạo các Service
         LOG_DEBUG("Initializing Services...");
-        auto authService = std::make_shared<AuthService>(loginDao, studentDao, teacherDao, generalInputValidator, sessionContext);
-        auto studentService = std::make_shared<StudentService>(studentDao, teacherDao, facultyDao, generalInputValidator, sessionContext);
+        auto authService = std::make_shared<AuthService>(
+            loginDao, 
+            studentDao, 
+            facultyDao,   
+            teacherDao, 
+            generalInputValidator, 
+            sessionContext
+        );   
+
+        auto studentService = std::make_shared<StudentService>(
+            studentDao, teacherDao, facultyDao, generalInputValidator, sessionContext
+        );
+        
         auto teacherService = std::make_shared<TeacherService>(teacherDao, studentDao, facultyDao, generalInputValidator, sessionContext);
         auto facultyService = std::make_shared<FacultyService>(facultyDao, studentDao, teacherDao, courseDao, generalInputValidator, sessionContext);
         auto courseService = std::make_shared<CourseService>(courseDao, facultyDao, enrollmentDao, courseResultDao, generalInputValidator, sessionContext);
         auto enrollmentService = std::make_shared<EnrollmentService>(enrollmentDao, studentDao, courseDao, generalInputValidator, sessionContext);
         auto resultService = std::make_shared<ResultService>(courseResultDao, facultyDao, studentDao, courseDao, enrollmentDao, generalInputValidator, sessionContext);
         auto financeService = std::make_shared<FinanceService>(feeRecordDao, salaryRecordDao, studentDao, teacherDao, facultyDao, generalInputValidator, sessionContext);
-        auto adminService = std::make_shared<AdminService>(studentDao, teacherDao, loginDao, feeRecordDao, salaryRecordDao, enrollmentDao, courseResultDao, generalInputValidator, sessionContext);        
+        auto adminService = std::make_shared<AdminService>(
+            studentDao, teacherDao, facultyDao,loginDao, feeRecordDao, salaryRecordDao, enrollmentDao, courseResultDao, generalInputValidator, sessionContext
+        );        
         LOG_INFO("Services initialized successfully.");
 
         // Khởi tạo giao diện người dùng

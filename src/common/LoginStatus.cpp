@@ -41,10 +41,7 @@ namespace LoginStatusUtils {
         if (statusStr == "ACTIVE") return LoginStatus::ACTIVE;
         if (statusStr == "PENDING_APPROVAL") return LoginStatus::PENDING_APPROVAL;
         if (statusStr == "DISABLED") return LoginStatus::DISABLED;
-        // Hoặc 
         throw std::invalid_argument("Invalid LoginStatus string: " + statusStr);
-        // Hiện tại, trả về một giá trị mặc định nếu không khớp
-        return LoginStatus::DISABLED;
     }
 
 } // namespace LoginStatusUtils

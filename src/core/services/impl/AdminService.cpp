@@ -20,6 +20,7 @@
 AdminService::AdminService(
     std::shared_ptr<IStudentDao> studentDao,
     std::shared_ptr<ITeacherDao> teacherDao,
+    std::shared_ptr<IFacultyDao> facultyDao,
     std::shared_ptr<ILoginDao> loginDao,
     std::shared_ptr<IFeeRecordDao> feeDao,
     std::shared_ptr<ISalaryRecordDao> salaryDao,
@@ -29,6 +30,7 @@ AdminService::AdminService(
     std::shared_ptr<SessionContext> sessionContext)
     : _studentDao(std::move(studentDao)),
       _teacherDao(std::move(teacherDao)),
+      _facultyDao(std::move(facultyDao)),
       _loginDao(std::move(loginDao)),
       _feeDao(std::move(feeDao)),
       _salaryDao(std::move(salaryDao)),
@@ -167,23 +169,50 @@ std::expected<Student, Error> AdminService::addStudentByAdmin(const NewStudentDa
     if (studentByEmail.has_value()) return std::unexpected(Error{ErrorCode::ALREADY_EXISTS, "Email already registered."});
     if (studentByEmail.error().code != ErrorCode::NOT_FOUND) return std::unexpected(studentByEmail.error());
 
-    // Tạo Student ID
-    std::string studentId; // Logic tạo ID như trong AuthService
-    std::string cIdSuffix = studentInfo.citizenId.length() > 3 ? studentInfo.citizenId.substr(studentInfo.citizenId.length() - 3) : studentInfo.citizenId;
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> distrib(100, 999);
-    int retryCount = 0;
-    bool idOk = false;
-    do {
-        studentId = "S" + cIdSuffix + std::to_string(distrib(gen)); // Prefix "S"
-        auto studentExists = _studentDao->exists(studentId); 
-        if (!studentExists.has_value()) return std::unexpected(studentExists.error());
-        if (!studentExists.value()) { idOk = true; break; }
-        retryCount++;
-    } while (retryCount < 20);
-    if (!idOk) return std::unexpected(Error{ErrorCode::OPERATION_FAILED, "Could not generate unique student ID."});
+    std::string studentId;
+    // Lấy năm hiện tại
+    auto nowChrono = std::chrono::system_clock::now(); // Đổi tên biến để tránh trùng
+    auto now_c = std::chrono::system_clock::to_time_t(nowChrono);
+    std::tm now_tm = {};
+    #if defined(_WIN32) || defined(_WIN64)
+        localtime_s(&now_tm, &now_c);
+    #else
+        localtime_r(&now_c, &now_tm);
+    #endif
+    std::string yearPrefix = std::to_string((now_tm.tm_year + 1900) % 100);
 
+    auto facultyDetails = _facultyDao->getById(data.studentInfo.facultyId);
+    if (!facultyDetails.has_value()) { /* Đã check ở trên, nhưng để an toàn */
+        return std::unexpected(Error{ErrorCode::NOT_FOUND, "Faculty details not found for ID: " + data.studentInfo.facultyId});
+    }
+
+    std::string idPrefix = yearPrefix + data.studentInfo.facultyId; 
+    bool idOk = false;
+    int maxRetriesForIdGeneration = 1000; // Tăng số lần thử để tìm số thứ tự
+    for (int sequence = 1; sequence <= 9999; ++sequence) {
+        std::ostringstream oss;
+        oss << idPrefix << std::setfill('0') << std::setw(4) << sequence;
+        studentId = oss.str();
+        // Kiểm tra xem studentId đã tồn tại trong bảng Users hay chưa
+        auto userExists = _loginDao->findCredentialsByUserId(studentId); 
+        if (!userExists.has_value()) {
+            if (userExists.error().code == ErrorCode::NOT_FOUND) {
+                idOk = true; 
+                break;
+            } else {
+                LOG_ERROR("Error checking student ID existence: " + userExists.error().message);
+                return std::unexpected(userExists.error()); // Lỗi DB
+            }
+        }
+        if (sequence >= maxRetriesForIdGeneration && !idOk) { // Giới hạn số lần thử
+             LOG_WARN("Student ID generation: Max retries reached for prefix " + idPrefix);
+             break; // Dừng nếu thử quá nhiều
+        }
+    }
+
+    if (!idOk) {
+        return std::unexpected(Error{ErrorCode::OPERATION_FAILED, "Could not generate unique student ID for prefix " + idPrefix + ". Sequence may be exhausted or DB error occurred."});
+    }
     Student newStudent(studentId, studentInfo.firstName, studentInfo.lastName, studentInfo.facultyId, LoginStatus::ACTIVE); // ACTIVE ngay
     newStudent.setBirthday(studentInfo.birthDay, studentInfo.birthMonth, studentInfo.birthYear);
     newStudent.setAddress(studentInfo.address);

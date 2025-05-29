@@ -123,20 +123,15 @@ void ConsoleUI::clearAndPause(const std::string& message){
  */
 void ConsoleUI::processMenu(const std::string& title, const std::vector<MenuItemDisplay>& items, 
                             const std::vector<std::function<void()>>& actions, bool isSubMenu) {
-    if (items.empty()) { // (➕) Xử lý menu rỗng ngay từ đầu
-        // clearScreen(); // Đã clear ở processCurrentState
-        _menuRenderer->renderMenu(title, items); // Vẫn render để hiển thị "No options"
-        std::cout << "No options available in this menu.\n";
-        if (isSubMenu) {
-            // Nếu là submenu rỗng, hành động mặc định là quay lại state cha
-            // (Cần logic để xác định state cha hoặc action[0] là back)
-            // Tạm thời, chúng ta sẽ để handleState của menu cha quyết định khi processMenu này thoát
-        } else {
-            // Nếu menu chính rỗng (lỗi cấu hình), có thể thoát hoặc về state an toàn
-            showErrorMessage("Critical Error: Main menu is empty.");
+    if (items.empty()) {
+        _menuRenderer->renderMenu(title, items); 
+        std::cout << "No options available in this menu." << std::endl;
+        if (!isSubMenu) { // Menu chính mà rỗng là lỗi nghiêm trọng
+            showErrorMessage("Critical Error: Main menu is empty, cannot proceed.");
             doExitApplication();
         }
-        clearAndPause("Press Enter to continue...");
+        // Nếu là submenu rỗng, không làm gì cả, handleState cha sẽ quyết định tiếp
+        clearAndPause("Press Enter to return...");
         return;
     }
 
@@ -147,10 +142,12 @@ void ConsoleUI::processMenu(const std::string& title, const std::vector<MenuItem
         // Logic phục hồi state đã có ở trên, giữ nguyên
         if (isSubMenu) {
             if (std::holds_alternative<AdminStudentManagementState>(_currentState) ||
-                /* ... các state con khác của Admin ... */
+                std::holds_alternative<AdminTeacherManagementState>(_currentState) ||
+                std::holds_alternative<AdminFacultyManagementState>(_currentState) ||
+                std::holds_alternative<AdminCourseManagementState>(_currentState) ||
                 std::holds_alternative<AdminAccountManagementState>(_currentState) ) {
                 _currentState = AdminPanelState{};
-            } else { 
+            }  else { 
                 if (_authService->isAuthenticated()) {
                     UserRole role = _authService->getCurrentUserRole().value_or(UserRole::UNKNOWN);
                     if (role == UserRole::ADMIN) _currentState = AdminPanelState{};
@@ -689,7 +686,22 @@ void ConsoleUI::doStudentRegistration() {
     const int maxAttempts = 3; // Cho phép nhập lại tối đa 3 lần (toàn bộ form)
 
     while (!registrationSuccess && attempts < maxAttempts) {
-        StudentRegistrationData regData = promptForStudentRegistrationData(); // Chỉ lấy input thô
+        StudentRegistrationData regData = promptForStudentRegistrationData(); 
+        
+        // (➕) Kiểm tra nếu promptForStudentRegistrationData trả về tín hiệu không có khoa
+        if (regData.facultyId.empty()) { // Giả sử facultyId rỗng là tín hiệu không có khoa để chọn
+            auto facultiesExp = _facultyService->getAllFaculties();
+            if (facultiesExp.has_value() && facultiesExp.value().empty()){
+                // showErrorMessage("No faculties available to select from. Cannot register."); // Đã hiện trong prompt
+                // clearAndPause(); // Đã có trong prompt
+                return; // Thoát khỏi chức năng đăng ký
+            } else if (!facultiesExp.has_value()){
+                // showErrorMessage("Error fetching faculties."); // Đã hiện trong prompt
+                clearAndPause("Please wait while we try to fetch faculties again.");
+                return;
+            }
+            // Nếu facultyId rỗng vì lý do khác (người dùng cố tình bỏ trống), service sẽ bắt
+        }
         
         std::string password, confirmPassword;
         do { // Vẫn giữ vòng lặp cho password vì nó đơn giản và không cần validate phức tạp ở service
@@ -1958,16 +1970,32 @@ StudentRegistrationData ConsoleUI::promptForStudentRegistrationData() {
     data.firstName = _prompter->promptForString("Enter First Name:");
     data.lastName = _prompter->promptForString("Enter Last Name:");
     
-    auto facultiesExp = _facultyService->getAllFaculties(); 
-    if (facultiesExp.has_value() && !facultiesExp.value().empty()) {
-        std::cout << "\nAvailable Faculties:\n";
+    auto facultiesExp = _facultyService->getAllFaculties();
+    if (!facultiesExp.has_value()) {
+        showErrorMessage("Error fetching faculties: " + facultiesExp.error().message);
+        showErrorMessage("Cannot proceed with registration without faculty data.");
+        // Làm thế nào để báo hiệu cho doStudentRegistration dừng lại?
+        // Có thể throw một exception nhẹ hoặc trả về một StudentRegistrationData đặc biệt (ví dụ, facultyId rỗng và một cờ lỗi)
+        // Hoặc, đơn giản là không cho nhập facultyId và hàm gọi sẽ kiểm tra.
+        // Tạm thời, để người dùng biết và có thể nhập, service sẽ validate:
+        data.facultyId = _prompter->promptForString("Enter Faculty ID (WARNING: Could not load faculty list. ID will be strictly validated):");
+        if(data.facultyId.empty()) { // Nếu họ bỏ trống vì không có faculty
+            // Coi như đây là tín hiệu dừng. Hàm gọi sẽ check.
+            return data; // facultyId sẽ rỗng
+        }
+    } else if (facultiesExp.value().empty()) {
+        showErrorMessage("No faculties found in the system. Student cannot be assigned to a faculty.");
+        showErrorMessage("Please ask an administrator to create faculties first.");
+        // Không cho phép tiếp tục nếu không có khoa.
+        // Hoặc cho phép nhập và để service báo lỗi.
+        // Tốt nhất là thông báo và không cho điền tiếp facultyId.
+        // Để hàm gọi (doStudentRegistration) biết và dừng:
+        data.facultyId = ""; // Đánh dấu là không có faculty để chọn
+        return data; // Hàm gọi sẽ kiểm tra facultyId rỗng
+    } else {
+        std::cout << "\nAvailable Faculties:" << std::endl;
         displayFacultiesList(facultiesExp.value());
         data.facultyId = _prompter->promptForString("Enter Faculty ID from the list above:");
-    } else {
-        if (!facultiesExp.has_value()) showErrorMessage(facultiesExp.error());
-       
-        else showErrorMessage("No faculties available to select from. Please ensure faculties are added by Admin.");
-        data.facultyId = _prompter->promptForString("Enter Faculty ID (will be validated):");
     }
 
     std::cout << "\nEnter Birthday:\n";

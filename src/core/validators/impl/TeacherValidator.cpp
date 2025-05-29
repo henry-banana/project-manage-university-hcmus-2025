@@ -28,64 +28,45 @@ TeacherValidator::TeacherValidator(std::shared_ptr<IGeneralInputValidator> gener
  */
 ValidationResult TeacherValidator::validateEntity(const Teacher& teacher) const {
     ValidationResult vr;
+    auto appendErrors = [&](const ValidationResult& r) {
+        for(const auto& err : r.errors) vr.addError(err);
+    };
 
-    // Validate User fields
-    ValidationResult idVr = _generalValidator->validateIdFormat(teacher.getId(), "Teacher ID", 3, 20);
-    for(const auto& err : idVr.errors) vr.addError(err);
+    appendErrors(_generalValidator->validateIdFormat(teacher.getId(), "Teacher ID", 3, 20));
+    appendErrors(_generalValidator->validateRequiredString(teacher.getFirstName(), "First Name", 50));
+    appendErrors(_generalValidator->validateRequiredString(teacher.getLastName(), "Last Name", 50));
 
-    ValidationResult firstNameVr = _generalValidator->validateRequiredString(teacher.getFirstName(), "First Name", 50);
-    for(const auto& err : firstNameVr.errors) vr.addError(err);
-
-    ValidationResult lastNameVr = _generalValidator->validateRequiredString(teacher.getLastName(), "Last Name", 50);
-    for(const auto& err : lastNameVr.errors) vr.addError(err);
-
-    if (teacher.getBirthday().isSet()) { // Birthday có thể không bắt buộc với Teacher
-        ValidationResult bdayVr = _generalValidator->validateDate(
+    if (teacher.getBirthday().isSet()) { // Birthday might be optional for teachers initially
+        appendErrors(_generalValidator->validateDate(
             teacher.getBirthday().getDay(), 
             teacher.getBirthday().getMonth(), 
             teacher.getBirthday().getYear(),
             "Birthday"
-        );
-        for(const auto& err : bdayVr.errors) vr.addError(err);
+        ));
     }
     
-    ValidationResult emailVr = _generalValidator->validateEmail(teacher.getEmail());
-    if (StringUtils::trim(teacher.getEmail()).empty()){ // Email bắt buộc
+    if (StringUtils::trim(teacher.getEmail()).empty()){
         vr.addError(ErrorCode::VALIDATION_ERROR, "Email is required for teachers.");
     } else {
-        for(const auto& err : emailVr.errors) vr.addError(err);
+        appendErrors(_generalValidator->validateEmail(teacher.getEmail()));
     }
 
-    ValidationResult citizenIdVr = _generalValidator->validateCitizenId(teacher.getCitizenId(), "VN");
-     if (StringUtils::trim(teacher.getCitizenId()).empty()){ // CitizenID bắt buộc
+    if (StringUtils::trim(teacher.getCitizenId()).empty()){
         vr.addError(ErrorCode::VALIDATION_ERROR, "Citizen ID is required for teachers.");
     } else {
-        for(const auto& err : citizenIdVr.errors) vr.addError(err);
+        appendErrors(_generalValidator->validateCitizenId(teacher.getCitizenId()));
     }
 
-    ValidationResult addressVr = _generalValidator->validateOptionalString(teacher.getAddress(), "Address", 200);
-    for(const auto& err : addressVr.errors) vr.addError(err);
-    
-    ValidationResult phoneVr = _generalValidator->validatePhoneNumber(teacher.getPhoneNumber(), "VN");
+    appendErrors(_generalValidator->validateOptionalString(teacher.getAddress(), "Address", 200));
     if (!StringUtils::trim(teacher.getPhoneNumber()).empty()){
-         for(const auto& err : phoneVr.errors) vr.addError(err);
+         appendErrors(_generalValidator->validatePhoneNumber(teacher.getPhoneNumber()));
     }
 
-    // Validate Teacher specific fields
-    ValidationResult facultyIdVr = _generalValidator->validateRequiredString(teacher.getFacultyId(), "Faculty ID", 10);
-    for(const auto& err : facultyIdVr.errors) vr.addError(err);
-
-    ValidationResult qualificationVr = _generalValidator->validateOptionalString(teacher.getQualification(), "Qualification", 100);
-    for(const auto& err : qualificationVr.errors) vr.addError(err);
-
-    ValidationResult specSubjectsVr = _generalValidator->validateOptionalString(teacher.getSpecializationSubjects(), "Specialization Subjects", 255);
-    for(const auto& err : specSubjectsVr.errors) vr.addError(err);
-
-    ValidationResult designationVr = _generalValidator->validateOptionalString(teacher.getDesignation(), "Designation", 50);
-    for(const auto& err : designationVr.errors) vr.addError(err);
-
-    ValidationResult expYearsVr = _generalValidator->validateInteger(teacher.getExperienceYears(), "Experience Years", 0, 70);
-    for(const auto& err : expYearsVr.errors) vr.addError(err);
+    appendErrors(_generalValidator->validateRequiredString(teacher.getFacultyId(), "Faculty ID", 10));
+    appendErrors(_generalValidator->validateOptionalString(teacher.getQualification(), "Qualification", 100));
+    appendErrors(_generalValidator->validateOptionalString(teacher.getSpecializationSubjects(), "Specialization Subjects", 255));
+    appendErrors(_generalValidator->validateOptionalString(teacher.getDesignation(), "Designation", 50));
+    appendErrors(_generalValidator->validateInteger(teacher.getExperienceYears(), "Experience Years", 0, 70));
 
     if (teacher.getRole() != UserRole::TEACHER) {
         vr.addError(ErrorCode::VALIDATION_ERROR, "Invalid role for a teacher object.");
