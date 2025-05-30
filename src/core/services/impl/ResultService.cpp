@@ -2,6 +2,18 @@
 #include "../../../utils/Logger.h"
 #include <sstream> // For report generation
 
+/**
+ * @brief Khởi tạo đối tượng ResultService
+ * 
+ * @param resultDao Đối tượng truy cập dữ liệu kết quả học tập
+ * @param facultyDao Đối tượng truy cập dữ liệu khoa
+ * @param studentDao Đối tượng truy cập dữ liệu sinh viên
+ * @param courseDao Đối tượng truy cập dữ liệu khóa học
+ * @param enrollmentDao Đối tượng truy cập dữ liệu đăng ký khóa học
+ * @param inputValidator Đối tượng kiểm tra đầu vào
+ * @param sessionContext Đối tượng quản lý phiên đăng nhập
+ * @throw std::invalid_argument Nếu bất kỳ đối số nào là nullptr
+ */
 ResultService::ResultService(
     std::shared_ptr<ICourseResultDao> resultDao,
     std::shared_ptr<IFacultyDao> facultyDao,
@@ -25,6 +37,19 @@ ResultService::ResultService(
     if (!_sessionContext) throw std::invalid_argument("SessionContext cannot be null.");
 }
 
+/**
+ * @brief Nhập điểm cho một sinh viên trong một khóa học
+ * 
+ * Phương thức này cho phép giảng viên hoặc admin nhập điểm cho một sinh viên 
+ * trong một khóa học cụ thể. Sinh viên phải đã đăng ký khóa học trước khi
+ * có thể nhập điểm.
+ * Yêu cầu quyền truy cập: Admin hoặc giảng viên dạy khóa học đó.
+ * 
+ * @param studentId ID của sinh viên cần nhập điểm
+ * @param courseId ID của khóa học cần nhập điểm
+ * @param marks Số điểm cần nhập (thang điểm phụ thuộc vào cấu hình hệ thống)
+ * @return std::expected<bool, Error> true nếu nhập điểm thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<bool, Error> ResultService::enterMarks(const std::string& studentId, const std::string& courseId, int marks) {
     if (!_sessionContext->isAuthenticated() || !_sessionContext->getCurrentUserRole().has_value() || 
         (_sessionContext->getCurrentUserRole().value() != UserRole::ADMIN && _sessionContext->getCurrentUserRole().value() != UserRole::TEACHER)
@@ -67,6 +92,18 @@ std::expected<bool, Error> ResultService::enterMarks(const std::string& studentI
     return saveResult;
 }
 
+/**
+ * @brief Nhập điểm cho nhiều khóa học của một sinh viên
+ * 
+ * Phương thức này cho phép giảng viên hoặc admin nhập điểm cho một sinh viên
+ * trong nhiều khóa học cùng một lúc. Tất cả các điểm sẽ được nhập hoặc
+ * không có điểm nào được nhập (đảm bảo tính nhất quán của dữ liệu).
+ * Yêu cầu quyền truy cập: Admin hoặc giảng viên dạy các khóa học đó.
+ * 
+ * @param studentId ID của sinh viên cần nhập điểm
+ * @param courseMarksMap Map chứa ID khóa học và điểm tương ứng
+ * @return std::expected<bool, Error> true nếu nhập điểm thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<bool, Error> ResultService::enterMultipleMarks(const std::string& studentId, const std::map<std::string, int>& courseMarksMap) {
     if (!_sessionContext->isAuthenticated() || !_sessionContext->getCurrentUserRole().has_value() || 
         (_sessionContext->getCurrentUserRole().value() != UserRole::ADMIN && _sessionContext->getCurrentUserRole().value() != UserRole::TEACHER)
@@ -105,6 +142,19 @@ std::expected<bool, Error> ResultService::enterMultipleMarks(const std::string& 
 }
 
 
+/**
+ * @brief Lấy kết quả học tập của một sinh viên trong một khóa học cụ thể
+ * 
+ * Phương thức này trả về thông tin chi tiết về điểm số của một sinh viên trong một khóa học.
+ * Yêu cầu quyền truy cập:
+ * - Sinh viên chỉ có thể xem điểm của chính mình
+ * - Giảng viên có thể xem điểm của sinh viên trong các khóa học do họ dạy
+ * - Admin có thể xem điểm của bất kỳ sinh viên nào
+ * 
+ * @param studentId ID của sinh viên
+ * @param courseId ID của khóa học
+ * @return std::expected<CourseResult, Error> Đối tượng CourseResult nếu thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<CourseResult, Error> ResultService::getSpecificResult(const std::string& studentId, const std::string& courseId) const {
     // Quyền: Student xem điểm của mình, Teacher xem điểm SV trong môn mình dạy, Admin xem tất cả
     if (!_sessionContext->isAuthenticated()) {
@@ -131,6 +181,19 @@ std::expected<CourseResult, Error> ResultService::getSpecificResult(const std::s
     return _resultDao->find(studentId, courseId);
 }
 
+/**
+ * @brief Lấy tất cả kết quả học tập của một sinh viên
+ * 
+ * Phương thức này trả về danh sách tất cả kết quả học tập của một sinh viên
+ * trong các khóa học mà sinh viên đã đăng ký.
+ * Yêu cầu quyền truy cập:
+ * - Sinh viên chỉ có thể xem kết quả của chính mình
+ * - Giảng viên có thể xem kết quả của bất kỳ sinh viên nào
+ * - Admin có thể xem kết quả của bất kỳ sinh viên nào
+ * 
+ * @param studentId ID của sinh viên
+ * @return std::expected<std::vector<CourseResult>, Error> Danh sách kết quả học tập nếu thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<std::vector<CourseResult>, Error> ResultService::getResultsByStudent(const std::string& studentId) const {
     // Quyền tương tự getSpecificResult
      if (!_sessionContext->isAuthenticated()) {
@@ -199,7 +262,7 @@ std::expected<std::string, Error> ResultService::generateStudentResultReport(con
            << std::setw(35) << "Course Name"
            << std::setw(10) << "Credits"
            << std::setw(8) << "Marks"
-           << std::setw(8) << "Grade" << "\n";
+           << std::setw(8) << "Grade\n";
     report << "-------------------------------------------------------------------------\n";
 
     if (results.empty()) {

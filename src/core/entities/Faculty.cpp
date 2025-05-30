@@ -10,7 +10,7 @@ const std::string& Faculty::getName() const { return _name; }
 
 bool Faculty::setName(const std::string& name) {
     std::string trimmed = StringUtils::trim(name);
-    if (trimmed.empty() || trimmed.length() > 100) {
+    if (trimmed.length() > 100) {
         return false;
     }
     _name = trimmed;

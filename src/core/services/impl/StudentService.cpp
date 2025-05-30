@@ -2,6 +2,16 @@
 #include "../../../utils/Logger.h"
 #include "../../../utils/StringUtils.h"
 
+/**
+ * @brief Khởi tạo đối tượng StudentService
+ * 
+ * @param studentDao Đối tượng truy cập dữ liệu sinh viên
+ * @param teacherDao Đối tượng truy cập dữ liệu giảng viên
+ * @param facultyDao Đối tượng truy cập dữ liệu khoa
+ * @param inputValidator Đối tượng kiểm tra đầu vào
+ * @param sessionContext Đối tượng quản lý phiên đăng nhập
+ * @throw std::invalid_argument Nếu bất kỳ đối số nào là nullptr
+ */
 StudentService::StudentService(std::shared_ptr<IStudentDao> studentDao,
                                std::shared_ptr<ITeacherDao> teacherDao,
                                std::shared_ptr<IFacultyDao> facultyDao,
@@ -18,6 +28,15 @@ StudentService::StudentService(std::shared_ptr<IStudentDao> studentDao,
     if (!_sessionContext) throw std::invalid_argument("SessionContext cannot be null for StudentService."); // (➕)
 }
 
+/**
+ * @brief Lấy thông tin chi tiết của một sinh viên
+ * 
+ * Phương thức này trả về thông tin chi tiết của một sinh viên dựa trên ID.
+ * Yêu cầu quyền truy cập: người dùng phải là admin hoặc chính sinh viên đó.
+ * 
+ * @param studentId ID của sinh viên cần lấy thông tin
+ * @return std::expected<Student, Error> Đối tượng sinh viên nếu thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<Student, Error> StudentService::getStudentDetails(const std::string& studentId) const {
     if (studentId.empty()) {
         return std::unexpected(Error{ErrorCode::VALIDATION_ERROR, "Student ID cannot be empty."});
@@ -43,6 +62,14 @@ std::expected<Student, Error> StudentService::getStudentDetails(const std::strin
     return _studentDao->getById(studentId);
 }
 
+/**
+ * @brief Lấy danh sách tất cả sinh viên
+ * 
+ * Phương thức này trả về danh sách tất cả sinh viên trong hệ thống.
+ * Yêu cầu quyền truy cập: chỉ admin mới có quyền thực hiện chức năng này.
+ * 
+ * @return std::expected<std::vector<Student>, Error> Danh sách sinh viên nếu thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<std::vector<Student>, Error> StudentService::getAllStudents() const {
     // Chỉ Admin mới có quyền xem tất cả sinh viên
     if (!_sessionContext->isAuthenticated() || !_sessionContext->getCurrentUserRole().has_value() || _sessionContext->getCurrentUserRole().value() != UserRole::ADMIN) {
@@ -51,6 +78,15 @@ std::expected<std::vector<Student>, Error> StudentService::getAllStudents() cons
     return _studentDao->getAll();
 }
 
+/**
+ * @brief Lấy danh sách sinh viên theo khoa
+ * 
+ * Phương thức này trả về danh sách sinh viên thuộc một khoa cụ thể.
+ * Hiện tại, bất kỳ người dùng nào cũng có thể sử dụng chức năng này.
+ * 
+ * @param facultyId ID của khoa cần lấy danh sách sinh viên
+ * @return std::expected<std::vector<Student>, Error> Danh sách sinh viên nếu thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<std::vector<Student>, Error> StudentService::getStudentsByFaculty(const std::string& facultyId) const {
     if (facultyId.empty()) {
         return std::unexpected(Error{ErrorCode::VALIDATION_ERROR, "Faculty ID cannot be empty."});
@@ -59,6 +95,17 @@ std::expected<std::vector<Student>, Error> StudentService::getStudentsByFaculty(
     return _studentDao->findByFacultyId(facultyId);
 }
 
+/**
+ * @brief Cập nhật thông tin sinh viên
+ * 
+ * Phương thức này cập nhật thông tin của một sinh viên dựa trên dữ liệu được cung cấp.
+ * Yêu cầu quyền truy cập:
+ * - Admin có thể cập nhật tất cả thông tin của sinh viên, bao gồm cả khoa và CMND/CCCD
+ * - Sinh viên chỉ có thể cập nhật thông tin cá nhân của chính mình, không được thay đổi khoa và CMND/CCCD
+ * 
+ * @param data Dữ liệu cập nhật sinh viên, chứa các trường cần được cập nhật
+ * @return std::expected<bool, Error> true nếu cập nhật thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<bool, Error> StudentService::updateStudentDetails(const StudentUpdateData& data) {
     if (!_sessionContext->isAuthenticated()) {
         return std::unexpected(Error{ErrorCode::AUTHENTICATION_FAILED, "User not authenticated."});

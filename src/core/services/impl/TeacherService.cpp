@@ -2,6 +2,16 @@
 #include "../../../utils/Logger.h"
 #include "../../../utils/StringUtils.h"
 
+/**
+ * @brief Khởi tạo đối tượng TeacherService
+ * 
+ * @param teacherDao Đối tượng truy cập dữ liệu giảng viên
+ * @param studentDao Đối tượng truy cập dữ liệu sinh viên
+ * @param facultyDao Đối tượng truy cập dữ liệu khoa
+ * @param inputValidator Đối tượng kiểm tra đầu vào
+ * @param sessionContext Đối tượng quản lý phiên đăng nhập
+ * @throw std::invalid_argument Nếu bất kỳ đối số nào là nullptr
+ */
 TeacherService::TeacherService(std::shared_ptr<ITeacherDao> teacherDao,
                                std::shared_ptr<IStudentDao> studentDao, // (➕)
                                std::shared_ptr<IFacultyDao> facultyDao,
@@ -19,6 +29,15 @@ TeacherService::TeacherService(std::shared_ptr<ITeacherDao> teacherDao,
     if (!_sessionContext) throw std::invalid_argument("SessionContext cannot be null for TeacherService."); // (➕)
 }
 
+/**
+ * @brief Lấy thông tin chi tiết của một giảng viên
+ * 
+ * Phương thức này trả về thông tin chi tiết của một giảng viên dựa trên ID.
+ * Yêu cầu người dùng phải đã đăng nhập để xem thông tin giảng viên.
+ * 
+ * @param teacherId ID của giảng viên cần lấy thông tin
+ * @return std::expected<Teacher, Error> Đối tượng giảng viên nếu thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<Teacher, Error> TeacherService::getTeacherDetails(const std::string& teacherId) const {
     if (teacherId.empty()) {
         return std::unexpected(Error{ErrorCode::VALIDATION_ERROR, "Teacher ID cannot be empty."});
@@ -30,6 +49,14 @@ std::expected<Teacher, Error> TeacherService::getTeacherDetails(const std::strin
     return _teacherDao->getById(teacherId);
 }
 
+/**
+ * @brief Lấy danh sách tất cả giảng viên
+ * 
+ * Phương thức này trả về danh sách tất cả giảng viên trong hệ thống.
+ * Yêu cầu người dùng phải đã đăng nhập để xem danh sách.
+ * 
+ * @return std::expected<std::vector<Teacher>, Error> Danh sách giảng viên nếu thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<std::vector<Teacher>, Error> TeacherService::getAllTeachers() const {
     // Mọi người dùng đã xác thực đều có thể xem danh sách giáo viên
      if (!_sessionContext->isAuthenticated()) {
@@ -38,6 +65,15 @@ std::expected<std::vector<Teacher>, Error> TeacherService::getAllTeachers() cons
     return _teacherDao->getAll();
 }
 
+/**
+ * @brief Lấy danh sách giảng viên theo khoa
+ * 
+ * Phương thức này trả về danh sách giảng viên thuộc một khoa cụ thể.
+ * Yêu cầu người dùng phải đã đăng nhập để xem danh sách.
+ * 
+ * @param facultyId ID của khoa cần lấy danh sách giảng viên
+ * @return std::expected<std::vector<Teacher>, Error> Danh sách giảng viên nếu thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<std::vector<Teacher>, Error> TeacherService::getTeachersByFaculty(const std::string& facultyId) const {
      if (facultyId.empty()) {
         return std::unexpected(Error{ErrorCode::VALIDATION_ERROR, "Faculty ID cannot be empty."});
@@ -48,6 +84,15 @@ std::expected<std::vector<Teacher>, Error> TeacherService::getTeachersByFaculty(
     return _teacherDao->findByFacultyId(facultyId);
 }
 
+/**
+ * @brief Lấy danh sách giảng viên theo chức vụ
+ * 
+ * Phương thức này trả về danh sách giảng viên có chức vụ cụ thể.
+ * Yêu cầu người dùng phải đã đăng nhập để xem danh sách.
+ * 
+ * @param designation Chức vụ của giảng viên cần tìm
+ * @return std::expected<std::vector<Teacher>, Error> Danh sách giảng viên nếu thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<std::vector<Teacher>, Error> TeacherService::getTeachersByDesignation(const std::string& designation) const {
     if (designation.empty()) {
         return std::unexpected(Error{ErrorCode::VALIDATION_ERROR, "Designation cannot be empty."});
@@ -58,6 +103,17 @@ std::expected<std::vector<Teacher>, Error> TeacherService::getTeachersByDesignat
     return _teacherDao->findByDesignation(designation);
 }
 
+/**
+ * @brief Cập nhật thông tin giảng viên
+ * 
+ * Phương thức này cập nhật thông tin của một giảng viên dựa trên dữ liệu được cung cấp.
+ * Yêu cầu quyền truy cập:
+ * - Admin có thể cập nhật tất cả thông tin của giảng viên, bao gồm cả khoa, chức vụ, và kinh nghiệm
+ * - Giảng viên chỉ có thể cập nhật thông tin cá nhân của chính mình, không được thay đổi khoa, chức vụ, và kinh nghiệm
+ * 
+ * @param data Dữ liệu cập nhật giảng viên, chứa các trường cần được cập nhật
+ * @return std::expected<bool, Error> true nếu cập nhật thành công, hoặc lỗi nếu thất bại
+ */
 std::expected<bool, Error> TeacherService::updateTeacherDetails(const TeacherUpdateData& data) {
     if (!_sessionContext->isAuthenticated()) {
         return std::unexpected(Error{ErrorCode::AUTHENTICATION_FAILED, "User not authenticated."});

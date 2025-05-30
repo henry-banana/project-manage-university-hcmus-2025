@@ -7,7 +7,6 @@ class MockEnrollmentDao : public IEnrollmentDao {
 public:
     MockEnrollmentDao();
     ~MockEnrollmentDao() override = default;
-    // (➖) Bỏ MockEnrollmentDao:: ở đây
     std::expected<bool, Error> addEnrollment(const std::string& studentId, const std::string& courseId) override;
     std::expected<bool, Error> removeEnrollment(const std::string& studentId, const std::string& courseId) override;
     std::expected<bool, Error> removeEnrollmentsByStudent(const std::string& studentId) override;

@@ -13,7 +13,7 @@ namespace {
 
     void initializeMockFeeRecordDataIfNeeded() {
         if (!mock_fee_record_data_initialized) {
-            // (SỬA Ở ĐÂY) Dùng emplace
+            
             mock_fee_records_data.emplace("S001", FeeRecord("S001", 5000000, 2500000));
             mock_fee_records_data.emplace("S002", FeeRecord("S002", 5500000, 5500000));
             mock_fee_records_data.emplace("S003", FeeRecord("S003", 4800000, 1000000));
@@ -50,7 +50,7 @@ std::expected<FeeRecord, Error> MockFeeRecordDao::add(const FeeRecord& feeRecord
     if (mock_fee_records_data.count(feeRecord.getStudentId())) {
         return std::unexpected(Error{ErrorCode::ALREADY_EXISTS, "Mock FeeRecord for Student ID " + feeRecord.getStudentId() + " already exists."});
     }
-    // (SỬA Ở ĐÂY) Dùng emplace
+    
     // mock_fee_records_data[feeRecord.getStudentId()] = feeRecord; // Dòng cũ
     auto insert_result = mock_fee_records_data.emplace(feeRecord.getStudentId(), feeRecord);
     if (!insert_result.second) {

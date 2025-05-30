@@ -13,7 +13,7 @@ namespace {
 
     void initializeMockFacultyDataIfNeeded() {
         if (!mock_faculty_data_initialized) {
-            // (SỬA Ở ĐÂY) Dùng emplace
+            
             mock_faculties_data.emplace("IT", Faculty("IT", "Information Technology"));
             mock_faculties_data.emplace("CS", Faculty("CS", "Computer Science"));
             mock_faculties_data.emplace("EE", Faculty("EE", "Electrical Engineering"));
@@ -55,7 +55,7 @@ std::expected<Faculty, Error> MockFacultyDao::add(const Faculty& faculty) {
              return std::unexpected(Error{ErrorCode::ALREADY_EXISTS, "Mock Faculty with Name " + faculty.getName() + " already exists"});
         }
     }
-    // (SỬA Ở ĐÂY) Dùng emplace
+    
     // mock_faculties_data[faculty.getId()] = faculty; // Dòng cũ
     auto insert_result = mock_faculties_data.emplace(faculty.getId(), faculty);
     if(!insert_result.second){
@@ -96,4 +96,9 @@ std::expected<Faculty, Error> MockFacultyDao::findByName(const std::string& name
         }
     }
     return std::unexpected(Error{ErrorCode::NOT_FOUND, "Mock Faculty with name '" + name + "' not found"});
+}
+
+void MockFacultyDao::resetMockData() {
+    mock_faculties_data.clear();
+    mock_faculty_data_initialized = false;
 }

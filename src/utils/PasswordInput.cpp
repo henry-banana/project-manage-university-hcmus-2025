@@ -8,7 +8,24 @@
 #include <iostream>
 #include <conio.h>
 
+/**
+ * @namespace PasswordUtils
+ * @brief Không gian tên chứa các hàm tiện ích xử lý mật khẩu
+ * 
+ * Namespace này cung cấp các hàm tiện ích để xử lý mật khẩu, bao gồm 
+ * tạo salt, băm mật khẩu, xác minh mật khẩu, kiểm tra độ phức tạp
+ * và nhập mật khẩu có che dấu.
+ */
 namespace PasswordUtils { 
+    /**
+     * @brief Tạo chuỗi salt ngẫu nhiên với độ dài xác định
+     * 
+     * Salt được sử dụng trong quá trình băm mật khẩu để tăng cường bảo mật
+     * bằng cách ngăn chặn các cuộc tấn công bảng băm (rainbow table).
+     * 
+     * @param length Độ dài của chuỗi salt cần tạo
+     * @return std::string Chuỗi salt ngẫu nhiên
+     */
     std::string generateSalt(size_t length) {
         const std::string characters = "TDTH@!@PTPC";
         std::random_device random_device;
@@ -24,8 +41,17 @@ namespace PasswordUtils {
     }
     
     // --- !! PLACEHOLDER HASHING - DO NOT USE IN PRODUCTION !! ---
-    // This uses SHA256 just as an example. Real password hashing needs key derivation
-    // functions like Argon2, bcrypt, or scrypt integrated with a library.
+    /**
+     * @brief Băm mật khẩu với chuỗi salt
+     * 
+     * @warning ĐÂY CHỈ LÀ PLACEHOLDER - KHÔNG SỬ DỤNG TRONG MÔI TRƯỜNG THỰC TẾ
+     * Phương thức này sử dụng hàm băm đơn giản (không đủ an toàn cho thực tế).
+     * Trong môi trường thực tế, nên sử dụng các hàm tạo khóa như Argon2, bcrypt hoặc scrypt.
+     * 
+     * @param plainPassword Mật khẩu dạng văn bản thường
+     * @param salt Chuỗi salt để kết hợp với mật khẩu
+     * @return std::string Chuỗi băm của mật khẩu đã thêm salt
+     */
     std::string hashPassword(const std::string& plainPassword, const std::string& salt) {
         // Simple combination (vulnerable to rainbow tables if salt is reused/short)
         std::string saltedPassword = salt + plainPassword;
@@ -35,7 +61,18 @@ namespace PasswordUtils {
         return std::to_string(hash); // Convert hash to string (not secure, just for example)
     }
     
-    // --- !! PLACEHOLDER VERIFICATION - MUST MATCH HASHING !! ---
+    /**
+     * @brief Xác minh mật khẩu bằng cách so sánh với chuỗi băm đã lưu
+     * 
+     * @warning ĐÂY CHỈ LÀ PLACEHOLDER - KHÔNG SỬ DỤNG TRONG MÔI TRƯỜNG THỰC TẾ
+     * Phương thức này phải khớp với phương thức băm và có cùng các vấn đề bảo mật.
+     * 
+     * @param plainPassword Mật khẩu dạng văn bản thường cần kiểm tra
+     * @param storedHash Chuỗi băm đã lưu trữ
+     * @param salt Chuỗi salt đã sử dụng khi băm mật khẩu
+     * @return true Nếu mật khẩu chính xác
+     * @return false Nếu mật khẩu không chính xác
+     */
     bool verifyPassword(const std::string& plainPassword, const std::string& storedHash, const std::string& salt) {
         // Re-hash the provided plain password with the *same* salt
         std::string computedHash = hashPassword(plainPassword, salt);
@@ -46,7 +83,20 @@ namespace PasswordUtils {
     // --- End Placeholder ---
     
     
-    // Basic complexity check example
+    /**
+     * @brief Kiểm tra độ phức tạp của mật khẩu
+     * 
+     * Kiểm tra xem mật khẩu có đủ phức tạp không dựa trên các tiêu chí:
+     * - Độ dài tối thiểu
+     * - Có ít nhất một chữ hoa
+     * - Có ít nhất một chữ thường
+     * - Có ít nhất một chữ số
+     * 
+     * @param password Mật khẩu cần kiểm tra
+     * @param minLength Độ dài tối thiểu của mật khẩu
+     * @return true Nếu mật khẩu đủ phức tạp
+     * @return false Nếu mật khẩu không đủ phức tạp
+     */
     bool isPasswordComplexEnough(const std::string& password, size_t minLength) {
         if (password.length() < minLength) return false;
         bool hasUpper = false, hasLower = false, hasDigit = false; //, hasSymbol = false;
@@ -61,7 +111,15 @@ namespace PasswordUtils {
     }
     
     #ifdef _WIN32
-        // Windows implementation using conio.h
+        /**
+         * @brief Nhập mật khẩu có che dấu (hiển thị dấu *) - Phiên bản Windows
+         * 
+         * Phương thức này cho phép người dùng nhập mật khẩu mà không hiển thị 
+         * ký tự thực tế, thay vào đó hiển thị dấu * cho mỗi ký tự.
+         * 
+         * @param prompt Thông báo để hiển thị trước khi nhập mật khẩu
+         * @return std::string Mật khẩu người dùng đã nhập
+         */
         std::string getMaskedPassword(const std::string& prompt) {
             std::cout << prompt << std::flush;
             std::string password;
@@ -77,11 +135,19 @@ namespace PasswordUtils {
                     std::cout << '*';
                 }
             }
-            std::cout << std::endl; // Move to next line after Enter
+            std::cout << "\n"; // Move to next line after Enter
             return password;
         }
     #else
-        // POSIX (Linux/macOS) implementation using termios
+        /**
+         * @brief Nhập mật khẩu có che dấu (hiển thị dấu *) - Phiên bản POSIX (Linux/macOS)
+         * 
+         * Phương thức này cho phép người dùng nhập mật khẩu mà không hiển thị 
+         * ký tự thực tế, thay vào đó hiển thị dấu * cho mỗi ký tự.
+         * 
+         * @param prompt Thông báo để hiển thị trước khi nhập mật khẩu
+         * @return std::string Mật khẩu người dùng đã nhập
+         */
         std::string getMaskedPassword(const std::string& prompt) {
             std::cout << prompt << std::flush;
             std::string password;
@@ -114,7 +180,7 @@ namespace PasswordUtils {
     
             tcsetattr(STDIN_FILENO, TCSANOW, &oldt); // Restore original settings
     
-            std::cout << std::endl;
+            std::cout << "\n";
             return password;
         }
     #endif // _WIN32

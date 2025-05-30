@@ -1,10 +1,21 @@
 #include "TableDisplayer.h"
 
+/**
+ * @brief Hiển thị dữ liệu dạng bảng với tiêu đề và các hàng dữ liệu
+ * 
+ * Phương thức này hiển thị dữ liệu trong định dạng bảng với các đường viền,
+ * bao gồm tiêu đề cột và các hàng dữ liệu. Độ rộng cột được tự động tính toán
+ * hoặc có thể được chỉ định trước.
+ * 
+ * @param headers Mảng chứa tiêu đề các cột
+ * @param rows Mảng hai chiều chứa dữ liệu của các hàng và cột
+ * @param initialColumnWidths Mảng chứa độ rộng ban đầu cho mỗi cột (tùy chọn)
+ */
 void TableDisplayer::displayTable(const std::vector<std::string>& headers,
                                   const std::vector<std::vector<std::string>>& rows,
                                   const std::vector<int>& initialColumnWidths) const {
     if (headers.empty()) {
-        std::cout << "No headers to display." << std::endl;
+        std::cout << "No headers to display.\n";
         return;
     }
 
@@ -19,7 +30,7 @@ void TableDisplayer::displayTable(const std::vector<std::string>& headers,
         }
         for (const auto& row : rows) {
             if (row.size() != numColumns) {
-                std::cerr << "Warning: Row size mismatch in TableDisplayer. Skipping row." << std::endl;
+                std::cerr << "Warning: Row size mismatch in TableDisplayer. Skipping row.\n";
                 continue;
             }
             for (size_t i = 0; i < numColumns; ++i) {
@@ -35,13 +46,17 @@ void TableDisplayer::displayTable(const std::vector<std::string>& headers,
         width += 2; // 1 padding mỗi bên
     }
 
-    // In dòng kẻ ngang
+    /**
+     * @brief Hàm lambda in đường kẻ ngang cho bảng
+     * 
+     * Hàm này in đường kẻ ngang với độ dài phù hợp với độ rộng của mỗi cột
+     */
     auto printHorizontalLine = [&]() {
         for (int width : columnWidths) {
             std::cout << "+";
             for (int i = 0; i < width; ++i) std::cout << "-";
         }
-        std::cout << "+" << std::endl;
+        std::cout << "+\n";
     };
 
     // In header
@@ -50,7 +65,7 @@ void TableDisplayer::displayTable(const std::vector<std::string>& headers,
     for (size_t i = 0; i < numColumns; ++i) {
         std::cout << " " << std::left << std::setw(columnWidths[i] -1) << headers[i] << "|";
     }
-    std::cout << std::endl;
+    std::cout << "\n";
     printHorizontalLine();
 
     // In các dòng dữ liệu
@@ -63,7 +78,7 @@ void TableDisplayer::displayTable(const std::vector<std::string>& headers,
 
         std::string noDataMsg = " No data available ";
         std::cout << std::left << std::setw(totalWidth > static_cast<int>(noDataMsg.length()) ? totalWidth : static_cast<int>(noDataMsg.length()) ) << noDataMsg;
-        std::cout << (numColumns > 0 ? "|" : "") << std::endl; // Chỉ thêm | cuối nếu có cột
+        std::cout << (numColumns > 0 ? "|" : "") << "\n"; // Chỉ thêm | cuối nếu có cột
     } else {
         for (const auto& row : rows) {
             if (row.size() != numColumns) continue; // Bỏ qua dòng lỗi (đã cảnh báo)
@@ -71,7 +86,7 @@ void TableDisplayer::displayTable(const std::vector<std::string>& headers,
             for (size_t i = 0; i < numColumns; ++i) {
                 std::cout << " " << std::left << std::setw(columnWidths[i] - 1) << row[i] << "|";
             }
-            std::cout << std::endl;
+            std::cout << "\n";
         }
     }
     printHorizontalLine();

@@ -5,10 +5,23 @@
 #include "../../utils/StringUtils.h" // Cho trim, toUpper
 #include "../../utils/Logger.h" // Để log
 
+/**
+ * @brief Khởi tạo đối tượng ConfigLoader với đường dẫn file cấu hình
+ * 
+ * @param configFilePath Đường dẫn đến file cấu hình
+ */
 ConfigLoader::ConfigLoader(const std::filesystem::path& configFilePath)
     : _configFilePath(configFilePath) {}
 
-// Helper function to parse AppConfig::DataSourceType from string
+/**
+ * @brief Phân tích loại nguồn dữ liệu từ chuỗi
+ * 
+ * Hàm này chuyển đổi chuỗi đại diện cho loại nguồn dữ liệu thành 
+ * giá trị enum DataSourceType tương ứng.
+ * 
+ * @param str Chuỗi cần phân tích
+ * @return DataSourceType Loại nguồn dữ liệu tương ứng
+ */
 DataSourceType parseDataSourceType(const std::string& str) {
     std::string upperStr = StringUtils::toUpper(StringUtils::trim(str));
     if (upperStr == "SQL") return DataSourceType::SQL;
@@ -18,7 +31,15 @@ DataSourceType parseDataSourceType(const std::string& str) {
     return DataSourceType::MOCK; // Default
 }
 
-// Helper function to parse Logger::Level from string
+/**
+ * @brief Phân tích cấp độ log từ chuỗi
+ * 
+ * Hàm này chuyển đổi chuỗi đại diện cho cấp độ log thành 
+ * giá trị enum Logger::Level tương ứng.
+ * 
+ * @param str Chuỗi cần phân tích
+ * @return Logger::Level Cấp độ log tương ứng
+ */
 Logger::Level parseLogLevel(const std::string& str) {
     std::string upperStr = StringUtils::toUpper(StringUtils::trim(str));
     if (upperStr == "DEBUG") return Logger::Level::DEBUG;
@@ -30,6 +51,15 @@ Logger::Level parseLogLevel(const std::string& str) {
     return Logger::Level::INFO; // Default
 }
 
+/**
+ * @brief Đọc và phân tích file cấu hình
+ * 
+ * Phương thức này đọc file cấu hình, phân tích cú pháp INI và
+ * trả về một đối tượng AppConfig chứa các thông số cấu hình.
+ * 
+ * @return std::expected<AppConfig, Error> Đối tượng cấu hình nếu thành công, 
+ *         hoặc đối tượng Error nếu có lỗi
+ */
 std::expected<AppConfig, Error> ConfigLoader::loadConfig() const { // (➕) Thay đổi kiểu trả về
     AppConfig config; 
     std::ifstream configFile(_configFilePath);

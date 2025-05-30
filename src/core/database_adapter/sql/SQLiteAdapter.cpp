@@ -102,8 +102,6 @@ bool SQLiteAdapter::isConnected() const {
     return _isConnected && _connector && _connector->isConnected();
 }
 
-// (Các hàm bindParameters, executeQuery, executeUpdate, ... transaction... giữ nguyên)
-// ... (phần này rất dài, đảm bảo bạn đã có từ các lần trước)
 Error SQLiteAdapter::bindParameters(sqlite3_stmt* stmt, const std::vector<DbQueryParam>& params) {
     for (size_t i = 0; i < params.size(); ++i) {
         const auto& param_any = params[i];
@@ -128,6 +126,8 @@ Error SQLiteAdapter::bindParameters(sqlite3_stmt* stmt, const std::vector<DbQuer
             const std::string& text_val = std::any_cast<const std::string&>(param_any);
             // Dùng SQLITE_TRANSIENT vì text_val có thể bị hủy sau khi hàm này kết thúc
             rc = sqlite3_bind_text(stmt, bind_idx, text_val.c_str(), -1, SQLITE_TRANSIENT);
+        } else if (param_any.type() == typeid(bool)) { // (➕) Thêm case cho bool
+            rc = sqlite3_bind_int(stmt, bind_idx, std::any_cast<bool>(param_any) ? 1 : 0);
         }
         else {
             std::string errMsg = "SQLiteAdapter::bindParameters - Unsupported parameter type at index " + std::to_string(i) + " (type: " + param_any.type().name() + ")";
@@ -255,15 +255,19 @@ std::expected<long, Error> SQLiteAdapter::executeUpdate(const std::string& sqlQu
                                  std::string(sqlite3_errmsg(_connector->getDbHandle()));
             LOG_ERROR(errMsg + " | Query: " + sqlQuery);
             sqlite3_finalize(stmt);
-            return std::unexpected(Error{ErrorCode::CONSTRAINT_VIOLATION, errMsg}); // Mã lỗi cụ thể hơn
+            return std::unexpected(Error{ErrorCode::DB_FOREIGN_KEY_ERROR, errMsg}); // (➕) Mã lỗi cụ thể hơn
         }
-        // Các lỗi ràng buộc khác
-        if (rc_step == SQLITE_CONSTRAINT) {
-             std::string errMsg = "SQLiteAdapter::executeUpdate - Constraint violation: " +
+        // Các lỗi ràng buộc khác (bao gồm cả primary key, unique)
+        if (rc_step == SQLITE_CONSTRAINT) { // Mã lỗi chung cho constraint
+            std::string errMsg = "SQLiteAdapter::executeUpdate - Constraint violation: " +
                                  std::string(sqlite3_errmsg(_connector->getDbHandle()));
             LOG_ERROR(errMsg + " | Query: " + sqlQuery);
             sqlite3_finalize(stmt);
-            return std::unexpected(Error{ErrorCode::CONSTRAINT_VIOLATION, errMsg});
+            // Phân loại lỗi constraint dựa trên extended_err_code
+            if(extended_err_code == SQLITE_CONSTRAINT_PRIMARYKEY || extended_err_code == SQLITE_CONSTRAINT_UNIQUE){
+                 return std::unexpected(Error{ErrorCode::ALREADY_EXISTS, errMsg});
+            }
+            return std::unexpected(Error{ErrorCode::DB_CONSTRAINT_ERROR, errMsg});
         }
 
         std::string errMsg = "SQLiteAdapter::executeUpdate - Failed to execute statement (SQLite code: " + std::to_string(rc_step) + "): " +
@@ -271,7 +275,7 @@ std::expected<long, Error> SQLiteAdapter::executeUpdate(const std::string& sqlQu
         LOG_ERROR(errMsg + " | Query: " + sqlQuery);
         sqlite3_finalize(stmt);
         // Trả về mã lỗi SQLite gốc nếu không phải là lỗi ràng buộc đã xử lý ở trên
-        return std::unexpected(Error{rc_step, errMsg}); 
+        return std::unexpected(Error{ErrorCode::DB_QUERY_ERROR, errMsg}); 
     }
     long affectedRows = sqlite3_changes(_connector->getDbHandle());
     sqlite3_finalize(stmt);
