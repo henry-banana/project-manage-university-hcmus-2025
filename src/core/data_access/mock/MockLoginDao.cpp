@@ -1,3 +1,4 @@
+// --- START OF MODIFIED FILE src/core/data_access/mock/MockLoginDao.cpp ---
 #include "MockLoginDao.h"
 #include "../../../utils/PasswordInput.h"
 #include "../../../common/ErrorType.h"
@@ -8,27 +9,33 @@
 
 namespace {
     std::map<std::string, LoginCredentials> mock_login_credentials_data; 
-    bool mock_login_data_initialized = false;
+    bool mock_login_data_initialized_flag = false;
 
     LoginCredentials createMockCred(const std::string& id, const std::string& plainPass, UserRole role, LoginStatus status) {
         std::string salt = PasswordUtils::generateSalt(); 
         std::string hash = PasswordUtils::hashPassword(plainPass, salt);
         return {id, hash, salt, role, status};
     }
-
-    void initializeMockLoginDataIfNeeded() {
-        if (!mock_login_data_initialized) {
-            mock_login_credentials_data.emplace("admin", createMockCred("admin", "admin123", UserRole::ADMIN, LoginStatus::ACTIVE));
-            mock_login_credentials_data.emplace("S001", createMockCred("S001", "alicepass", UserRole::STUDENT, LoginStatus::ACTIVE));
-            // ... (các emplace khác) ...
-            mock_login_credentials_data.emplace("T003", createMockCred("T003", "filiuspass", UserRole::TEACHER, LoginStatus::DISABLED));
-            mock_login_data_initialized = true;
-        }
-    }
 } 
 
+void MockLoginDao::initializeDefaultMockData() {
+    if (!mock_login_data_initialized_flag) {
+        mock_login_credentials_data.clear();
+        mock_login_credentials_data.emplace("admin", createMockCred("admin", "admin123", UserRole::ADMIN, LoginStatus::ACTIVE));
+        mock_login_credentials_data.emplace("S001", createMockCred("S001", "alicepass", UserRole::STUDENT, LoginStatus::ACTIVE));
+        mock_login_credentials_data.emplace("T001", createMockCred("T001", "teacherpass", UserRole::TEACHER, LoginStatus::ACTIVE));
+        mock_login_credentials_data.emplace("S002_Pending", createMockCred("S002_Pending", "pendingpass", UserRole::PENDING_STUDENT, LoginStatus::PENDING_APPROVAL));
+        mock_login_credentials_data.emplace("T003_Disabled", createMockCred("T003_Disabled", "filiuspass", UserRole::TEACHER, LoginStatus::DISABLED));
+        mock_login_data_initialized_flag = true;
+    }
+}
+void MockLoginDao::clearMockData() {
+    mock_login_credentials_data.clear();
+    mock_login_data_initialized_flag = false;
+}
+
 MockLoginDao::MockLoginDao() {
-    initializeMockLoginDataIfNeeded();
+    // Constructor không tự động init data
 }
 
 std::expected<LoginCredentials, Error> MockLoginDao::findCredentialsByUserId(const std::string& userId) const {
@@ -43,7 +50,6 @@ std::expected<bool, Error> MockLoginDao::addUserCredentials(const std::string& u
     if (mock_login_credentials_data.count(userId)) {
         return std::unexpected(Error{ErrorCode::ALREADY_EXISTS, "Mock User ID " + userId + " already exists in login data."});
     }
-    // mock_login_credentials_data[userId] = {userId, passwordHash, salt, role, status}; // Dòng cũ
     auto insert_result = mock_login_credentials_data.emplace(userId, LoginCredentials{userId, passwordHash, salt, role, status});
     if(!insert_result.second){
         return std::unexpected(Error{ErrorCode::OPERATION_FAILED, "Failed to emplace login credentials into mock data."});
@@ -69,19 +75,20 @@ std::expected<bool, Error> MockLoginDao::removeUserCredentials(const std::string
 }
 
 std::expected<UserRole, Error> MockLoginDao::getUserRole(const std::string& userId) const {
-    auto creds = findCredentialsByUserId(userId);
-    if (creds.has_value()) {
-        return creds.value().role;
+    auto credsExp = findCredentialsByUserId(userId); // findCredentialsByUserId đã xử lý NOT_FOUND
+    if (credsExp.has_value()) {
+        return credsExp.value().role;
     }
-    return std::unexpected(creds.error()); 
+    // Nếu không tìm thấy user (NOT_FOUND từ findCredentialsByUserId) hoặc lỗi khác
+    return std::unexpected(credsExp.error()); 
 }
 
 std::expected<LoginStatus, Error> MockLoginDao::getUserStatus(const std::string& userId) const {
-    auto creds = findCredentialsByUserId(userId);
-    if (creds.has_value()) {
-        return creds.value().status;
+    auto credsExp = findCredentialsByUserId(userId);
+    if (credsExp.has_value()) {
+        return credsExp.value().status;
     }
-    return std::unexpected(creds.error());
+    return std::unexpected(credsExp.error());
 }
 
 std::expected<bool, Error> MockLoginDao::updateUserRoleAndStatus(const std::string& userId, UserRole newRole, LoginStatus newStatus) {
@@ -103,3 +110,4 @@ std::expected<std::vector<LoginCredentials>, Error> MockLoginDao::findByStatus(L
     }
     return results; 
 }
+// --- END OF MODIFIED FILE src/core/data_access/mock/MockLoginDao.cpp ---

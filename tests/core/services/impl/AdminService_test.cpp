@@ -6,6 +6,7 @@
 #include "../../../src/core/data_access/mock/MockLoginDao.h"
 #include "../../../src/core/data_access/mock/MockFeeRecordDao.h"
 #include "../../../src/core/data_access/mock/MockSalaryRecordDao.h"
+#include "../../../../src/core/data_access/mock/MockFacultyDao.h"
 #include "../../../src/core/data_access/mock/MockEnrollmentDao.h"
 #include "../../../src/core/data_access/mock/MockCourseResultDao.h"
 #include "../../../src/core/validators/impl/GeneralInputValidator.h"
@@ -101,6 +102,8 @@ public:
     }
 };
 
+class MyMockFalcutyDao : public MockFacultyDao {};
+
 class MyMockFeeRecordDao : public MockFeeRecordDao {};
 class MyMockSalaryRecordDao : public MockSalaryRecordDao {};
 class MyMockEnrollmentDao : public MockEnrollmentDao {};
@@ -111,6 +114,7 @@ class AdminServiceTest : public ::testing::Test {
 protected:
     std::shared_ptr<MyMockStudentDao> mockStudentDao = std::make_shared<MyMockStudentDao>();
     std::shared_ptr<MyMockTeacherDao> mockTeacherDao = std::make_shared<MyMockTeacherDao>();
+    std::shared_ptr<MyMockFalcutyDao> mockFalcutyDao = std::make_shared<MyMockFalcutyDao>();
     std::shared_ptr<MyMockLoginDao> mockLoginDao = std::make_shared<MyMockLoginDao>();
     std::shared_ptr<MyMockFeeRecordDao> mockFeeDao = std::make_shared<MyMockFeeRecordDao>();
     std::shared_ptr<MyMockSalaryRecordDao> mockSalaryDao = std::make_shared<MyMockSalaryRecordDao>();
@@ -119,7 +123,7 @@ protected:
     std::shared_ptr<MockGeneralInputValidator> mockValidator = std::make_shared<MockGeneralInputValidator>();
     std::shared_ptr<MockSessionContext> mockSession = std::make_shared<MockSessionContext>();
     AdminService service{
-        mockStudentDao, mockTeacherDao, mockLoginDao, mockFeeDao,
+        mockStudentDao, mockTeacherDao, mockFalcutyDao, mockLoginDao, mockFeeDao,
         mockSalaryDao, mockEnrollmentDao, mockCourseResultDao,
         mockValidator, mockSession
     };

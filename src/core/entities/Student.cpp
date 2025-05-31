@@ -17,7 +17,7 @@ const std::string& Student::getFacultyId() const {
 
 bool Student::setFacultyId(const std::string& facultyId) {
     std::string trimmed = StringUtils::trim(facultyId);
-    if (trimmed.length() > 10) { 
+    if (trimmed.empty() || trimmed.length() > 10) { 
         return false;
     }
     _facultyId = trimmed;

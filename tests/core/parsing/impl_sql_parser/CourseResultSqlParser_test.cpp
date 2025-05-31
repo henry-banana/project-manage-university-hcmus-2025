@@ -16,23 +16,20 @@ protected:
         return DbQueryResultRow{
             {"studentId", std::string("SV001")},
             {"courseId", std::string("CS101")},
-            {"marks", 85},
-            {"grade", 'B'}
+            {"marks", static_cast<long long>(85)}, // Hoặc int(85)
         };
     }
 };
 
 TEST_F(CourseResultSqlParserTest, Parse_ValidRow_ReturnsCourseResult) {
-    auto row = makeValidRow();
-
+    auto row = makeValidRow(); // row["marks"] = 85LL
     auto result = parser.parse(row);
     ASSERT_TRUE(result.has_value()) << "Parsing valid row should succeed";
-
     const CourseResult& cr = result.value();
     EXPECT_EQ(cr.getStudentId(), "SV001");
     EXPECT_EQ(cr.getCourseId(), "CS101");
-    EXPECT_EQ(cr.getMarks(), 85);
-    EXPECT_EQ(cr.getGrade(), 'B');
+    EXPECT_EQ(cr.getMarks(), 85); // Kiểm tra marks
+    EXPECT_EQ(cr.getGrade(), 'A');
 }
 
 TEST_F(CourseResultSqlParserTest, Parse_MissingStudentId_ReturnsError) {
@@ -54,7 +51,6 @@ TEST_F(CourseResultSqlParserTest, Serialize_ValidCourseResult_ReturnsRow) {
     EXPECT_EQ(std::any_cast<std::string>(row.at("studentId")), "SV001");
     EXPECT_EQ(std::any_cast<std::string>(row.at("courseId")), "CS101");
     EXPECT_EQ(std::any_cast<int>(row.at("marks")), 85);
-    EXPECT_EQ(std::any_cast<char>(row.at("grade")), cr.getGrade());
 }
 
 TEST_F(CourseResultSqlParserTest, ToQueryInsertParams_ReturnsCorrectParams) {

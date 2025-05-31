@@ -42,10 +42,6 @@ std::expected<DbQueryResultRow, Error> LoginCredentialsSqlParser::serialize(cons
     row.emplace("userId", creds.userId);
     row.emplace("passwordHash", creds.passwordHash);
     row.emplace("salt", creds.salt);
-    // Role và Status không lưu trực tiếp trong bảng Logins theo schema hiện tại
-    // Chúng nằm trong bảng Users.
-    // row.emplace("role", static_cast<int>(creds.role)); 
-    // row.emplace("status", static_cast<int>(creds.status));
     return row;
 }
 

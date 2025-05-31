@@ -28,7 +28,7 @@ bool FeeRecord::setPaidFee(long paidFee) {
     if (paidFee < 0) return false;
     if (paidFee > _totalFee) { // Không cho phép trả nhiều hơn tổng số nợ
         _paidFee = _totalFee; // Chỉ trả tối đa bằng tổng số nợ
-        return true; // Hoặc false nếu coi đây là lỗi
+        return false; // Hoặc false nếu coi đây là lỗi
     }
     _paidFee = paidFee;
     return true;

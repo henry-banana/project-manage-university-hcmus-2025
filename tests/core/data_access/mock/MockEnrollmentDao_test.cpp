@@ -1,88 +1,99 @@
+// --- START OF MODIFIED FILE tests/core/data_access/mock/MockEnrollmentDao_test.cpp ---
 #include <gtest/gtest.h>
-#include "../src/core/data_access/mock/MockEnrollmentDao.h"
+#include "../../../../src/core/data_access/mock/MockEnrollmentDao.h" // (➕)
+#include "../../../../src/common/ErrorType.h"                      // (➕)
 #include <algorithm>
 
-EnrollmentRecord makeRecord(const std::string& sid, const std::string& cid) {
-    return EnrollmentRecord{sid, cid};
-}
+// EnrollmentRecord đã được define trong IEnrollmentDao.h
 
-TEST(MockEnrollmentDaoTest, EnrollAndFind) {
+class MockEnrollmentDaoTest : public ::testing::Test { // (➕)
+protected:
     MockEnrollmentDao dao;
-    auto result = dao.addEnrollment("sv01", "cs101");
-    EXPECT_TRUE(result.has_value());
+
+    void SetUp() override {
+        MockEnrollmentDao::clearMockData();
+        // MockEnrollmentDao::initializeDefaultMockData(); // Gọi nếu muốn data mặc định
+    }
+    void TearDown() override {
+        MockEnrollmentDao::clearMockData();
+    }
+};
+
+TEST_F(MockEnrollmentDaoTest, EnrollAndIsEnrolled) { // Gộp EnrollAndFind
+    auto result = dao.addEnrollment("sv01_test", "cs101_test");
+    ASSERT_TRUE(result.has_value()) << result.error().message;
     EXPECT_TRUE(result.value());
 
-    auto isEnrolledResult = dao.isEnrolled("sv01", "cs101");
-    EXPECT_TRUE(isEnrolledResult.has_value());
-    EXPECT_TRUE(isEnrolledResult.value());  // Đúng là đã đăng ký
-
-    auto courses = dao.findCourseIdsByStudentId("sv01");
-    EXPECT_TRUE(courses.has_value());
-    EXPECT_NE(std::find(courses->begin(), courses->end(), "cs101"), courses->end());
+    auto isEnrolledResult = dao.isEnrolled("sv01_test", "cs101_test");
+    ASSERT_TRUE(isEnrolledResult.has_value());
+    EXPECT_TRUE(isEnrolledResult.value()); 
 }
 
-TEST(MockEnrollmentDaoTest, Enroll_Duplicate) {
-    MockEnrollmentDao dao;
-    auto first = dao.addEnrollment("sv01", "cs101");
-    EXPECT_TRUE(first.has_value());
-    EXPECT_TRUE(first.value());
+TEST_F(MockEnrollmentDaoTest, Enroll_Duplicate_ShouldFail) {
+    dao.addEnrollment("sv_dup", "cs_dup"); // Add lần 1
 
-    auto second = dao.addEnrollment("sv01", "cs101");
-    EXPECT_TRUE(second.has_value());
-    EXPECT_FALSE(second.value()); // Không được phép trùng
+    auto second_result = dao.addEnrollment("sv_dup", "cs_dup"); // Add lần 2
+    ASSERT_FALSE(second_result.has_value()); 
+    EXPECT_EQ(second_result.error().code, ErrorCode::ALREADY_EXISTS);
 }
 
-TEST(MockEnrollmentDaoTest, FindEnrollment_NotFound) {
-    MockEnrollmentDao dao;
-
-    auto isEnrolledResult = dao.isEnrolled("non_exist", "no_course");
-    EXPECT_TRUE(isEnrolledResult.has_value());
-    EXPECT_FALSE(isEnrolledResult.value());  // Không có enrollment này
+TEST_F(MockEnrollmentDaoTest, IsEnrolled_NotFound_ReturnsFalse) { // Đổi tên từ FindEnrollment_NotFound
+    auto isEnrolledResult = dao.isEnrolled("non_exist_stud", "no_course_exist");
+    ASSERT_TRUE(isEnrolledResult.has_value());
+    EXPECT_FALSE(isEnrolledResult.value());
 }
 
 
-TEST(MockEnrollmentDaoTest, RemoveEnrollment) {
-    MockEnrollmentDao dao;
-    auto enroll = dao.addEnrollment("sv01", "cs101");
-    EXPECT_TRUE(enroll.has_value());
-    EXPECT_TRUE(enroll.value());
-
-    auto removeResult = dao.removeEnrollment("sv01", "cs101");
-    EXPECT_TRUE(removeResult.has_value());
+TEST_F(MockEnrollmentDaoTest, RemoveEnrollment_Success) {
+    dao.addEnrollment("sv_remove", "cs_remove");
+    
+    auto removeResult = dao.removeEnrollment("sv_remove", "cs_remove");
+    ASSERT_TRUE(removeResult.has_value()) << removeResult.error().message;
     EXPECT_TRUE(removeResult.value());
 
-    auto isEnrolledAfterRemove = dao.isEnrolled("sv01", "cs101");
-    EXPECT_TRUE(isEnrolledAfterRemove.has_value());
+    auto isEnrolledAfterRemove = dao.isEnrolled("sv_remove", "cs_remove");
+    ASSERT_TRUE(isEnrolledAfterRemove.has_value());
     EXPECT_FALSE(isEnrolledAfterRemove.value());
 }
 
-TEST(MockEnrollmentDaoTest, RemoveEnrollment_NotExist) {
-    MockEnrollmentDao dao;
-    auto removeResult = dao.removeEnrollment("noone", "nothing");
-    EXPECT_TRUE(removeResult.has_value());
-    EXPECT_FALSE(removeResult.value());
+TEST_F(MockEnrollmentDaoTest, RemoveEnrollment_NotExist_ShouldFail) {
+    auto removeResult = dao.removeEnrollment("noone_remove", "nothing_remove");
+    ASSERT_FALSE(removeResult.has_value());
+    EXPECT_EQ(removeResult.error().code, ErrorCode::NOT_FOUND);
 }
 
-TEST(MockEnrollmentDaoTest, GetAllEnrollments) {
-    MockEnrollmentDao dao;
-    dao.addEnrollment("sv01", "cs101");
-    dao.addEnrollment("sv01", "cs102");
-    dao.addEnrollment("sv02", "cs101");
+TEST_F(MockEnrollmentDaoTest, GetAllEnrollments_Populated) {
+    dao.addEnrollment("sv_all_1", "cs_all_1");
+    dao.addEnrollment("sv_all_1", "cs_all_2");
+    dao.addEnrollment("sv_all_2", "cs_all_1");
 
     auto all = dao.getAllEnrollments();
-    EXPECT_TRUE(all.has_value());
+    ASSERT_TRUE(all.has_value());
     EXPECT_EQ(all->size(), 3);
 }
 
-TEST(MockEnrollmentDaoTest, GetEnrollmentsByStudentId) {
-    MockEnrollmentDao dao;
-    dao.addEnrollment("sv01", "cs101");
-    dao.addEnrollment("sv01", "cs102");
-    dao.addEnrollment("sv02", "cs101");
-
-    auto courses = dao.findCourseIdsByStudentId("sv01");
-    EXPECT_TRUE(courses.has_value());
-    EXPECT_EQ(courses->size(), 2);
-    EXPECT_NE(std::find(courses->begin(), courses->end(), "cs101"), courses->end());
-    EXPECT_NE(std::find(courses->begin(), courses->end(), "cs102"), courses->end());
+TEST_F(MockEnrollmentDaoTest, GetAllEnrollments_Empty) {
+    auto all = dao.getAllEnrollments();
+    ASSERT_TRUE(all.has_value());
+    EXPECT_TRUE(all->empty());
 }
+
+
+TEST_F(MockEnrollmentDaoTest, FindCourseIdsByStudentId_Success) { // Đổi tên từ GetEnrollmentsByStudentId
+    dao.addEnrollment("sv_find_c_1", "cs_find_c_101");
+    dao.addEnrollment("sv_find_c_1", "cs_find_c_102");
+    dao.addEnrollment("sv_find_c_2", "cs_find_c_101");
+
+    auto courses = dao.findCourseIdsByStudentId("sv_find_c_1");
+    ASSERT_TRUE(courses.has_value());
+    EXPECT_EQ(courses->size(), 2);
+    EXPECT_NE(std::find(courses->begin(), courses->end(), "cs_find_c_101"), courses->end());
+    EXPECT_NE(std::find(courses->begin(), courses->end(), "cs_find_c_102"), courses->end());
+}
+
+TEST_F(MockEnrollmentDaoTest, FindCourseIdsByStudentId_NoEnrollments_ReturnsEmpty) {
+    auto courses = dao.findCourseIdsByStudentId("sv_no_enroll");
+    ASSERT_TRUE(courses.has_value());
+    EXPECT_TRUE(courses->empty());
+}
+// --- END OF MODIFIED FILE tests/core/data_access/mock/MockEnrollmentDao_test.cpp ---

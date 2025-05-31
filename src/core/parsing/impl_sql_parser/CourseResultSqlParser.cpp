@@ -10,11 +10,23 @@ std::expected<CourseResult, Error> CourseResultSqlParser::parse(const DbQueryRes
             return std::unexpected(Error{ErrorCode::PARSING_ERROR, "StudentId or CourseId not found or empty in CourseResult SQL row."});
         }
 
-        int marks = -1; // Mặc định
+        int marks_val;
         auto marks_it = row.find("marks");
         if (marks_it != row.end() && marks_it->second.has_value()) {
-            marks = SqlParserUtils::getOptional<long long>(row, "marks", -1);
+            try {
+                marks_val = static_cast<int>(std::any_cast<long long>(marks_it->second));
+            } catch (const std::bad_any_cast& ) {
+                try {
+                    marks_val = std::any_cast<int>(marks_it->second);
+                } catch (const std::bad_any_cast& e_int) {
+                    LOG_WARN("Failed to parse marks as long long or int: " + std::string(e_int.what()));
+                    marks_val = -1; // Hoặc trả về lỗi
+                }
+            }
+        } else {
+            marks_val = -1; // "marks" không có trong row hoặc là std::any rỗng
         }
+        int marks = marks_val;
         // Trường 'grade' trong DB là TEXT, nhưng trong CourseResult là char và được tính toán.
         // Parser không cần đọc 'grade' từ DB nếu nó luôn được tính lại.
         // Nếu DB lưu grade, thì đọc:

@@ -1,3 +1,4 @@
+// --- START OF MODIFIED FILE src/core/data_access/mock/MockCourseDao.cpp ---
 #include "MockCourseDao.h"
 #include "../../entities/Course.h"
 #include "../../../common/ErrorType.h"
@@ -9,20 +10,29 @@
 
 namespace { 
     std::map<std::string, Course> mock_courses_data;
-    bool mock_course_data_initialized = false;
+    bool mock_course_data_initialized_flag = false;
+}
 
-    void initializeMockCourseDataIfNeeded() {
-        if (!mock_course_data_initialized) {
-            mock_courses_data.emplace("CS101", Course("CS101", "Introduction to Programming", 3, "CS"));
-            mock_courses_data.emplace("IT202", Course("IT202", "Data Structures and Algorithms", 4, "IT"));
-            // ... các emplace khác ...
-            mock_course_data_initialized = true;
-        }
+void MockCourseDao::initializeDefaultMockData() {
+    if (!mock_course_data_initialized_flag) {
+        mock_courses_data.clear();
+        mock_courses_data.emplace("CS101", Course("CS101", "Introduction to Programming", 3, "CS"));
+        mock_courses_data.emplace("IT202", Course("IT202", "Data Structures and Algorithms", 4, "IT"));
+        mock_courses_data.emplace("EE301", Course("EE301", "Circuit Theory", 3, "EE"));
+        mock_courses_data.emplace("POT101", Course("POT101", "Basic Potions", 3, "CHEM"));
+        mock_courses_data.emplace("TRN101", Course("TRN101", "Intro to Transfiguration", 4, "TRAN"));
+        mock_course_data_initialized_flag = true;
     }
 }
 
+void MockCourseDao::clearMockData() {
+    mock_courses_data.clear();
+    mock_course_data_initialized_flag = false;
+}
+
+
 MockCourseDao::MockCourseDao() {
-    initializeMockCourseDataIfNeeded();
+    // Constructor không tự động init data
 }
 
 std::expected<Course, Error> MockCourseDao::getById(const std::string& id) const {
@@ -45,12 +55,9 @@ std::expected<Course, Error> MockCourseDao::add(const Course& course) {
     if (mock_courses_data.count(course.getId())) {
         return std::unexpected(Error{ErrorCode::ALREADY_EXISTS, "Mock Course with ID " + course.getId() + " already exists"});
     }
-    auto insert_result = mock_courses_data.emplace(course.getId(), course); // Cách 1: Dùng emplace
-    // Hoặc cách 2: Dùng insert (tạo std::pair trước)
-    // auto insert_result = mock_courses_data.insert(std::make_pair(course.getId(), course));
-
-    if (!insert_result.second) { // Kiểm tra xem việc chèn có thực sự diễn ra không (dù đã check count ở trên)
-        // Trường hợp này không nên xảy ra nếu logic count ở trên đúng
+    // Có thể thêm kiểm tra trùng tên nếu cần
+    auto insert_result = mock_courses_data.emplace(course.getId(), course);
+    if (!insert_result.second) { 
         return std::unexpected(Error{ErrorCode::OPERATION_FAILED, "Failed to emplace/insert course into mock data, possibly due to internal map state."});
     }
     return course;
@@ -59,7 +66,7 @@ std::expected<Course, Error> MockCourseDao::add(const Course& course) {
 std::expected<bool, Error> MockCourseDao::update(const Course& course) {
     auto it = mock_courses_data.find(course.getId());
     if (it != mock_courses_data.end()) {
-        it->second = course; // Gán trực tiếp khi đã tìm thấy là OK
+        it->second = course; 
         return true;
     }
     return std::unexpected(Error{ErrorCode::NOT_FOUND, "Mock Course with ID " + course.getId() + " not found for update"});
@@ -85,3 +92,4 @@ std::expected<std::vector<Course>, Error> MockCourseDao::findByFacultyId(const s
     }
     return result;
 }
+// --- END OF MODIFIED FILE src/core/data_access/mock/MockCourseDao.cpp ---

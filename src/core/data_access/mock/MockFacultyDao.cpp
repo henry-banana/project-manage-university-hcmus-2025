@@ -1,3 +1,4 @@
+// --- START OF MODIFIED FILE src/core/data_access/mock/MockFacultyDao.cpp ---
 #include "MockFacultyDao.h"
 #include "../../entities/Faculty.h"
 #include "../../../common/ErrorType.h"
@@ -7,27 +8,38 @@
 #include <algorithm>
 #include <expected>
 
+// (➕) Biến static phải được định nghĩa ở file .cpp
 namespace { 
+    // Giữ private cho file cpp này, quản lý qua hàm static của class
     std::map<std::string, Faculty> mock_faculties_data;
-    bool mock_faculty_data_initialized = false;
+    bool mock_faculty_data_initialized = false; // Cờ này giờ dùng để initializeDefaultMockData chỉ chạy 1 lần nếu cần
+}
 
-    void initializeMockFacultyDataIfNeeded() {
-        if (!mock_faculty_data_initialized) {
-            
-            mock_faculties_data.emplace("IT", Faculty("IT", "Information Technology"));
-            mock_faculties_data.emplace("CS", Faculty("CS", "Computer Science"));
-            mock_faculties_data.emplace("EE", Faculty("EE", "Electrical Engineering"));
-            mock_faculties_data.emplace("CHEM", Faculty("CHEM", "Chemistry Department"));
-            mock_faculties_data.emplace("TRAN", Faculty("TRAN", "Transfiguration Studies"));
-            mock_faculties_data.emplace("CHAR", Faculty("CHAR", "Charms & Enchantments"));
-            mock_faculties_data.emplace("LAW", Faculty("LAW", "Magical Law"));
-            mock_faculty_data_initialized = true;
-        }
+// (➕) Hàm khởi tạo dữ liệu mặc định
+void MockFacultyDao::initializeDefaultMockData() {
+    if (!mock_faculty_data_initialized) { // Chỉ chạy nếu chưa init hoặc đã clear
+        mock_faculties_data.clear(); // Đảm bảo sạch trước khi init
+        mock_faculties_data.emplace("IT", Faculty("IT", "Information Technology"));
+        mock_faculties_data.emplace("CS", Faculty("CS", "Computer Science"));
+        mock_faculties_data.emplace("EE", Faculty("EE", "Electrical Engineering"));
+        mock_faculties_data.emplace("CHEM", Faculty("CHEM", "Chemistry Department"));
+        mock_faculties_data.emplace("TRAN", Faculty("TRAN", "Transfiguration Studies"));
+        mock_faculties_data.emplace("CHAR", Faculty("CHAR", "Charms & Enchantments"));
+        mock_faculties_data.emplace("LAW", Faculty("LAW", "Magical Law"));
+        mock_faculty_data_initialized = true;
     }
 }
 
+// (➕) Hàm xóa dữ liệu mock
+void MockFacultyDao::clearMockData() {
+    mock_faculties_data.clear();
+    mock_faculty_data_initialized = false;
+}
+
+
 MockFacultyDao::MockFacultyDao() {
-    initializeMockFacultyDataIfNeeded();
+    // (➖) Không gọi initializeDefaultMockData() ở đây nữa
+    // Test fixture sẽ quản lý việc này
 }
 
 std::expected<Faculty, Error> MockFacultyDao::getById(const std::string& id) const {
@@ -56,7 +68,6 @@ std::expected<Faculty, Error> MockFacultyDao::add(const Faculty& faculty) {
         }
     }
     
-    // mock_faculties_data[faculty.getId()] = faculty; // Dòng cũ
     auto insert_result = mock_faculties_data.emplace(faculty.getId(), faculty);
     if(!insert_result.second){
          return std::unexpected(Error{ErrorCode::OPERATION_FAILED, "Failed to emplace faculty into mock data."});
@@ -72,7 +83,7 @@ std::expected<bool, Error> MockFacultyDao::update(const Faculty& faculty) {
                 return std::unexpected(Error{ErrorCode::ALREADY_EXISTS, "Mock Faculty Name " + faculty.getName() + " conflicts with another faculty."});
             }
         }
-        it->second = faculty; // Gán trực tiếp khi đã tìm thấy là OK
+        it->second = faculty; 
         return true;
     }
     return std::unexpected(Error{ErrorCode::NOT_FOUND, "Mock Faculty with ID " + faculty.getId() + " not found for update"});
@@ -97,8 +108,4 @@ std::expected<Faculty, Error> MockFacultyDao::findByName(const std::string& name
     }
     return std::unexpected(Error{ErrorCode::NOT_FOUND, "Mock Faculty with name '" + name + "' not found"});
 }
-
-void MockFacultyDao::resetMockData() {
-    mock_faculties_data.clear();
-    mock_faculty_data_initialized = false;
-}
+// --- END OF MODIFIED FILE src/core/data_access/mock/MockFacultyDao.cpp ---
