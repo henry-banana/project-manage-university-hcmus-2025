@@ -1,172 +1,225 @@
-// // File: test_SqlCourseDao.cpp
-// #include <gtest/gtest.h>
-// #include <gmock/gmock.h>
-// #include "../../src/core/data_access/sql/SqlCourseDao.h"
-// #include "../../src/core/entities/Course.h"
-// #include "../../src/common/ErrorType.h"
-// #include "../../src/core/database_adapter/sql/SQLiteAdapter.h"
-// #include "../../src/core/parsing/impl_sql_parser/CourseSqlParser.h"
+// --- START OF NEW FILE tests/core/data_access/sql/SqlCourseDao_test.cpp ---
+#include "gtest/gtest.h"
+#include "../../../../src/core/data_access/sql/SqlCourseDao.h"
+#include "../../../../src/core/entities/Course.h"
+#include "../../../../src/core/entities/Faculty.h"
+#include "../../../../src/core/database_adapter/sql/SQLiteAdapter.h"
+#include "../../../../src/core/parsing/impl_sql_parser/CourseSqlParser.h"
+#include "../../../../src/common/ErrorType.h"
+#include <memory>
+#include <filesystem>
 
-// using ::testing::Return;
-// using ::testing::ReturnRef;
-// using ::testing::ReturnRefOfCopy;
-// using ::testing::Throw;
-// using ::testing::_;
-// using ::testing::NiceMock;
+// Test Fixture cho SqlCourseDaoTest
+class SqlCourseDaoTest : public ::testing::Test {
+protected:
+    std::shared_ptr<IDatabaseAdapter> dbAdapter;
+    std::shared_ptr<IEntityParser<Course, DbQueryResultRow>> courseParser;
+    std::shared_ptr<IEntityParser<Faculty, DbQueryResultRow>> facultyParser;
+    std::unique_ptr<SqlCourseDao> courseDao;
+    std::string dbPath;
 
+    void setupDatabase() {
+        dbPath = ":memory:"; // Sử dụng DB trong bộ nhớ để test độc lập
+        dbAdapter = std::make_shared<SQLiteAdapter>();
+        auto connectResult = dbAdapter->connect(dbPath);
+        ASSERT_TRUE(connectResult.has_value()) << "Failed to connect to in-memory DB: " << (connectResult.has_value() ? "" : connectResult.error().message);
+        ASSERT_TRUE(connectResult.value()) << "Connection to in-memory DB returned false.";
 
-// class SqlCourseDaoTest : public ::testing::Test {
-// protected:
-//     std::shared_ptr<NiceMock<SQLiteAdapter>> dbAdapter;
-//     std::shared_ptr<NiceMock<CourseSqlParser>> parser;
-//     std::unique_ptr<SqlCourseDao> dao;
+        // Đảm bảo bảng Courses tồn tại, giả sử hàm này tạo bảng nếu chưa có
+        auto tableResult = std::static_pointer_cast<SQLiteAdapter>(dbAdapter)->ensureTablesExist();
+        ASSERT_TRUE(tableResult.has_value()) << "Failed to ensure tables exist: " << (tableResult.has_value() ? "" : tableResult.error().message);
+        ASSERT_TRUE(tableResult.value()) << "Ensuring tables failed.";
 
-//     void SetUp() override {
-//         dbAdapter = std::make_shared<NiceMock<SQLiteAdapter>>();
-//         parser = std::make_shared<NiceMock<CourseSqlParser>>();
-//         dao = std::make_unique<SqlCourseDao>(dbAdapter, parser);
-//     }
-// };
+        courseParser = std::make_shared<CourseSqlParser>();
+        courseDao = std::make_unique<SqlCourseDao>(dbAdapter, courseParser);
+    }
 
-// TEST_F(SqlCourseDaoTest, GetById_ReturnsCourse_WhenFound) {
-//     std::string id = "CS101";
-//     DbQueryResultRow row;
-//     Course expectedCourse{"CS101", "Intro to CS",4, "F001"};
+    void SetUp() override {
+        setupDatabase();
+        clearCoursesTable();
+    }
 
-//     EXPECT_CALL(*dbAdapter, querySingle(_)).WillOnce(Return(row));
-//     EXPECT_CALL(*parser, parse(row)).WillOnce(Return(expectedCourse));
+    void TearDown() override {
+        if (dbAdapter && dbAdapter->isConnected()) {
+            dbAdapter->disconnect();
+        }
+    }
 
-//     auto result = dao->getById(id);
-//     ASSERT_TRUE(result.has_value());
-//     EXPECT_EQ(result->getId(), "CS101");
-// }
+    void clearCoursesTable() {
+        if (courseDao && dbAdapter->isConnected()) {
+            auto result = dbAdapter->executeUpdate("DELETE FROM Courses;");
+            ASSERT_TRUE(result.has_value()) << "Failed to clear Courses table: " << result.error().message;
+        }
+    }
+    bool facultyExists(const std::string& facultyId) {
+    auto result = dbAdapter->executeQuery("SELECT 1 FROM Faculties WHERE id = ? LIMIT 1;", {facultyId});
+    return result.has_value() && !result.value().empty();
+    }
+    // Thêm Course trực tiếp vào DB cho chuẩn bị test
+    Course addCourseDirectly(const std::string& id, const std::string& name, int credits, const std::string& facultyId) {
+        // 1. Đảm bảo Faculty tồn tại trước
+        auto facultyResult = dbAdapter->executeQuery("SELECT 1 FROM Faculties WHERE id = ? LIMIT 1;", {facultyId});
+        if (!facultyResult.has_value() || facultyResult.value().empty()) {
+            // Nếu chưa có Faculty, thêm một cái tạm
+            Faculty f(facultyId, "Default Faculty Name");
+            auto facultyParams = facultyParser->toQueryInsertParams(f);
+            EXPECT_TRUE(facultyParams.has_value());
 
-// TEST_F(SqlCourseDaoTest, GetById_ReturnsError_WhenNotFound) {
-//     EXPECT_CALL(*dbAdapter, querySingle(_)).WillOnce(Return(Error{"Not found"}));
+            auto insertFaculty = dbAdapter->executeUpdate("INSERT INTO Faculties (id, name) VALUES (?, ?);", facultyParams.value());
+            EXPECT_TRUE(insertFaculty.has_value()) << "Failed to insert faculty: " << insertFaculty.error().message;
+        }
 
-//     auto result = dao->getById("INVALID_ID");
-//     ASSERT_FALSE(result.has_value());
-//     EXPECT_EQ(result.error().message(), "Not found");
-// }
+        // 2. Thêm Course
+        Course c(id, name, credits, facultyId);
+        auto paramsExp = courseParser->toQueryInsertParams(c);
+        EXPECT_TRUE(paramsExp.has_value());
 
-// TEST_F(SqlCourseDaoTest, GetAll_ReturnsCourses) {
-//     DbQueryResult result;
-//     std::vector<DbQueryResultRow> rows = {DbQueryResultRow{}, DbQueryResultRow{}};
-//     Course course1{"CS101", "Intro to CS", "F001"};
-//     Course course2{"CS102", "Data Structures", "F001"};
+        auto execResult = dbAdapter->executeUpdate(
+            "INSERT INTO Courses (id, name, credits, faculty_id) VALUES (?, ?, ?, ?);", 
+            paramsExp.value());
 
-//     result.rows = rows;
+        EXPECT_TRUE(execResult.has_value()) << "Direct add failed: " << (execResult.has_value() ? "" : execResult.error().message);
+        if (!execResult.has_value() || execResult.value() == 0) {
+            throw std::runtime_error("Failed to add course directly for test setup.");
+        }
 
-//     EXPECT_CALL(*dbAdapter, query(_)).WillOnce(Return(result));
-//     EXPECT_CALL(*parser, parse(_)).WillOnce(Return(course1)).WillOnce(Return(course2));
+        return c;
+    }
+};
 
-//     auto resultExp = dao->getAll();
-//     ASSERT_TRUE(resultExp.has_value());
-//     EXPECT_EQ(resultExp->size(), 2);
-// }
+TEST_F(SqlCourseDaoTest, AddCourse_Success) {
+    // Đảm bảo faculty "IT" tồn tại trước
+    Faculty f("IT", "Information Technology");
+    auto facParams = facultyParser->toQueryInsertParams(f);
+    ASSERT_TRUE(facParams.has_value());
+    auto facResult = dbAdapter->executeUpdate("INSERT INTO Faculties (id, name) VALUES (?, ?);", facParams.value());
+    ASSERT_TRUE(facResult.has_value()) << "Failed to insert faculty: " << facResult.error().message;
 
-// TEST_F(SqlCourseDaoTest, Add_ReturnsInsertedCourse) {
-//     Course course{"CS103", "Algorithms", "F002"};
+    // Bắt đầu test thêm course
+    Course course("CS101", "Intro to Programming", 3, "IT");
+    auto result = courseDao->add(course);
+    ASSERT_TRUE(result.has_value()) << result.error().message;
+    EXPECT_EQ(result.value().getId(), "CS101");
+    EXPECT_EQ(result.value().getName(), "Intro to Programming");
+    EXPECT_EQ(result.value().getCredits(), 3);
+    EXPECT_EQ(result.value().getFacultyId(), "IT");
 
-//     EXPECT_CALL(*dbAdapter, insert(_)).WillOnce(Return(true));
-//     EXPECT_CALL(*parser, serialize(course)).WillOnce(Return(DbQuery{}));
+    // Kiểm tra lại bằng getById
+    auto fetched = courseDao->getById("CS101");
+    ASSERT_TRUE(fetched.has_value());
+    EXPECT_EQ(fetched.value().getName(), "Intro to Programming");
+}
 
-//     auto result = dao->add(course);
-//     ASSERT_TRUE(result.has_value());
-//     EXPECT_EQ(result->getId(), "CS103");
-// }
+/*
+TEST_F(SqlFacultyDaoTest, AddFaculty_Success) {
+    Faculty faculty("IT", "Information Technology");
+    auto result = facultyDao->add(faculty);
+    ASSERT_TRUE(result.has_value()) << result.error().message;
+    EXPECT_EQ(result.value().getId(), "IT");
+    EXPECT_EQ(result.value().getName(), "Information Technology");
 
-// TEST_F(SqlCourseDaoTest, Add_ReturnsErrorOnFailure) {
-//     Course course{"CS103", "Algorithms", "F002"};
+    // Kiểm tra lại bằng cách getById
+    auto fetched = facultyDao->getById("IT");
+    ASSERT_TRUE(fetched.has_value());
+    EXPECT_EQ(fetched.value().getName(), "Information Technology");
+}
+*/
+TEST_F(SqlCourseDaoTest, AddCourse_DuplicateId_ReturnsError) {
+    addCourseDirectly("CS102", "Data Structures", 4, "IT");
+    Course duplicate("CS102", "Algorithms", 4, "IT");
+    auto result = courseDao->add(duplicate);
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error().code, ErrorCode::ALREADY_EXISTS);
+}
 
-//     EXPECT_CALL(*dbAdapter, insert(_)).WillOnce(Return(Error{"Insert failed"}));
-//     EXPECT_CALL(*parser, serialize(course)).WillOnce(Return(DbQuery{}));
+TEST_F(SqlCourseDaoTest, GetById_ExistingCourse_ReturnsCourse) {
+    addCourseDirectly("MA101", "Calculus I", 4, "Math");
+    auto result = courseDao->getById("MA101");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(result.value().getName(), "Calculus I");
+}
 
-//     auto result = dao->add(course);
-//     ASSERT_FALSE(result.has_value());
-//     EXPECT_EQ(result.error().message(), "Insert failed");
-// }
+TEST_F(SqlCourseDaoTest, GetById_NonExisting_ReturnsError) {
+    auto result = courseDao->getById("NONEXIST");
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error().code, ErrorCode::NOT_FOUND);
+}
 
-// TEST_F(SqlCourseDaoTest, Update_Success) {
-//     Course course{"CS101", "Intro to CS", "F001"};
+TEST_F(SqlCourseDaoTest, GetAllCourses_ReturnsAll) {
+    addCourseDirectly("PHY101", "Physics I", 3, "Science");
+    addCourseDirectly("CHE101", "Chemistry I", 3, "Science");
+    auto result = courseDao->getAll();
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 2);
+}
 
-//     EXPECT_CALL(*dbAdapter, update(_)).WillOnce(Return(true));
-//     EXPECT_CALL(*parser, serialize(course)).WillOnce(Return(DbQuery{}));
+TEST_F(SqlCourseDaoTest, UpdateCourse_Success) {
+    addCourseDirectly("CS103", "Programming Basics", 3, "IT");
+    Course updated("CS103", "Advanced Programming", 4, "IT");
+    auto result = courseDao->update(updated);
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(result.value());
 
-//     auto result = dao->update(course);
-//     ASSERT_TRUE(result.has_value());
-//     EXPECT_TRUE(result.value());
-// }
+    auto fetched = courseDao->getById("CS103");
+    ASSERT_TRUE(fetched.has_value());
+    EXPECT_EQ(fetched.value().getName(), "Advanced Programming");
+    EXPECT_EQ(fetched.value().getCredits(), 4);
+}
 
-// TEST_F(SqlCourseDaoTest, Update_Failure) {
-//     Course course{"CS101", "Intro to CS", "F001"};
+TEST_F(SqlCourseDaoTest, UpdateCourse_NotExists_ReturnsError) {
+    Course nonExist("XX999", "Nonexistent", 3, "IT");
+    auto result = courseDao->update(nonExist);
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error().code, ErrorCode::NOT_FOUND);
+}
 
-//     EXPECT_CALL(*dbAdapter, update(_)).WillOnce(Return(Error{"Update failed"}));
-//     EXPECT_CALL(*parser, serialize(course)).WillOnce(Return(DbQuery{}));
+TEST_F(SqlCourseDaoTest, RemoveCourse_Success) {
+    addCourseDirectly("CS104", "Discrete Math", 3, "IT");
+    auto result = courseDao->remove("CS104");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(result.value());
 
-//     auto result = dao->update(course);
-//     ASSERT_FALSE(result.has_value());
-//     EXPECT_EQ(result.error().message(), "Update failed");
-// }
+    auto fetched = courseDao->getById("CS104");
+    ASSERT_FALSE(fetched.has_value());
+    EXPECT_EQ(fetched.error().code, ErrorCode::NOT_FOUND);
+}
 
-// TEST_F(SqlCourseDaoTest, Remove_Success) {
-//     EXPECT_CALL(*dbAdapter, remove(_)).WillOnce(Return(true));
+TEST_F(SqlCourseDaoTest, RemoveCourse_NotExists_ReturnsError) {
+    auto result = courseDao->remove("NONEXIST_REM");
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error().code, ErrorCode::NOT_FOUND);
+}
 
-//     auto result = dao->remove("CS101");
-//     ASSERT_TRUE(result.has_value());
-//     EXPECT_TRUE(result.value());
-// }
+TEST_F(SqlCourseDaoTest, Exists_CourseExists_ReturnsTrue) {
+    addCourseDirectly("CS105", "Operating Systems", 3, "IT");
+    auto result = courseDao->exists("CS105");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(result.value());
+}
 
-// TEST_F(SqlCourseDaoTest, Remove_Failure) {
-//     EXPECT_CALL(*dbAdapter, remove(_)).WillOnce(Return(Error{"Delete failed"}));
+TEST_F(SqlCourseDaoTest, Exists_CourseNotExists_ReturnsFalse) {
+    auto result = courseDao->exists("NONEXIST_EXISTS");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_FALSE(result.value());
+}
 
-//     auto result = dao->remove("CS101");
-//     ASSERT_FALSE(result.has_value());
-//     EXPECT_EQ(result.error().message(), "Delete failed");
-// }
+TEST_F(SqlCourseDaoTest, FindByFacultyId_ReturnsCourses) {
+    addCourseDirectly("CS201", "Networks", 3, "IT");
+    addCourseDirectly("CS202", "Databases", 3, "IT");
+    addCourseDirectly("MA201", "Linear Algebra", 3, "Math");
 
-// TEST_F(SqlCourseDaoTest, Exists_ReturnsTrue) {
-//     EXPECT_CALL(*dbAdapter, exists(_)).WillOnce(Return(true));
+    auto result = courseDao->findByFacultyId("IT");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(result.value().size(), 2);
 
-//     auto result = dao->exists("CS101");
-//     ASSERT_TRUE(result.has_value());
-//     EXPECT_TRUE(result.value());
-// }
+    for (const auto& c : result.value()) {
+        EXPECT_EQ(c.getFacultyId(), "IT");
+    }
+}
 
-// TEST_F(SqlCourseDaoTest, Exists_ReturnsFalse) {
-//     EXPECT_CALL(*dbAdapter, exists(_)).WillOnce(Return(false));
-
-//     auto result = dao->exists("CS101");
-//     ASSERT_TRUE(result.has_value());
-//     EXPECT_FALSE(result.value());
-// }
-
-// TEST_F(SqlCourseDaoTest, Exists_ReturnsError) {
-//     EXPECT_CALL(*dbAdapter, exists(_)).WillOnce(Return(Error{"Exist check failed"}));
-
-//     auto result = dao->exists("CS101");
-//     ASSERT_FALSE(result.has_value());
-//     EXPECT_EQ(result.error().message(), "Exist check failed");
-// }
-
-// TEST_F(SqlCourseDaoTest, FindByFacultyId_ReturnsCourses) {
-//     DbQueryResult result;
-//     result.rows = {DbQueryResultRow{}, DbQueryResultRow{}};
-//     Course c1{"CS101", "Intro", "F001"}, c2{"CS102", "Adv", "F001"};
-
-//     EXPECT_CALL(*dbAdapter, query(_)).WillOnce(Return(result));
-//     EXPECT_CALL(*parser, parse(_)).WillOnce(Return(c1)).WillOnce(Return(c2));
-
-//     auto resultExp = dao->findByFacultyId("F001");
-//     ASSERT_TRUE(resultExp.has_value());
-//     EXPECT_EQ(resultExp->size(), 2);
-//     EXPECT_EQ(resultExp->at(0).getId(), "CS101");
-// }
-
-// TEST_F(SqlCourseDaoTest, FindByFacultyId_ReturnsError) {
-//     EXPECT_CALL(*dbAdapter, query(_)).WillOnce(Return(Error{"Query failed"}));
-
-//     auto result = dao->findByFacultyId("F001");
-//     ASSERT_FALSE(result.has_value());
-//     EXPECT_EQ(result.error().message(), "Query failed");
-// }
+TEST_F(SqlCourseDaoTest, FindByFacultyId_NoCourses_ReturnsEmptyVector) {
+    auto result = courseDao->findByFacultyId("NONEXIST_FAC");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(result.value().empty());
+}
+// --- END OF NEW FILE tests/core/data_access/sql/SqlCourseDao_test.cpp ---
