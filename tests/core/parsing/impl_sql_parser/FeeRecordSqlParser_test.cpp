@@ -85,8 +85,8 @@ TEST_F(FeeRecordSqlParserTest, Serialize_ValidRecord_Success) {
     ASSERT_TRUE(row.find("paidFee") != row.end());
 
     EXPECT_EQ(std::any_cast<std::string>(row.at("studentId")), "SV001");
-    EXPECT_EQ(std::any_cast<int64_t>(row.at("totalFee")), 20000000);
-    EXPECT_EQ(std::any_cast<int64_t>(row.at("paidFee")), 5000000);
+    EXPECT_EQ(std::any_cast<long>(row.at("totalFee")), 20000000);
+    EXPECT_EQ(std::any_cast<long>(row.at("paidFee")), 5000000);
 }
 
 // Test toQueryInsertParams trả về vector đúng thứ tự: studentId, totalFee, paidFee
@@ -99,8 +99,8 @@ TEST_F(FeeRecordSqlParserTest, ToQueryInsertParams_ValidRecord_Success) {
 
     ASSERT_EQ(params.size(), 3u);
     EXPECT_EQ(std::any_cast<std::string>(params[0]), "SV001");
-    EXPECT_EQ(std::any_cast<int64_t>(params[1]), 20000000);
-    EXPECT_EQ(std::any_cast<int64_t>(params[2]), 5000000);
+    EXPECT_EQ(std::any_cast<long>(params[1]), 20000000);
+    EXPECT_EQ(std::any_cast<long>(params[2]), 5000000);
 }
 
 // Test toQueryUpdateParams trả về vector đúng thứ tự: totalFee, paidFee, studentId (giả định)

@@ -19,7 +19,9 @@ int Teacher::getExperienceYears() const { return _experienceYears; }
 
 bool Teacher::setFacultyId(const std::string& facultyId) {
     std::string trimmed = StringUtils::trim(facultyId);
-    if (trimmed.length() > 10) return false;
+    if (trimmed.empty() || trimmed.length() > 10) { 
+        return false;
+    }
     _facultyId = trimmed;
     return true;
 }

@@ -68,7 +68,7 @@ TEST_F(SalaryRecordSqlParserTest, Serialize_ValidRecord_Success) {
     ASSERT_TRUE(row.find("basicMonthlyPay") != row.end());
 
     EXPECT_EQ(std::any_cast<std::string>(row.at("teacherId")), "GV001");
-    EXPECT_EQ(std::any_cast<int64_t>(row.at("basicMonthlyPay")), 15000000);
+    EXPECT_EQ(std::any_cast<long>(row.at("basicMonthlyPay")), 15000000);
 }
 
 // Test toQueryInsertParams trả về vector đúng teacherId, basicMonthlyPay

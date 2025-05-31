@@ -13,16 +13,16 @@ TEST(CourseResultTest, ConstructorAndGetters) {
     EXPECT_EQ(result.getStudentId(), "SV001");
     EXPECT_EQ(result.getCourseId(), "CS101");
     EXPECT_EQ(result.getMarks(), 85);
-    EXPECT_EQ(result.getGrade(), 'B');
+    EXPECT_EQ(result.getGrade(), 'A');
 }
 
 // Grade mapping
 TEST(CourseResultTest, GradeCalculation) {
     CourseResult a("S1", "C1", 95);  EXPECT_EQ(a.getGrade(), 'A');
-    CourseResult b("S2", "C2", 85);  EXPECT_EQ(b.getGrade(), 'B');
-    CourseResult c("S3", "C3", 70);  EXPECT_EQ(c.getGrade(), 'C');
-    CourseResult d("S4", "C4", 60);  EXPECT_EQ(d.getGrade(), 'D');
-    CourseResult f("S5", "C5", 40);  EXPECT_EQ(f.getGrade(), 'F');
+    CourseResult b("S2", "C2", 85);  EXPECT_EQ(b.getGrade(), 'A');
+    CourseResult c("S3", "C3", 70);  EXPECT_EQ(c.getGrade(), 'B');
+    CourseResult d("S4", "C4", 60);  EXPECT_EQ(d.getGrade(), 'C');
+    CourseResult f("S5", "C5", 40);  EXPECT_EQ(f.getGrade(), 'D');
     CourseResult none("S6", "C6");   EXPECT_EQ(none.getGrade(), '-');
 }
 
@@ -66,5 +66,5 @@ TEST(CourseResultTest, ToStringOutput) {
     EXPECT_NE(s.find("SV001"), std::string::npos);
     EXPECT_NE(s.find("CS101"), std::string::npos);
     EXPECT_NE(s.find("88"), std::string::npos);
-    EXPECT_NE(s.find("B"), std::string::npos);
+    EXPECT_NE(s.find("A"), std::string::npos);
 }

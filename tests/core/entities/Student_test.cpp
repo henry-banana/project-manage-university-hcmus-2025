@@ -51,6 +51,13 @@ TEST(StudentTest, DisplayIncludesFaculty) {
 // Test validateBasic trả về VALID khi dữ liệu đầy đủ
 TEST(StudentTest, ValidateBasicReturnsValid) {
     Student s("SV104", "Quang", "Do", "Economics");
+    s.setAddress("123 Street");
+    s.setCitizenId("123456789012");
+    s.setEmail("sd@d.com");
+    s.setPhoneNumber("0987654321");
+    s.setBirthday(1, 1, 2000); // Giả sử ngày sinh hợp lệ
+    s.setRole(UserRole::STUDENT); // Giả sử role hợp lệ
+    s.setStatus(LoginStatus::ACTIVE); // Giả sử status hợp lệ
 
     auto result = s.validateBasic();
 

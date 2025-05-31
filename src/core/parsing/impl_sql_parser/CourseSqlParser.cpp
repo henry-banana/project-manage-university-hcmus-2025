@@ -8,7 +8,22 @@ std::expected<Course, Error> CourseSqlParser::parse(const DbQueryResultRow& row)
             return std::unexpected(Error{ErrorCode::PARSING_ERROR, "Course ID not found or empty in SQL row."});
         }
         std::string name = SqlParserUtils::getOptional<std::string>(row, "name");
-        int credits = SqlParserUtils::getOptional<long long>(row, "credits", 0); // SQLite trả int64
+        
+        int credits_val;
+        try {
+            // Thử cast sang kiểu dữ liệu mà SQLiteAdapter có thể trả về cho INTEGER
+            // SQLiteAdapter thường trả về int64_t cho cột INTEGER
+            credits_val = static_cast<int>(SqlParserUtils::getOptional<long long>(row, "credits", 0LL));
+        } catch (const std::bad_any_cast& ) {
+            // Nếu không phải long long, thử int (ít khả năng hơn nếu từ DB)
+            try {
+                credits_val = SqlParserUtils::getOptional<int>(row, "credits", 0);
+            } catch (const std::bad_any_cast& e) {
+                return std::unexpected(Error{ErrorCode::PARSING_ERROR, "Failed to parse Course credits: " + std::string(e.what())});
+            }
+        }
+        int credits = credits_val;
+
         std::string facultyId = SqlParserUtils::getOptional<std::string>(row, "facultyId");
 
         if (name.empty()) {

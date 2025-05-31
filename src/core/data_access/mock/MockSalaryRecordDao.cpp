@@ -1,3 +1,4 @@
+// --- START OF MODIFIED FILE src/core/data_access/mock/MockSalaryRecordDao.cpp ---
 #include "MockSalaryRecordDao.h"
 #include "../../entities/SalaryRecord.h"
 #include "../../../common/ErrorType.h"
@@ -8,19 +9,25 @@
 
 namespace {
     std::map<std::string, SalaryRecord> mock_salary_records_data;
-    bool mock_salary_record_data_initialized = false;
+    bool mock_salary_record_data_initialized_flag = false;
+}
 
-    void initializeMockSalaryRecordDataIfNeeded() {
-        if (!mock_salary_record_data_initialized) {
-            mock_salary_records_data.emplace("T001", SalaryRecord("T001", 15000000)); // Dùng emplace
-            mock_salary_records_data.emplace("T002", SalaryRecord("T002", 20000000)); // Dùng emplace
-            mock_salary_record_data_initialized = true;
-        }
+void MockSalaryRecordDao::initializeDefaultMockData() {
+    if (!mock_salary_record_data_initialized_flag) {
+        mock_salary_records_data.clear();
+        mock_salary_records_data.emplace("T001", SalaryRecord("T001", 15000000)); 
+        mock_salary_records_data.emplace("T002", SalaryRecord("T002", 20000000)); 
+        mock_salary_record_data_initialized_flag = true;
     }
 }
 
+void MockSalaryRecordDao::clearMockData() {
+    mock_salary_records_data.clear();
+    mock_salary_record_data_initialized_flag = false;
+}
+
 MockSalaryRecordDao::MockSalaryRecordDao() {
-    initializeMockSalaryRecordDataIfNeeded();
+    // Constructor không tự động init data
 }
 
 std::expected<SalaryRecord, Error> MockSalaryRecordDao::getById(const std::string& teacherId) const {
@@ -42,12 +49,11 @@ std::expected<std::vector<SalaryRecord>, Error> MockSalaryRecordDao::getAll() co
 std::expected<SalaryRecord, Error> MockSalaryRecordDao::add(const SalaryRecord& salaryRecord) {
     ValidationResult vr = salaryRecord.validateBasic();
     if (!vr.isValid) {
-        return std::unexpected(Error{ErrorCode::VALIDATION_ERROR, "Invalid SalaryRecord data: " + vr.getErrorMessagesCombined()});
+        return std::unexpected(Error{ErrorCode::VALIDATION_ERROR, "Invalid SalaryRecord data: " + vr.errors[0].message});
     }
     if (mock_salary_records_data.count(salaryRecord.getTeacherId())) {
         return std::unexpected(Error{ErrorCode::ALREADY_EXISTS, "Mock SalaryRecord for Teacher ID " + salaryRecord.getTeacherId() + " already exists."});
     }
-    // mock_salary_records_data[salaryRecord.getTeacherId()] = salaryRecord; // Dòng cũ
     auto insert_result = mock_salary_records_data.emplace(salaryRecord.getTeacherId(), salaryRecord);
     if (!insert_result.second) {
         return std::unexpected(Error{ErrorCode::OPERATION_FAILED, "Failed to emplace salary record into mock data."});
@@ -58,7 +64,7 @@ std::expected<SalaryRecord, Error> MockSalaryRecordDao::add(const SalaryRecord& 
 std::expected<bool, Error> MockSalaryRecordDao::update(const SalaryRecord& salaryRecord) {
     ValidationResult vr = salaryRecord.validateBasic();
     if (!vr.isValid) {
-        return std::unexpected(Error{ErrorCode::VALIDATION_ERROR, "Invalid SalaryRecord data for update: " + vr.getErrorMessagesCombined()});
+        return std::unexpected(Error{ErrorCode::VALIDATION_ERROR, "Invalid SalaryRecord data for update: " + vr.errors[0].message});
     }
     auto it = mock_salary_records_data.find(salaryRecord.getTeacherId());
     if (it != mock_salary_records_data.end()) {
@@ -78,3 +84,4 @@ std::expected<bool, Error> MockSalaryRecordDao::remove(const std::string& teache
 std::expected<bool, Error> MockSalaryRecordDao::exists(const std::string& teacherId) const {
     return mock_salary_records_data.count(teacherId) > 0;
 }
+// --- END OF MODIFIED FILE src/core/data_access/mock/MockSalaryRecordDao.cpp ---

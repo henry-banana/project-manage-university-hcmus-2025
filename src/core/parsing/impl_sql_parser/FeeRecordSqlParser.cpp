@@ -4,17 +4,26 @@
 std::expected<FeeRecord, Error> FeeRecordSqlParser::parse(const DbQueryResultRow& row) const {
     try {
         std::string studentId = SqlParserUtils::getOptional<std::string>(row, "studentId");
-        if (studentId.empty()) {
+        if (studentId.empty()) { // Giữ nguyên check này
             return std::unexpected(Error{ErrorCode::PARSING_ERROR, "FeeRecord studentId not found or empty in SQL row."});
         }
-        long totalFee = SqlParserUtils::getOptional<long long>(row, "totalFee", 0L);
+
+        // Kiểm tra sự tồn tại của key trước khi lấy giá trị
+        if (row.find("totalFee") == row.end()) {
+            return std::unexpected(Error{ErrorCode::PARSING_ERROR, "FeeRecord totalFee not found in SQL row."});
+        }
+        long totalFee = SqlParserUtils::getOptional<long long>(row, "totalFee", 0L); // Default value ít quan trọng hơn nếu đã check key
+
+        if (row.find("paidFee") == row.end()) {
+            return std::unexpected(Error{ErrorCode::PARSING_ERROR, "FeeRecord paidFee not found in SQL row."});
+        }
         long paidFee = SqlParserUtils::getOptional<long long>(row, "paidFee", 0L);
 
         return FeeRecord(studentId, totalFee, paidFee);
     } catch (const std::bad_any_cast& e) {
-        return std::unexpected(Error{ErrorCode::PARSING_ERROR, "Failed to parse FeeRecord from SQL row: " + std::string(e.what())});
-    } catch (const std::exception& e) {
-        return std::unexpected(Error{ErrorCode::PARSING_ERROR, "Generic error parsing FeeRecord from SQL row: " + std::string(e.what())});
+        return std::unexpected(Error{ErrorCode::PARSING_ERROR, "Failed to parse FeeRecord: " + std::string(e.what())});
+    } catch (const std::exception& e) { // Bắt lỗi chung hơn
+        return std::unexpected(Error{ErrorCode::PARSING_ERROR, "Generic error parsing FeeRecord: " + std::string(e.what())});
     }
 }
 

@@ -1,3 +1,4 @@
+// --- START OF MODIFIED FILE src/core/data_access/mock/MockEnrollmentDao.cpp ---
 #include "MockEnrollmentDao.h"
 #include "../../../common/ErrorType.h"
 #include <vector>
@@ -5,39 +6,46 @@
 #include <algorithm>
 #include <expected>
 
-namespace { // Copy lại
+namespace { 
     std::vector<EnrollmentRecord> mock_enrollments_data;
-    bool mock_enrollment_data_initialized = false;
+    bool mock_enrollment_data_initialized_flag = false;
+}
 
-    void initializeMockEnrollmentDataIfNeeded() {
-        if (!mock_enrollment_data_initialized) {
-            mock_enrollments_data.push_back({"S001", "CS101"});
-            mock_enrollments_data.push_back({"S001", "IT202"});
-            mock_enrollments_data.push_back({"S002", "CS101"});
-            mock_enrollments_data.push_back({"S003", "IT202"});
-            mock_enrollments_data.push_back({"S003", "EE301"});
-            mock_enrollments_data.push_back({"S001", "POT101"});
-            mock_enrollments_data.push_back({"S002", "TRN101"});
-
-            mock_enrollment_data_initialized = true;
-        }
+void MockEnrollmentDao::initializeDefaultMockData() {
+    if (!mock_enrollment_data_initialized_flag) {
+        mock_enrollments_data.clear();
+        mock_enrollments_data.push_back({"S001", "CS101"});
+        mock_enrollments_data.push_back({"S001", "IT202"});
+        mock_enrollments_data.push_back({"S002", "CS101"});
+        mock_enrollments_data.push_back({"S003", "IT202"});
+        mock_enrollments_data.push_back({"S003", "EE301"});
+        mock_enrollments_data.push_back({"S001", "POT101"});
+        mock_enrollments_data.push_back({"S002", "TRN101"});
+        mock_enrollment_data_initialized_flag = true;
     }
+}
+
+void MockEnrollmentDao::clearMockData() {
+    mock_enrollments_data.clear();
+    mock_enrollment_data_initialized_flag = false;
 }
 
 MockEnrollmentDao::MockEnrollmentDao() {
-    initializeMockEnrollmentDataIfNeeded();
+    // Constructor không tự động init data
 }
 
 std::expected<bool, Error> MockEnrollmentDao::addEnrollment(const std::string& studentId, const std::string& courseId) {
-    auto enrolledCheck = isEnrolled(studentId, courseId);
-    if (enrolledCheck.has_value() && enrolledCheck.value()) {
-        return std::unexpected(Error{ErrorCode::ALREADY_EXISTS, "Student " + studentId + " already enrolled in course " + courseId});
-    }
-    // Giả sử isEnrolled trả về error nếu có vấn đề khác
-    if (!enrolledCheck.has_value() && enrolledCheck.error().code != ErrorCode::NOT_FOUND) { // NOT_FOUND là ok để add
-         return std::unexpected(enrolledCheck.error());
+    auto enrolledCheck = isEnrolled(studentId, courseId); // isEnrolled đã trả về std::expected<bool, Error>
+
+    if (!enrolledCheck.has_value()) { // Lỗi khi kiểm tra isEnrolled
+        return std::unexpected(enrolledCheck.error());
     }
 
+    if (enrolledCheck.value()) { // Nếu value là true -> đã enrolled
+        return std::unexpected(Error{ErrorCode::ALREADY_EXISTS, "Student " + studentId + " already enrolled in course " + courseId});
+    }
+    
+    // Nếu value là false -> chưa enrolled, tiến hành add
     mock_enrollments_data.push_back({studentId, courseId});
     return true;
 }
@@ -51,18 +59,18 @@ std::expected<bool, Error> MockEnrollmentDao::removeEnrollment(const std::string
         mock_enrollments_data.erase(it, mock_enrollments_data.end());
         return true;
     }
-    return std::unexpected(Error{ErrorCode::NOT_FOUND, "Enrollment not found for Student " + studentId + " in Course " + courseId});
+    // Nếu không tìm thấy để xóa, trả về lỗi NOT_FOUND
+    return std::unexpected(Error{ErrorCode::NOT_FOUND, "Enrollment not found for Student " + studentId + " in Course " + courseId + " to remove."});
 }
 
 std::expected<bool, Error> MockEnrollmentDao::removeEnrollmentsByStudent(const std::string& studentId) {
-    auto initial_size = mock_enrollments_data.size();
+    // auto initial_size = mock_enrollments_data.size(); // Không cần thiết nữa
     mock_enrollments_data.erase(
         std::remove_if(mock_enrollments_data.begin(), mock_enrollments_data.end(),
                        [&](const EnrollmentRecord& er){ return er.studentId == studentId; }),
         mock_enrollments_data.end()
     );
-    // Trong mock, việc này luôn thành công, kể cả khi không có gì để xóa
-    return true; // Hoặc trả về true nếu size thay đổi
+    return true; // Luôn thành công, kể cả khi không xóa gì
 }
 
 std::expected<bool, Error> MockEnrollmentDao::removeEnrollmentsByCourse(const std::string& courseId) {
@@ -71,7 +79,7 @@ std::expected<bool, Error> MockEnrollmentDao::removeEnrollmentsByCourse(const st
                        [&](const EnrollmentRecord& er){ return er.courseId == courseId; }),
         mock_enrollments_data.end()
     );
-    return true;
+    return true; // Luôn thành công
 }
 
 std::expected<bool, Error> MockEnrollmentDao::isEnrolled(const std::string& studentId, const std::string& courseId) const {
@@ -79,13 +87,7 @@ std::expected<bool, Error> MockEnrollmentDao::isEnrolled(const std::string& stud
                        [&](const EnrollmentRecord& er){
                            return er.studentId == studentId && er.courseId == courseId;
                        });
-    if (found) return true;
-    // Trả về lỗi NOT_FOUND nếu không tìm thấy, thay vì false trực tiếp, để phân biệt với lỗi khác
-    // Tuy nhiên, isEnrolled thường được mong đợi trả về bool (true/false) hơn là error khi không tìm thấy.
-    // Để nhất quán, nếu không tìm thấy, ta trả về `false` và không có error.
-    return false; 
-    // Nếu muốn phân biệt rõ "không tìm thấy" và "lỗi thực sự", có thể phức tạp hơn:
-    // return std::unexpected(Error{ErrorCode::NOT_FOUND, "Enrollment record not found."}); // nếu muốn coi "không tìm thấy" là một dạng lỗi kiểm tra được
+    return found; 
 }
 
 std::expected<std::vector<std::string>, Error> MockEnrollmentDao::findCourseIdsByStudentId(const std::string& studentId) const {
@@ -111,3 +113,4 @@ std::expected<std::vector<std::string>, Error> MockEnrollmentDao::findStudentIds
 std::expected<std::vector<EnrollmentRecord>, Error> MockEnrollmentDao::getAllEnrollments() const {
     return mock_enrollments_data;
 }
+// --- END OF MODIFIED FILE src/core/data_access/mock/MockEnrollmentDao.cpp ---

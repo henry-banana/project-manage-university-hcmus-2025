@@ -1,29 +1,34 @@
+// --- START OF MODIFIED FILE src/core/data_access/mock/MockFeeRecordDao.cpp ---
 #include "MockFeeRecordDao.h"
-#include "../../entities/FeeRecord.h" // Đảm bảo include FeeRecord.h
+#include "../../entities/FeeRecord.h" 
 #include "../../../common/ErrorType.h"
 #include <map>
 #include <vector>
 #include <algorithm>
 #include <expected>
 
-// Namespace ẩn danh và initializeMockFeeRecordDataIfNeeded
 namespace {
     std::map<std::string, FeeRecord> mock_fee_records_data;
-    bool mock_fee_record_data_initialized = false;
+    bool mock_fee_record_data_initialized_flag = false;
+}
 
-    void initializeMockFeeRecordDataIfNeeded() {
-        if (!mock_fee_record_data_initialized) {
-            
-            mock_fee_records_data.emplace("S001", FeeRecord("S001", 5000000, 2500000));
-            mock_fee_records_data.emplace("S002", FeeRecord("S002", 5500000, 5500000));
-            mock_fee_records_data.emplace("S003", FeeRecord("S003", 4800000, 1000000));
-            mock_fee_record_data_initialized = true;
-        }
+void MockFeeRecordDao::initializeDefaultMockData() {
+    if (!mock_fee_record_data_initialized_flag) {
+        mock_fee_records_data.clear();
+        mock_fee_records_data.emplace("S001", FeeRecord("S001", 5000000, 2500000));
+        mock_fee_records_data.emplace("S002", FeeRecord("S002", 5500000, 5500000));
+        // Hòa có thể thêm S003 ở đây nếu muốn
+        mock_fee_record_data_initialized_flag = true;
     }
 }
 
+void MockFeeRecordDao::clearMockData() {
+    mock_fee_records_data.clear();
+    mock_fee_record_data_initialized_flag = false;
+}
+
 MockFeeRecordDao::MockFeeRecordDao() {
-    initializeMockFeeRecordDataIfNeeded();
+    // Constructor không tự động init data
 }
 
 std::expected<FeeRecord, Error> MockFeeRecordDao::getById(const std::string& studentId) const {
@@ -45,13 +50,12 @@ std::expected<std::vector<FeeRecord>, Error> MockFeeRecordDao::getAll() const {
 std::expected<FeeRecord, Error> MockFeeRecordDao::add(const FeeRecord& feeRecord) {
     ValidationResult vr = feeRecord.validateBasic();
     if (!vr.isValid) {
-        return std::unexpected(Error{ErrorCode::VALIDATION_ERROR, "Invalid FeeRecord data: " + vr.getErrorMessagesCombined()});
+        return std::unexpected(Error{ErrorCode::VALIDATION_ERROR, "Invalid FeeRecord data: " + vr.errors[0].message});
     }
     if (mock_fee_records_data.count(feeRecord.getStudentId())) {
         return std::unexpected(Error{ErrorCode::ALREADY_EXISTS, "Mock FeeRecord for Student ID " + feeRecord.getStudentId() + " already exists."});
     }
     
-    // mock_fee_records_data[feeRecord.getStudentId()] = feeRecord; // Dòng cũ
     auto insert_result = mock_fee_records_data.emplace(feeRecord.getStudentId(), feeRecord);
     if (!insert_result.second) {
          return std::unexpected(Error{ErrorCode::OPERATION_FAILED, "Failed to emplace fee record into mock data."});
@@ -62,11 +66,11 @@ std::expected<FeeRecord, Error> MockFeeRecordDao::add(const FeeRecord& feeRecord
 std::expected<bool, Error> MockFeeRecordDao::update(const FeeRecord& feeRecord) {
     ValidationResult vr = feeRecord.validateBasic();
     if (!vr.isValid) {
-        return std::unexpected(Error{ErrorCode::VALIDATION_ERROR, "Invalid FeeRecord data for update: " + vr.getErrorMessagesCombined()});
+        return std::unexpected(Error{ErrorCode::VALIDATION_ERROR, "Invalid FeeRecord data for update: " + vr.errors[0].message});
     }
     auto it = mock_fee_records_data.find(feeRecord.getStudentId());
     if (it != mock_fee_records_data.end()) {
-        it->second = feeRecord; // Gán trực tiếp khi đã tìm thấy là OK
+        it->second = feeRecord; 
         return true;
     }
     return std::unexpected(Error{ErrorCode::NOT_FOUND, "Mock FeeRecord for Student ID " + feeRecord.getStudentId() + " not found for update."});
@@ -82,3 +86,4 @@ std::expected<bool, Error> MockFeeRecordDao::remove(const std::string& studentId
 std::expected<bool, Error> MockFeeRecordDao::exists(const std::string& studentId) const {
     return mock_fee_records_data.count(studentId) > 0;
 }
+// --- END OF MODIFIED FILE src/core/data_access/mock/MockFeeRecordDao.cpp ---

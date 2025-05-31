@@ -9,13 +9,13 @@ CourseResult::CourseResult(std::string studentId, std::string courseId, int mark
 }
 
 void CourseResult::calculateGrade() {
-    if (_marks < 0) _grade = '-'; // Chưa có điểm
-    else if (_marks < 35) _grade = 'F'; // Rớt (ví dụ)
-    else if (_marks < 50) _grade = 'D';
-    else if (_marks < 65) _grade = 'C';
-    else if (_marks < 80) _grade = 'B';
-    else if (_marks <= 100) _grade = 'A';
-    else _grade = '?'; // Điểm không hợp lệ
+    if (_marks < 0) _grade = '-';
+    else if (_marks < 40) _grade = 'F';  // Dưới 40 là F
+    else if (_marks < 55) _grade = 'D';  // 40-54 là D
+    else if (_marks < 70) _grade = 'C';  // 55-69 là C
+    else if (_marks < 85) _grade = 'B';  // 70-84 là B
+    else if (_marks <= 100) _grade = 'A'; // 85-100 là A
+    else _grade = '?'; 
 }
 
 const std::string& CourseResult::getStudentId() const { return _studentId; }
@@ -26,7 +26,6 @@ char CourseResult::getGrade() const { return _grade; }
 bool CourseResult::setMarks(int marks) {
     if (marks < -1 || marks > 100) { // -1 cho phép "chưa nhập điểm"
         // Không set và trả về false nếu điểm không hợp lệ
-        // Hoặc có thể set _marks = -1, _grade = '?' nếu muốn ghi nhận là có người cố tình nhập sai
         return false;
     }
     _marks = marks;
@@ -38,10 +37,10 @@ ValidationResult CourseResult::validate() const {
     ValidationResult vr;
     if (StringUtils::trim(_studentId).empty()) vr.addError(ErrorCode::VALIDATION_ERROR, "Student ID in CourseResult cannot be empty.");
     if (StringUtils::trim(_courseId).empty()) vr.addError(ErrorCode::VALIDATION_ERROR, "Course ID in CourseResult cannot be empty.");
-    if (_marks < -1 || _marks > 100) {
+    // Kiểm tra lại marks trong validate
+    if (_marks < -1 || _marks > 100) { // -1 là cho phép (chưa có điểm)
         vr.addError(ErrorCode::VALIDATION_ERROR, "Marks must be between -1 (not graded) and 100.");
     }
-    // Grade được tính tự động, không cần validate trực tiếp
     return vr;
 }
 

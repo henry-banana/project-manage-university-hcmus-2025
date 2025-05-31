@@ -15,13 +15,13 @@ protected:
 
     // Tạo 1 dòng dữ liệu hợp lệ đại diện cho Course
     DbQueryResultRow makeValidRow() {
-        return DbQueryResultRow{
-            {"id", std::string("CS101")},
-            {"name", std::string("Introduction to Programming")},
-            {"credits", 3},
-            {"facultyId", std::string("F001")}
-        };
-    }
+    return DbQueryResultRow{
+        {"id", std::string("CS101")},
+        {"name", std::string("Introduction to Programming")},
+        {"credits", static_cast<long long>(3)}, // (<<<< Lưu ý kiểu ở đây)
+        {"facultyId", std::string("F001")}
+    };
+}
 };
 
 TEST_F(CourseSqlParserTest, Parse_ValidRow_ReturnsCourse) {

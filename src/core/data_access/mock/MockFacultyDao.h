@@ -16,6 +16,7 @@ public:
     std::expected<bool, Error> exists(const std::string& id) const override;
     std::expected<Faculty, Error> findByName(const std::string& name) const override;
 
-    static void resetMockData();
+    static void clearMockData();
+    static void initializeDefaultMockData();
 };
 #endif // MOCK_FACULTY_DAO_H

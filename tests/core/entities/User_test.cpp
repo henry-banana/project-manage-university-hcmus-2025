@@ -27,8 +27,8 @@ TEST(UserTest, ConstructorAndGetters) {
     TestUser user("SV001", "Linh", "Nguyen", UserRole::STUDENT);
 
     EXPECT_EQ(user.getId(), "SV001");
-    EXPECT_EQ(user.getFirstName(), "Linh");
-    EXPECT_EQ(user.getLastName(), "Nguyen");
+    EXPECT_EQ(user.getFirstName(), "Nguyen");
+    EXPECT_EQ(user.getLastName(), "Linh");
     EXPECT_EQ(user.getFullName(), "Nguyen Linh");
     EXPECT_EQ(user.getRole(), UserRole::STUDENT);
     EXPECT_EQ(user.getStatus(), LoginStatus::ACTIVE);

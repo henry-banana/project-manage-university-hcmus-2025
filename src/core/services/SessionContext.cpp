@@ -1,16 +1,20 @@
-// src/core/services/impl/SessionContext.cpp
 #include "SessionContext.h"
 
 void SessionContext::setCurrentUser(std::shared_ptr<User> user) {
-    _currentUser = std::move(user);
+    if (user == nullptr) { // (➕) Thêm kiểm tra này
+        clearCurrentUser();
+    } else {
+        _currentUser = std::move(user);
+    }
 }
 
 void SessionContext::clearCurrentUser() {
-    _currentUser.reset();
+    _currentUser.reset(); // Hoặc _currentUser = std::nullopt;
 }
 
 bool SessionContext::isAuthenticated() const {
-    return _currentUser.has_value();
+    // (➕) Sửa lại isAuthenticated để kiểm tra cả con trỏ bên trong
+    return _currentUser.has_value() && _currentUser.value() != nullptr;
 }
 
 std::optional<std::string> SessionContext::getCurrentUserId() const {
@@ -28,5 +32,9 @@ std::optional<UserRole> SessionContext::getCurrentUserRole() const {
 }
 
 std::optional<std::shared_ptr<User>> SessionContext::getCurrentUser() const {
-    return _currentUser;
+    // (➕) Nếu _currentUser chứa nullptr, thì nên trả về std::nullopt
+    if (_currentUser.has_value() && _currentUser.value() != nullptr) {
+        return _currentUser;
+    }
+    return std::nullopt;
 }

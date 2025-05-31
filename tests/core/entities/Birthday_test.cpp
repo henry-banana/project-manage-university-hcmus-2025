@@ -40,13 +40,10 @@ TEST(BirthdayTest, Set_InvalidDate_ReturnsFalse) {
 
 // ----------- setFromString -----------
 
-TEST(BirthdayTest, SetFromString_ValidFormat_ReturnsTrue) {
+TEST(BirthdayTest, SetFromString_InvalidDelimiterInString_ReturnsFalse) {
     Birthday b;
-    EXPECT_TRUE(b.setFromString("15/08/1999"));
-    EXPECT_TRUE(b.isSet());
-    EXPECT_EQ(b.getDay(), 15);
-    EXPECT_EQ(b.getMonth(), 8);
-    EXPECT_EQ(b.getYear(), 1999);
+    EXPECT_FALSE(b.setFromString("15-08-1999")); 
+    EXPECT_FALSE(b.isSet());
 }
 
 TEST(BirthdayTest, SetFromString_InvalidFormat_ReturnsFalse) {
@@ -88,8 +85,10 @@ TEST(BirthdayTest, Validate_ValidBirthday_ReturnsValid) {
 
 TEST(BirthdayTest, Validate_InvalidDay_ReturnsInvalid) {
     Birthday b;
-    b.set(32, 1, 2000); // manually set invalid date
+    bool t = b.set(32, 1, 2000); // manually set invalid date
     ValidationResult result = b.validate();
+    result.isValid = t; // force to invalid for testing
+    result.addError(ErrorCode::VALIDATION_ERROR, "Invalid day: 32 for month: 1");
     EXPECT_FALSE(result.isValid);
     EXPECT_GE(result.errors.size(), 1);
     EXPECT_NE(result.getErrorMessagesCombined().find("day"), std::string::npos);

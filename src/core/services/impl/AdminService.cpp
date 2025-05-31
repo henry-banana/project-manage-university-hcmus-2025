@@ -57,9 +57,11 @@ AdminService::AdminService(
  * @return false Nếu người dùng chưa đăng nhập hoặc không phải admin
  */
 bool AdminService::isAdminAuthenticated() const {
-    return _sessionContext->isAuthenticated() && 
-           _sessionContext->getCurrentUserRole().has_value() &&
-           _sessionContext->getCurrentUserRole().value() == UserRole::ADMIN;
+    if (!_sessionContext->isAuthenticated()) {
+        return false;
+    }
+    auto roleOpt = _sessionContext->getCurrentUserRole(); // Gọi 1 lần
+    return roleOpt.has_value() && roleOpt.value() == UserRole::ADMIN;
 }
 
 /**

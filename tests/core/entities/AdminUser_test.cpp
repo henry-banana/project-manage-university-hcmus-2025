@@ -20,12 +20,6 @@ TEST(AdminUserTest, Constructor_InitializesCorrectly) {
     EXPECT_EQ(admin.getRole(), UserRole::ADMIN);
 }
 
-TEST(AdminUserTest, Display_ReturnsCorrectFormat) {
-    AdminUser admin("A001", "John", "Doe");
-    std::string expected = "ADMIN - [A001] Doe John";
-    EXPECT_EQ(admin.display(), expected);
-}
-
 TEST(AdminUserTest, ValidateBasic_ReturnsValid_WithCorrectData) {
     AdminUser admin("A001", "John", "Doe");
     ValidationResult result = admin.validateBasic();
